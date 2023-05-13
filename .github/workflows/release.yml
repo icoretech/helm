@@ -43,10 +43,14 @@ jobs:
 
       - name: Push Charts to GHCR
         run: |
-          for pkg in .cr-release-packages/*; do
-            if [ -z "${pkg:-}" ]; then
-              break
-            fi
+          if [ -d ".cr-release-packages" ]; then
+            for pkg in .cr-release-packages/*; do
+              if [ -z "${pkg:-}" ]; then
+                break
+              fi
 
-            helm push "${pkg}" oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts
-          done
+              helm push "${pkg}" oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts
+            done
+          else
+            echo "Directory .cr-release-packages does not exist."
+          fi
