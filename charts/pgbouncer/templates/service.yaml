@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "pgbouncer.fullname" . }}
+  labels:
+    {{- include "pgbouncer.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: psql
+      protocol: TCP
+      name: psql
+  selector:
+    app.kubernetes.io/name: {{ template "pgbouncer.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}

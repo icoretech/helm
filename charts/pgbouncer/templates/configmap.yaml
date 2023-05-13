@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "pgbouncer.fullname" . }}-configmap
+  labels:
+    {{- include "pgbouncer.labels" . | nindent 4 }}
+data:
+  pgbouncer.ini: |
+    [databases]
+{{- range $key, $val := .Values.config.databases }}
+    {{ $key }} ={{ range $k, $v := $val }} {{ $k }}={{ $v }}{{ end }}
+{{- end }}
+    [pgbouncer]
+    listen_addr = *
+    listen_port = 5432
+    auth_file = /etc/userlist/userlist.txt
+    admin_users = {{ .Values.config.adminUser }}
+    server_reset_query = SELECT pg_advisory_unlock_all()
+    server_reset_query_always = 1
+{{- if .Values.config.authUser }}
+    auth_user = {{ .Values.config.authUser }}
+{{- end }}
+{{- range $key, $val := .Values.config.pgbouncer }}
+    {{ $key }} = {{ $val }}
+{{- end }}

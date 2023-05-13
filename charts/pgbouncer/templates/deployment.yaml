@@ -1,0 +1,152 @@
+apiVersion: {{ template "deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: {{ include "pgbouncer.fullname" . }}
+  labels:
+    {{- include "pgbouncer.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  {{ if .Values.updateStrategy -}}
+  strategy: {{ .Values.updateStrategy | toYaml | trimSuffix "\n" | nindent 4 }}
+  {{ end -}}
+  {{ if .Values.minReadySeconds -}}
+  minReadySeconds: {{ .Values.minReadySeconds }}
+  {{ end -}}
+  selector:
+    matchLabels:
+      {{- include "pgbouncer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "pgbouncer.selectorLabels" . | nindent 8 }}
+        {{- if .Values.podLabels }}
+        {{ range $key, $value := .Values.podLabels -}}
+        {{ $key }}: {{ $value | quote }}
+        {{- end -}}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if .Values.pgbouncerExporter.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.pgbouncerExporter.port }}"
+        prometheus.io/path: "/metrics"
+        {{- end }}
+        {{ range $key, $value := .Values.podAnnotations -}}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ template "pgbouncer.serviceAccountName" . }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{ if .Values.nodeSelector -}}
+      nodeSelector: {{ toYaml .Values.nodeSelector | trimSuffix "\n" | nindent 8 }}
+      {{ end -}}
+      {{ if .Values.tolerations -}}
+      tolerations: {{ toYaml .Values.tolerations | trimSuffix "\n" | nindent 6 }}
+      {{ end -}}
+      {{ if .Values.affinity -}}
+      affinity: {{ toYaml .Values.affinity | trimSuffix "\n" | nindent 8 }}
+      {{ end -}}
+      {{ if .Values.priorityClassName -}}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{ end -}}
+      {{ if .Values.runtimeClassName -}}
+      runtimeClassName: {{ .Values.runtimeClassName }}
+      {{ end -}}
+      {{ if len .Values.imagePullSecrets -}}
+      imagePullSecrets: {{ toYaml .Values.imagePullSecrets | trimSuffix "\n" | nindent 6 }}
+      {{ end -}}
+      {{ if .Values.extraInitContainers -}}
+      initContainers: {{ toYaml .Values.extraInitContainers | trimSuffix "\n" | nindent 6 }}
+      {{ end -}}
+      containers:
+      - name: pgbouncer
+        image: {{ template "pgbouncer.image" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - "/usr/bin/dumb-init"
+          ## rewrite SIGTERM as SIGINT, so pgbouncer does a safe shutdown
+          - "--rewrite=15:2"
+          - "--"
+        args:
+          - "/bin/sh"
+          - "-c"
+          - |-
+            exec pgbouncer /home/pgbouncer/config/pgbouncer.ini
+        # command:
+        # - /opt/pgbouncer/pgbouncer
+        # - /etc/pgbouncer/pgbouncer.ini
+        {{- if .Values.lifecycle }}
+        lifecycle: {{ toYaml .Values.lifecycle | trimSuffix "\n" | nindent 10 }}
+        {{- end }}
+        {{- if .Values.extraEnvs }}
+        env:
+        {{ toYaml .Values.extraEnvs | trimSuffix "\n" | nindent 10 }}
+        {{- end }}
+        ports:
+        - name: psql
+          containerPort: 5432
+          protocol: TCP
+        readinessProbe:
+          tcpSocket:
+            port: 5432
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: 5432
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        {{- if .Values.resources }}
+        resources: {{ toYaml .Values.resources | trimSuffix "\n" | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: /home/pgbouncer/config/
+        - name: userlist
+          mountPath: /etc/userlist/
+        {{- if .Values.extraVolumeMounts -}}
+        {{ toYaml .Values.extraVolumeMounts | trimSuffix "\n" | nindent 8 }}
+        {{- end }}
+      {{- if .Values.pgbouncerExporter.enabled }}
+      - name: exporter
+        image: {{ template "pgbouncer.exporterImage" . }}
+        imagePullPolicy: {{ .Values.pgbouncerExporter.image.pullPolicy }}
+        args:
+        - --web.listen-address=:{{ .Values.pgbouncerExporter.port }}
+        - --web.telemetry-path=/metrics
+        - --log.level={{ .Values.pgbouncerExporter.log.level }}
+        - --log.format={{ .Values.pgbouncerExporter.log.format }}
+        - --pgBouncer.connectionString=postgres://$(PGBOUNCER_USER):$(PGBOUNCER_PASS)@127.0.0.1:5432/pgbouncer?sslmode=disable&connect_timeout=10
+        env:
+        - name: PGBOUNCER_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "pgbouncer.fullname" . }}-secret
+              key: adminUser
+        - name: PGBOUNCER_PASS
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "pgbouncer.fullname" . }}-secret
+              key: adminPassword
+        {{- if .Values.pgbouncerExporter.resources }}
+        resources: {{ toYaml .Values.pgbouncerExporter.resources | trimSuffix "\n" | nindent 10 }}
+        {{- end }}
+        ports:
+        - name: exporter
+          containerPort: {{ .Values.pgbouncerExporter.port }}
+          protocol: TCP
+      {{- end }}
+      {{ if .Values.extraContainers -}}
+      {{ toYaml .Values.extraContainers | trimSuffix "\n" | indent 6 | trimPrefix "      " }}
+      {{ end -}}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ template "pgbouncer.fullname" . }}-configmap
+      - name: userlist
+        secret:
+          secretName: {{ template "pgbouncer.fullname" . }}-userlist-secret
+      {{- if .Values.extraVolumes -}}
+      {{ toYaml .Values.extraVolumes | trimSuffix "\n" | nindent 6 }}
+      {{ end -}}

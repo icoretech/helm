@@ -1,0 +1,235 @@
+## Replica count for Deployment
+## https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#deploymentspec-v1-apps
+##
+replicaCount: 1
+
+## The update strategy to apply to the Deployment
+## https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#deploymentstrategy-v1-apps
+##
+updateStrategy: {}
+#  type: Recreate
+#
+#  type: RollingUpdate
+#  rollingUpdate:
+#    maxUnavailable: 1
+#    maxSurge: 25%
+
+## Interval between discrete pods transitions
+## https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#deploymentspec-v1-apps
+##
+minReadySeconds: 0
+
+## Rollback limit
+## https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#deploymentspec-v1-apps
+##
+revisionHistoryLimit: 10
+
+## Optional array of imagePullSecrets containing private registry credentials
+## https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+##
+imagePullSecrets: []
+# - name: "image-pull-secret"
+
+## Container image to run
+## https://kubernetes.io/docs/concepts/containers/images/
+##
+image:
+  registry: ""
+  repository: ghcr.io/airflow-helm/pgbouncer
+  tag: 1.18.0-patch.1
+  pullPolicy: IfNotPresent
+
+## Service configuration
+## https://kubernetes.io/docs/concepts/services-networking/service/
+##
+service:
+  type: ClusterIP
+  port: 5432
+
+## Labels to add to the pod metadata
+##
+podLabels: {}
+# key: value
+
+## Annotations to add to the pod metadata
+##
+podAnnotations: {}
+# prometheus.io/scrape: true
+# prometheus.io/port: "{{ .Values.pgbouncerExporter.port }}"
+
+## Additional environment variables to set
+##
+extraEnvs: []
+# - name: FOO
+#   value: FOO
+# - name: BAR
+#   valueFrom:
+#     secretKeyRef:
+#       key: BAR
+#       name: bar-secret
+
+## Pod resources for scheduling/limiting
+## https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+##
+resources: {}
+
+## Node labels for pod assignment
+## https://kubernetes.io/docs/user-guide/node-selection/
+##
+nodeSelector: {}
+
+## Lifecycle hooks
+## https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
+##
+lifecycle: {}
+
+## Tolerations for pod assignment
+## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+##
+tolerations: []
+# - key: "key"
+#   operator: "Equal|Exists"
+#   value: "value"
+#   effect: "NoSchedule|PreferNoSchedule"
+
+## Affinity and anti-affinity
+## https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+##
+affinity: {}
+# podAntiAffinity:
+#   preferredDuringSchedulingIgnoredDuringExecution:
+#   - weight: 100
+#     podAffinityTerm:
+#       labelSelector:
+#         matchExpressions:
+#         - key: app.kubernetes.io/name
+#           operator: In
+#           values:
+#           - pgbouncer
+#         - key: app.kubernetes.io/instance
+#           operator: In
+#           values:
+#           - pgbouncer
+#       topologyKey: kubernetes.io/hostname
+# podAntiAffinity:
+#   requiredDuringSchedulingIgnoredDuringExecution:
+#   - labelSelector:
+#       matchExpressions:
+#       - key: app.kubernetes.io/name
+#         operator: In
+#         values:
+#         - pgbouncer
+#       - key: app.kubernetes.io/instance
+#         operator: In
+#         values:
+#         - pgbouncer
+#     topologyKey: "kubernetes.io/hostname"
+
+## Priority of pods
+## https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
+##
+priorityClassName: ""
+
+## Runtime class for pods
+## https://kubernetes.io/docs/concepts/containers/runtime-class/
+##
+runtimeClassName: ""
+
+## PGBouncer Settings
+##
+config:
+  adminUser: admin
+  adminPassword:
+  authUser:
+  authPassword:
+  databases: {}
+    # <DB_NAME>:
+    #  host: <DB_HOST>
+    #  port: <DB_PORT>
+  pgbouncer: {}
+    # auth_type: md5
+    # pool_mode: transaction
+    # max_client_conn: 1024
+    # default_pool_size: 20
+    # ignore_startup_parameters = extra_float_digits
+  userlist: {}
+    # <USERNAME>: <PASSWORD>
+
+## Additional containers to be added to the pods
+##
+extraContainers: []
+# - name: some-container
+#   image: some/image:latest
+#   env:
+#   - name: FOO
+#     value: "123"
+#   volumeMounts:
+#   - name: bar-volume
+#     mountPath: /mnt
+
+## Containers, which are run before the app containers are started
+##
+extraInitContainers: []
+# - name: init
+#   image: busybox
+#   command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+
+## Additional volumeMounts to the main container
+##
+extraVolumeMounts: []
+# - name: something
+#   mountPath: /mnt/something
+
+## Additional volumes to the pods
+##
+extraVolumes: []
+# - name: something
+#   emptyDir: {}
+
+## PGBouncer Exporter container image and configuration
+##
+pgbouncerExporter:
+  enabled: false
+  port: 9127
+  image:
+    registry: ""
+    repository: prometheuscommunity/pgbouncer-exporter
+    tag: v0.6.0
+    pullPolicy: IfNotPresent
+  log:
+    level: info # or debug, warn, error
+    format: logfmt # or json
+  resources:
+    limits:
+      cpu: 250m
+      memory: 150Mi
+    requests:
+      cpu: 30m
+      memory: 40Mi
+
+## Pod Disruption Budget
+## https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+##
+podDisruptionBudget:
+  ## if a PodDisruptionBudget resource is created for the pgbouncer Deployment
+  ##
+  enabled: false
+
+  ## the maximum unavailable pods/percentage for the pgbouncer Deployment
+  ##
+  maxUnavailable:
+
+  ## the minimum available pods/percentage for the pgbouncer Deployment
+  ##
+  minAvailable:
+
+## Service Account for pods
+## https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+##
+serviceAccount:
+  ## Creates new ServiceAccount if empty string
+  ##
+  name: ""
+  ## Annotations for created ServiceAccount
+  ##
+  annotations: {}

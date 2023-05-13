@@ -1,0 +1,4 @@
+charts/*/charts/
+charts/*/Chart.lock
+
+.cr-release-packages/
