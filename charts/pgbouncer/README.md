@@ -12,7 +12,8 @@ This chart deploys a [pgBouncer](https://www.pgbouncer.org/) instance to your Ku
 To install the chart with the release name `my-release`:
 
 ```bash
-helm install my-release ./pgbouncer
+helm repo add icoretech https://icoretech.github.io/helm
+helm install my-pgbouncer icoretech/pgbouncer
 ```
 
 This command deploys a pgBouncer instance with default configuration.

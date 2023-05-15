@@ -13,7 +13,7 @@ keywords:
 maintainers:
   - name: Claudio Poli
     email: claudio@icorete.ch
-home: https://github.com/icoretech/helm/charts/pgbouncer
+home: https://github.com/icoretech/helm
 sources:
   - https://github.com/pgbouncer/pgbouncer
   - https://github.com/icoretech/helm/charts/pgbouncer
