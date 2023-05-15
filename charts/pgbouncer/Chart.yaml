@@ -15,7 +15,6 @@ maintainers:
     email: claudio@icorete.ch
 home: https://github.com/icoretech/helm
 sources:
-  - https://github.com/pgbouncer/pgbouncer
-  - https://github.com/icoretech/helm/charts/pgbouncer
+  - https://github.com/icoretech/helm/tree/main/charts/pgbouncer
 annotations:
   artifacthub.io/license: "MIT"
