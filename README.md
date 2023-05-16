@@ -2,7 +2,7 @@
 
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/icoretech)](https://artifacthub.io/packages/search?repo=icoretech)
 
-For detailed information on the individual charts, please navigate to the `charts` subdirectory.
+For detailed information on the individual charts, please navigate to the [charts](https://github.com/icoretech/helm/tree/main/charts) subdirectory.
 
 ## Example using Flux
 
