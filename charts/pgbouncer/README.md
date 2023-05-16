@@ -5,11 +5,11 @@ This chart deploys a [pgBouncer](https://www.pgbouncer.org/) instance to your Ku
 ## Prerequisites
 
 - Kubernetes 1.20+
-- Helm 3.0+
+- Helm 3.10+
 
 ## Installing the Chart
 
-To install the chart with the release name `my-release`:
+To install the chart with the release name `my-pgbouncer`:
 
 ```bash
 helm repo add icoretech https://icoretech.github.io/helm
@@ -17,6 +17,56 @@ helm install my-pgbouncer icoretech/pgbouncer
 ```
 
 This command deploys a pgBouncer instance with default configuration.
+
+## Example using Flux
+
+```yaml
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: pgbouncer
+  namespace: default
+spec:
+  releaseName: pgbouncer
+  chart:
+    spec:
+      chart: pgbouncer
+      version: ">= 1.8.2"
+      sourceRef:
+        kind: HelmRepository
+        name: icoretech
+        namespace: flux-system
+  interval: 3m0s
+  install:
+    remediation:
+      retries: 3
+  values:
+    config:
+      adminPassword: myadminpassword
+      databases:
+        mydb_production:
+          host: postgresql
+          port: 5432
+      pgbouncer:
+        server_tls_sslmode: prefer
+        # max_client_conn: 500
+        ignore_startup_parameters: extra_float_digits
+        pool_mode: transaction
+        auth_type: scram-sha-256
+        max_client_conn: 8192
+        max_db_connections: 200
+        default_pool_size: 100
+        log_connections: 1
+        log_disconnections: 1
+        log_pooler_errors: 1
+        application_name_add_host: 1
+        # verbose: 1
+      userlist:
+        # SELECT rolname, rolpassword FROM pg_authid WHERE rolname = 'icoretech_db';
+        myuser: SCRAM-SHA-256$4096:xxxxx=
+        # <DBUser2>: <md5MD5HashOfPassword2>
+        # <DBUSer3>: <md5MD5HashOfPassword3>
+```
 
 ## Configuration
 
