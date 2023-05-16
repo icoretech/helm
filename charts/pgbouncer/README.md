@@ -21,6 +21,15 @@ This command deploys a pgBouncer instance with default configuration.
 ## Example using Flux
 
 ```yaml
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: icoretech
+spec:
+  interval: 30m
+  type: oci
+  url: oci://ghcr.io/icoretech/charts
+---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
@@ -66,6 +75,30 @@ spec:
         myuser: SCRAM-SHA-256$4096:xxxxx=
         # <DBUser2>: <md5MD5HashOfPassword2>
         # <DBUSer3>: <md5MD5HashOfPassword3>
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: airbroke
+  namespace: flux-system
+spec:
+  image: ghcr.io/icoretech/airbroke
+  interval: 5m0s
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: airbroke
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: airbroke
+  filterTags:
+    pattern: "^main-[a-fA-F0-9]+-(?P<ts>.*)"
+    extract: "$ts"
+  policy:
+    numerical:
+      order: asc
 ```
 
 ## Configuration
