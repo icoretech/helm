@@ -28,7 +28,7 @@ spec:
   chart:
     spec:
       chart: pgbouncer
-      version: ">= 1.7.7"
+      version: ">= 1.8.2"
       sourceRef:
         kind: HelmRepository
         name: icoretech

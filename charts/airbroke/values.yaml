@@ -1,0 +1,104 @@
+nameOverride: ""
+fullnameOverride: ""
+
+database:
+  url: "" # postgres://airbroke:airbroke@airbroke-pgbouncer/airbroke_production?pgbouncer=true&connection_limit=100&pool_timeout=10&application_name=nextjs&schema=public
+  migrations_url: "" # postgres://airbroke:airbroke@pg/airbroke_production?schema=public
+
+openapiKey: ""
+openapiOrg: ""
+corsOrigins: ""
+
+web:
+  enabled: true
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: "" # must be present in namespace
+  image: ghcr.io/icoretech/airbroke:main-aeecf0b6-1683300826
+  terminationGracePeriodSeconds: 0
+  replicaCount: 1
+
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  hpa:
+    enabled: false
+    maxReplicas: 10
+    # average total CPU usage per pod (1-100)
+    cpu:
+    # average memory usage per pod (100Mi-1Gi)
+    memory:
+    # average http requests per second per pod (k8s-prometheus-adapter)
+    requests:
+
+  ingress:
+    enabled: false
+    ingressClassName: nginx
+    annotations: {}
+    hosts: []
+    tls: []
+
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 3000
+    # nodePort: 31198
+    annotations: {}
+
+  livenessProbe:
+    enabled: true
+    httpGet:
+      httpHeaders: []
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 2
+    successThreshold: 1
+  readinessProbe:
+    enabled: true
+    httpGet:
+      httpHeaders: []
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 2
+    successThreshold: 1
+
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  extraEnvs: []
+  # extraEnvs:
+  #  - name: MY_ENV_VAR
+  #    value: myservice:9092
+  #
+
+pgbouncer:
+  enabled: false
+  config:
+    adminPassword: airbroke
+    databases:
+      airbroke_production:
+        host: postgres-postgresql.postgres.svc.cluster.local
+        port: 5432
+    pgbouncer:
+      server_tls_sslmode: prefer
+      # max_client_conn: 500
+      ignore_startup_parameters: extra_float_digits
+      pool_mode: transaction
+      auth_type: scram-sha-256
+      max_client_conn: 8192
+      max_db_connections: 200
+      default_pool_size: 100
+      log_connections: 1
+      log_disconnections: 1
+      log_pooler_errors: 1
+      application_name_add_host: 1
+      # verbose: 1
+    userlist:
+      # SELECT rolname, rolpassword FROM pg_authid WHERE rolname = 'airbroke_production';
+      airbroke_production: SCRAM-SHA-256$xxxxxx=

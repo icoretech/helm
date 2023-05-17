@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "app.web-env.name" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+data:
+  AWS_SDK_CONFIG_OPT_OUT: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+{{- if (not (empty .Values.corsOrigins)) }}
+  CORS_ORIGINS: {{ .Values.corsOrigins }}
+{{- end }}
+{{- if (not (empty .Values.openapiOrg)) }}
+  OPENAI_ORGANIZATION: {{ .Values.openapiOrg }}
+{{- end }}
