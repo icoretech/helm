@@ -71,7 +71,7 @@ spec:
         application_name_add_host: 1
         # verbose: 1
       userlist:
-        # SELECT rolname, rolpassword FROM pg_authid WHERE rolname = 'icoretech_db';
+        # SELECT rolname, rolpassword FROM pg_authid;
         myuser: SCRAM-SHA-256$4096:xxxxx=
         # <DBUser2>: <md5MD5HashOfPassword2>
         # <DBUSer3>: <md5MD5HashOfPassword3>
@@ -79,20 +79,20 @@ spec:
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImageRepository
 metadata:
-  name: airbroke
+  name: pgbouncer
   namespace: flux-system
 spec:
-  image: ghcr.io/icoretech/airbroke
+  image: ghcr.io/icoretech/pgbouncer
   interval: 5m0s
 ---
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImagePolicy
 metadata:
-  name: airbroke
+  name: pgbouncer
   namespace: flux-system
 spec:
   imageRepositoryRef:
-    name: airbroke
+    name: pgbouncer
   filterTags:
     pattern: "^main-[a-fA-F0-9]+-(?P<ts>.*)"
     extract: "$ts"
