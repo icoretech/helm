@@ -13,7 +13,7 @@ web:
   enabled: true
   imagePullPolicy: IfNotPresent
   imagePullSecrets: "" # must be present in namespace
-  image: ghcr.io/icoretech/airbroke:main-aeecf0b6-1683300826
+  image: ghcr.io/icoretech/airbroke:main-1ce5e68b-1684353502
   terminationGracePeriodSeconds: 0
   replicaCount: 1
 
