@@ -40,7 +40,7 @@ spec:
   chart:
     spec:
       chart: pgbouncer
-      version: ">= 1.8.2"
+      version: ">= 1.8.4"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -73,32 +73,6 @@ spec:
       userlist:
         # SELECT rolname, rolpassword FROM pg_authid;
         myuser: SCRAM-SHA-256$4096:xxxxx=
-        # <DBUser2>: <md5MD5HashOfPassword2>
-        # <DBUSer3>: <md5MD5HashOfPassword3>
----
-apiVersion: image.toolkit.fluxcd.io/v1beta2
-kind: ImageRepository
-metadata:
-  name: pgbouncer
-  namespace: flux-system
-spec:
-  image: ghcr.io/icoretech/pgbouncer
-  interval: 5m0s
----
-apiVersion: image.toolkit.fluxcd.io/v1beta2
-kind: ImagePolicy
-metadata:
-  name: pgbouncer
-  namespace: flux-system
-spec:
-  imageRepositoryRef:
-    name: pgbouncer
-  filterTags:
-    pattern: "^main-[a-fA-F0-9]+-(?P<ts>.*)"
-    extract: "$ts"
-  policy:
-    numerical:
-      order: asc
 ```
 
 ## Configuration
