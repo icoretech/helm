@@ -34,6 +34,15 @@ Pgbouncer, a lightweight connection pooler for PostgreSQL, can be enabled using 
 ## Example using Flux
 
 ```yaml
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: icoretech
+spec:
+  interval: 30m
+  type: oci
+  url: oci://ghcr.io/icoretech/charts
+---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
@@ -43,10 +52,11 @@ spec:
   releaseName: airbroke
   chart:
     spec:
-      chart: ./charts/airbroke
+      chart: airbroke
+      version: ">= 1.1.3"
       sourceRef:
-        kind: GitRepository
-        name: flux-system
+        kind: HelmRepository
+        name: icoretech
         namespace: flux-system
   interval: 10m0s
   install:
