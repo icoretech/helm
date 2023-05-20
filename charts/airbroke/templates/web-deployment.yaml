@@ -38,10 +38,6 @@ spec:
               name: {{ template "app.web-env.name" . }}
           - secretRef:
               name: {{ template "app.web-env.name" . }}
-        {{- if .Values.web.extraEnvs }}
-        env:
-        {{- toYaml .Values.web.extraEnvs | nindent 12 }}
-        {{- end }}
         ports:
           - name: http
             containerPort: {{ .Values.web.service.port }}
@@ -72,7 +68,7 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.web.resources | nindent 12 }}
-      terminationGracePeriodSeconds: {{ .Values.web.terminationGracePeriodSeconds | default 0 }}
+      terminationGracePeriodSeconds: {{ .Values.web.terminationGracePeriodSeconds | default 30 }}
       {{- with .Values.web.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -94,8 +90,4 @@ spec:
                 name: {{ template "app.web-env.name" . }}
             - secretRef:
                 name: {{ template "app.web-env-migrations.name" . }}
-          {{- if .Values.web.extraEnvs }}
-          env:
-          {{- toYaml .Values.web.extraEnvs | nindent 12 }}
-          {{- end }}
           args: ['npx', 'prisma', 'migrate', 'deploy']

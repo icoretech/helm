@@ -2,8 +2,8 @@ apiVersion: v2
 name: airbroke
 description: Airbroke Helm chart for Kubernetes
 type: application
-version: 1.1.0
-appVersion: "1.1.1"
+version: 1.1.1
+appVersion: "1.1.2"
 keywords:
   - open
   - source
@@ -28,6 +28,8 @@ annotations:
   artifacthub.io/screenshots: |
     - title: Projects
       url: https://i.imgur.com/hcwnz84.png
+    - title: Toolbox
+      url: https://i.imgur.com/b2NBh2i.png
   artifacthub.io/category: monitoring-logging
 dependencies:
   - name: pgbouncer

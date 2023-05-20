@@ -5,15 +5,10 @@ database:
   url: "" # postgres://airbroke:airbroke@airbroke-pgbouncer/airbroke_production?pgbouncer=true&connection_limit=100&pool_timeout=10&application_name=nextjs&schema=public
   migrations_url: "" # postgres://airbroke:airbroke@pg/airbroke_production?schema=public
 
-openapiKey: ""
-openapiOrg: ""
-corsOrigins: ""
-
 web:
-  enabled: true
   imagePullPolicy: IfNotPresent
   imagePullSecrets: "" # must be present in namespace
-  image: ghcr.io/icoretech/airbroke:1.1.1
+  image: ghcr.io/icoretech/airbroke:1.1.2
   terminationGracePeriodSeconds: 0
   replicaCount: 1
 
@@ -73,9 +68,18 @@ web:
 
   extraEnvs: []
   # extraEnvs:
-  #  - name: MY_ENV_VAR
-  #    value: myservice:9092
-  #
+  #   - name: GITHUB_ID
+  #     value: xxxx
+  #   - name: GITHUB_SECRET
+  #     value: xxxxx
+  #   - name: GITHUB_ORGS
+  #     value: xxxxx
+  #   - name: NEXTAUTH_SECRET
+  #     value: xxxxxxx
+  #   - name: NEXTAUTH_URL
+  #     value: https://xxxxxx
+  #   - name: OPENAI_API_KEY
+  #     value: sk-xxxxxxx
 
 pgbouncer:
   enabled: false
