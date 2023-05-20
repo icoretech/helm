@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://i.imgur.com/dPL9YEz.png" height="400">
+</p>
+
 # Airbroke Helm Chart
 
 This Helm chart deploys [Airbroke](https://airbroke.icorete.ch), a modern, React-based open source error catcher web application.
@@ -64,7 +68,9 @@ spec:
   interval: 30m
   type: oci
   url: oci://ghcr.io/icoretech/charts
----
+```
+
+```yaml
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
@@ -105,6 +111,19 @@ spec:
         limits:
           cpu: 1500m
           memory: 500M
+      extraEnvs:
+        - name: GITHUB_ID
+          value: "xxxx"
+        - name: GITHUB_SECRET
+          value: "xxxxx"
+        - name: GITHUB_ORGS
+          value: "xxxxx"
+        - name: NEXTAUTH_SECRET
+          value: "xxxxxxx"
+        - name: NEXTAUTH_URL
+          value: "https://xxxxxx"
+        - name: OPENAI_API_KEY
+          value: "sk-xxxxxxx"
       ingress:
         enabled: true
         ingressClassName: nginx
@@ -126,6 +145,8 @@ Please be aware that the previous example serves as a basic template, and you'll
 
 For automated image updates, consider utilizing [Flux Image Automation](https://fluxcd.io/docs/guides/image-update/).
 Our images are deliberately tagged to facilitate Flux's automatic deployment updates whenever a new image becomes available.
+
+## Image Policies
 
 ```yaml
 # example production semver image policy
