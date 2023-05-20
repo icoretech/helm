@@ -4,5 +4,5 @@
 
 For detailed information on the individual charts, please navigate to the [charts](https://github.com/icoretech/helm/tree/main/charts) subdirectory.
 
-- [Airbroke](hhttps://icoretech.github.io/helm/charts/airbroke), a modern, React-based open source error catcher web application.
-- [pgBouncer](hhttps://icoretech.github.io/helm/charts/pgbouncer), a lightweight connection pooler for PostgreSQL.
+- [Airbroke](https://icoretech.github.io/helm/charts/airbroke), a modern, React-based open source error catcher web application.
+- [pgBouncer](https://icoretech.github.io/helm/charts/pgbouncer), a lightweight connection pooler for PostgreSQL.
