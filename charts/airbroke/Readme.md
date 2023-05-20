@@ -1,6 +1,28 @@
 # Airbroke Helm Chart
 
-This Helm chart deploys Airbroke, a modern, React-based open source error catcher web application.
+This Helm chart deploys [Airbroke](https://airbroke.icorete.ch), a modern, React-based open source error catcher web application.
+
+## Prerequisites
+
+- Kubernetes 1.20+
+- Helm 3.10+
+- Postgres 15+ Database ready to use
+
+## Installing the Chart
+
+To install the chart with the release name `my-airbroke`:
+
+```bash
+# OCI
+helm install my-airbroke oci://ghcr.io/icoretech/charts/airbroke
+```
+
+```bash
+helm repo add icoretech https://icoretech.github.io/helm
+helm install my-airbroke icoretech/airbroke
+```
+
+Please remember to set at least the `database.url` and `database.migrations_url` values. Continue reading for further details.
 
 ## Database
 
