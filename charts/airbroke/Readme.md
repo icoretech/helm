@@ -112,17 +112,17 @@ spec:
           cpu: 1500m
           memory: 500M
       extraEnvs:
-        - name: GITHUB_ID
+        - name: AIRBROKE_GITHUB_ID
           value: "xxxx"
-        - name: GITHUB_SECRET
+        - name: AIRBROKE_GITHUB_SECRET
           value: "xxxxx"
-        - name: GITHUB_ORGS
+        - name: AIRBROKE_GITHUB_ORGS
           value: "xxxxx"
-        - name: NEXTAUTH_SECRET
+        - name: AIRBROKE_NEXTAUTH_SECRET
           value: "xxxxxxx"
         - name: NEXTAUTH_URL
           value: "https://xxxxxx"
-        - name: OPENAI_API_KEY
+        - name: AIRBROKE_OPENAI_API_KEY
           value: "sk-xxxxxxx"
       ingress:
         enabled: true
