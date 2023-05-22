@@ -81,6 +81,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+      {{- if .Values.database.enable_migration }}
       initContainers:
         - name: migrations
           image: "{{ .Values.web.image }}"
@@ -91,3 +92,4 @@ spec:
             - secretRef:
                 name: {{ template "app.web-env-migrations.name" . }}
           args: ['npx', 'prisma', 'migrate', 'deploy']
+      {{- end }}
