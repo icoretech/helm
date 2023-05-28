@@ -42,7 +42,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | `fullnameOverride` | String to fully override airbroke.fullname | `""` |
 | `database.url` | PostgreSQL connection string | `""` |
 | `database.migrations_url` | PostgreSQL connection string for migrations | `""` |
-| `web.image` | Docker image for the web application | `ghcr.io/icoretech/airbroke:1.1.11` |
+| `web.image` | Docker image for the web application | `ghcr.io/icoretech/airbroke:1.1.18` |
 | `web.replicaCount` | Number of replicas to run | `1` |
 | `web.updateStrategy` | Update strategy to use | `{type: RollingUpdate, rollingUpdate: {maxUnavailable: 0, maxSurge: 1}}` |
 | `web.hpa.enabled` | Enables the Horizontal Pod Autoscaler | `false` |
