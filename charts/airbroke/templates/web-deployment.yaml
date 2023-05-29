@@ -68,6 +68,11 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.web.resources | nindent 12 }}
+        {{- if .Values.web.cachePersistentVolume.enabled }}
+        volumeMounts:
+          - name: next-cache
+            mountPath: {{ .Values.web.cachePersistentVolume.mountPath }}
+        {{- end }}
       terminationGracePeriodSeconds: {{ .Values.web.terminationGracePeriodSeconds | default 30 }}
       {{- with .Values.web.nodeSelector }}
       nodeSelector:
@@ -92,4 +97,10 @@ spec:
             - secretRef:
                 name: {{ template "app.web-env-migrations.name" . }}
           args: ['npx', 'prisma', 'migrate', 'deploy']
+      {{- end }}
+      {{- if .Values.web.cachePersistentVolume.enabled }}
+      volumes:
+        - name: next-cache
+          persistentVolumeClaim:
+            claimName: {{ include "app.web.name" . }}-next-cache
       {{- end }}
