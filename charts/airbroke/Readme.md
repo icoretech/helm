@@ -106,8 +106,14 @@ spec:
       url: 'postgresql://xxxx:xxxx@pgbouncer.default.svc.cluster.local:5432/airbroke_production?pgbouncer=true&connection_limit=100&pool_timeout=10&application_name=airbroke&schema=public'
       migrations_url: 'postgresql://xxxx:xxxx@postgres-postgresql.postgres.svc.cluster.local:5432/airbroke_production?schema=public'
     web:
-      image: ghcr.io/icoretech/airbroke:main-c5d425f-1683936478 # {"$imagepolicy": "flux-system:airbroke"}
+      image: ghcr.io/icoretech/airbroke:1.1.22 # {"$imagepolicy": "flux-system:airbroke"}
       replicaCount: 2
+      cachePersistentVolume:
+        enabled: true
+        storageClass: efs
+        accessModes:
+          - ReadWriteMany
+        size: 1Gi
       hpa:
         enabled: true
         maxReplicas: 5
@@ -168,7 +174,7 @@ spec:
     name: airbroke
   policy:
     semver:
-      range: '>=1.1.3 <2.0.0'
+      range: '>=1.1.22 <2.0.0'
 ```
 
 ```yaml
