@@ -132,7 +132,7 @@ spec:
           value: "xxxxx"
         - name: AIRBROKE_GITHUB_ORGS
           value: "xxxxx"
-        - name: AIRBROKE_NEXTAUTH_SECRET
+        - name: NEXTAUTH_SECRET
           value: "xxxxxxx"
         - name: NEXTAUTH_URL
           value: "https://xxxxxx"
