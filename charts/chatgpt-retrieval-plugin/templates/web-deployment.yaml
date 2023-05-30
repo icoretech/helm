@@ -46,7 +46,6 @@ spec:
         volumeMounts:
           - name: well-known
             mountPath: /code/.well-known
-            readOnly: true
         {{- if .Values.web.livenessProbe.enabled }}
         livenessProbe:
           httpGet:
@@ -94,7 +93,6 @@ spec:
         volumeMounts:
           - name: well-known
             mountPath: /code/.well-known
-            readOnly: true
           - name: well-known-override
             mountPath: /override/.well-known
       volumes:
