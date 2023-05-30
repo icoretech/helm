@@ -159,25 +159,20 @@ spec:
       image: ghcr.io/icoretech/chatgpt-retrieval-plugin-docker:weaviate-9969191-1685462163 # {"$imagepolicy": "flux-system:chatgpt-retrieval-plugin-weaviate"}
       replicaCount: 1
       config:
-        aiPluginJson: |
-          {
-            "schema_version": "v1",
-            "name_for_model": "retrieval",
-            "name_for_human": "Retrieval Plugin",
-            "description_for_model": "Plugin for searching through the user's documents (such as files, emails, and more) to find answers to questions and retrieve relevant information. Use it whenever a user asks something that might be found in their personal information.",
-            "description_for_human": "Search through your documents.",
-            "auth": {
-              "type": "none"
-            },
-            "api": {
-              "type": "openapi",
-              "url": "https://mychatgpt.mydomain.com/.well-known/openapi.yaml"
-            },
-            "logo_url": "https://mychatgpt.mydomain.com/.well-known/logo.png",
-            "contact_email": "hello@icorete.ch",
-            "legal_info_url": "hello@icorete.ch"
-          }
-        # openApiYa
+        aiPluginJson:
+          schema_version: "v1"
+          name_for_model: "retrieval"
+          name_for_human: "Retrieval Plugin"
+          description_for_model: "Plugin for searching through the user's documents (such as files, emails, and more) to find answers to questions and retrieve relevant information. Use it whenever a user asks something that might be found in their personal information."
+          description_for_human: "Search through your documents."
+          auth:
+            type: "none"
+          api:
+            type: "openapi"
+            url: "https://mygpt.xxxx.ch/.well-known/openapi.yaml"
+          logo_url: "https://mygpt.xxxx.ch/.well-known/logo.png"
+          contact_email: "mygpt@xxxx.ch"
+          legal_info_url: "https://mygpt.xxxx.ch/legal"
       hpa:
         enabled: true
         maxReplicas: 5
