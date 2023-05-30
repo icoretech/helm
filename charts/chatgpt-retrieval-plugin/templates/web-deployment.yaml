@@ -90,8 +90,9 @@ spec:
         image: "{{ .Values.web.image }}"
         command: ["/bin/sh", "-c"]
         args:
-          - "cp -Rv /code/.well-known/. /original/.well-known"
-          - "cp -Rv /override/.well-known/. /original/.well-known"
+          - >
+            cp -Rv /code/.well-known/. /original/.well-known &&
+            cp -Rv /override/.well-known/. /original/.well-known
         volumeMounts:
           - name: well-known
             mountPath: /original/.well-known
