@@ -46,6 +46,7 @@ spec:
         volumeMounts:
           - name: config
             mountPath: /code/.well-known
+            readOnly: true # Ensure the mounted volume is read-only
         {{- if .Values.web.livenessProbe.enabled }}
         livenessProbe:
           httpGet:
@@ -87,5 +88,4 @@ spec:
     {{- end }}
       volumes:
         - name: config
-          configMap:
-            name: {{ template "app.configmap.name" . }}
+          emptyDir: {}
