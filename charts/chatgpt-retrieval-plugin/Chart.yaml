@@ -1,0 +1,22 @@
+apiVersion: v2
+name: chatgpt-retrieval-plugin
+description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
+type: application
+version: 0.0.1
+appVersion: "0.0.1"
+keywords:
+  - docker
+  - openai
+  - chatgpt
+  - chatgpt-plugin
+maintainers:
+  - name: Claudio Poli
+    email: claudio@icorete.ch
+    url: https://github.com/masterkain
+home: https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+sources:
+  - https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+  - https://github.com/icoretech/helm/tree/main/charts/chatgpt-retrieval-plugin
+annotations:
+  artifacthub.io/license: "MIT"
+  artifacthub.io/category: ai-machine-learning

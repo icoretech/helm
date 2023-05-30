@@ -1,0 +1,72 @@
+nameOverride: ""
+fullnameOverride: ""
+
+web:
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: "" # must be present in namespace
+  image: ghcr.io/icoretech/chatgpt-retrieval-plugin-docker:postgres-9969191-1685433326
+  terminationGracePeriodSeconds: 0
+  replicaCount: 1
+
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  hpa:
+    enabled: false
+    maxReplicas: 10
+    # average total CPU usage per pod (1-100)
+    cpu:
+    # average memory usage per pod (100Mi-1Gi)
+    memory:
+    # average http requests per second per pod (k8s-prometheus-adapter)
+    requests:
+
+  ingress:
+    enabled: false
+    ingressClassName: nginx
+    annotations: {}
+    hosts: []
+    tls: []
+
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 8080
+    # nodePort: 31198
+    annotations: {}
+
+  livenessProbe:
+    enabled: false # there are no health checks atm
+    httpGet:
+      httpHeaders: []
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 2
+    successThreshold: 1
+  readinessProbe:
+    enabled: false # there are no health checks atm
+    httpGet:
+      httpHeaders: []
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 2
+    successThreshold: 1
+
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  extraEnvs: []
+  # extraEnvs:
+  #   - name: DATASTORE
+  #     value: "xxxx"
+  #   - name: BEARER_TOKEN
+  #     value: "xxxxx"
+  #   - name: OPENAI_API_KEY
+  #     value: "xxxxx"

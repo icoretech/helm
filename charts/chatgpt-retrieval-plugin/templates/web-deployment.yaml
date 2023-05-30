@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.web.name" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  revisionHistoryLimit: 5
+  replicas: {{ .Values.web.replicaCount }}
+  strategy:
+    type: {{ .Values.web.updateStrategy.type }}
+    {{- with .Values.web.updateStrategy.rollingUpdate }}
+    rollingUpdate:
+      maxUnavailable: {{ .maxUnavailable }}
+      maxSurge: {{ .maxSurge }}
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "app.web.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "app.web.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/env-cm: {{ include (print $.Template.BasePath "/web-env-cm.yaml") . | sha256sum }}
+        checksum/env-secret: {{ include (print $.Template.BasePath "/web-env-secret.yaml") . | sha256sum }}
+    spec:
+      {{- if (not (empty .Values.web.imagePullSecrets)) }}
+      imagePullSecrets:
+      - name: {{ .Values.web.imagePullSecrets }}
+      {{- end }}
+      containers:
+      - name: {{ include "app.web.name" . }}
+        image: "{{ .Values.web.image }}"
+        imagePullPolicy: {{ .Values.web.imagePullPolicy }}
+        envFrom:
+          - configMapRef:
+              name: {{ template "app.web-env.name" . }}
+          - secretRef:
+              name: {{ template "app.web-env.name" . }}
+        ports:
+          - name: http
+            containerPort: {{ .Values.web.service.port }}
+            protocol: TCP
+        {{- if .Values.web.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /hc?source=livenessProbe
+            port: http
+            httpHeaders: {{ .Values.web.livenessProbe.httpGet.httpHeaders }}
+          initialDelaySeconds: {{ .Values.web.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.web.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.web.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.web.livenessProbe.failureThreshold }}
+          successThreshold: {{ .Values.web.livenessProbe.successThreshold }}
+        {{- end }}
+        {{- if .Values.web.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: /hc?source=readinessProbe
+            port: http
+            httpHeaders: {{ .Values.web.readinessProbe.httpGet.httpHeaders }}
+          initialDelaySeconds: {{ .Values.web.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.web.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.web.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.web.readinessProbe.failureThreshold }}
+          successThreshold: {{ .Values.web.readinessProbe.successThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.web.resources | nindent 12 }}
+      terminationGracePeriodSeconds: {{ .Values.web.terminationGracePeriodSeconds | default 30 }}
+      {{- with .Values.web.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.web.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.web.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
