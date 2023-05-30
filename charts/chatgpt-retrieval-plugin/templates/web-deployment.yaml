@@ -44,9 +44,11 @@ spec:
             containerPort: {{ .Values.web.service.port }}
             protocol: TCP
         volumeMounts:
-          - name: config
+          - name: well-known
             mountPath: /code/.well-known
-            readOnly: true # Ensure the mounted volume is read-only
+            readOnly: true
+          - name: well-known-override
+            mountPath: /override/.well-known
         {{- if .Values.web.livenessProbe.enabled }}
         livenessProbe:
           httpGet:
@@ -86,6 +88,20 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+      initContainers:
+      - name: copy-override-files
+        image: busybox
+        command: ["/bin/sh", "-c"]
+        args: ["cp -R /override/.well-known/. /code/.well-known"]
+        volumeMounts:
+          - name: original-files
+            mountPath: /original/.well-known
+            readOnly: true
+          - name: override-files
+            mountPath: /override/.well-known
       volumes:
-        - name: config
+        - name: well-known
           emptyDir: {}
+        - name: well-known-override
+          configMap:
+            name: {{ template "app.configmap.name" . }}
