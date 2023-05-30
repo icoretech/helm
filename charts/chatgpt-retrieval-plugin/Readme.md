@@ -62,11 +62,31 @@ Here's an example `values.yaml` file with the `web.config` options:
 ```yaml
 web:
   config:
-    aiPluginJson: |
-      # Content of ai-plugin.json file goes here
+    aiPluginJson:
+      schema_version: "v1"
+      name_for_model: "retrieval"
+      name_for_human: "Retrieval Plugin"
+      description_for_model: "Plugin for searching through the user's documents (such as files, emails, and more) to find answers to questions and retrieve relevant information. Use it whenever a user asks something that might be found in their personal information."
+      description_for_human: "Search through your documents."
+      auth:
+        type: "none"
+      api:
+        type: "openapi"
+        url: "https://mychatgpt.zyx/.well-known/openapi.yaml"
+      logo_url: "https://mychatgpt.zyx/.well-known/logo.png"
+      contact_email: "hello@mychatgpt.zyx"
+      legal_info_url: "https://mychatgpt.zyx/legal"
 
     openApiYaml: |
-      # Content of openapi.yaml file goes here
+      openapi: 3.0.2
+      info:
+        title: Retrieval Plugin API
+        description: A retrieval API for querying and filtering documents based on natural language queries and metadata
+        version: 1.0.0
+      servers:
+        - url: https://your-app-url.com
+      ...
+
 ```
 
 ## Example using Flux
