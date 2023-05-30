@@ -25,21 +25,6 @@ helm install mychatgpt icoretech/chatgpt-retrieval-plugin
 
 Please ensure that you select the correct Docker image flavor based on the supported vector database provider you intend to use. Refer to the [Supported Vector Database Providers](https://github.com/icoretech/chatgpt-retrieval-plugin-docker#supported-vector-database-providers) for more information.
 
-### Redis Configuration
-
-The chart includes a Redis setup for quick experiments with the ChatGPT Retrieval Plugin.
-You can configure the Redis deployment by modifying the `redis` values in the `values.yaml` file. By default, Redis is not enabled (`redis.enabled: false`).
-
-If you enable Redis, it will be deployed in `standalone` mode with the following configurations:
-
-- Redis Master:
-  - Persistence: 1Gi
-  - Resources:
-    - Requests: CPU: 200m, Memory: 100Mi
-    - Limits: CPU: 200m, Memory: 100Mi
-
-Please note that this Redis setup is intended for quick experiments and is not be suitable for production environments. Adjust the Redis configuration accordingly for production usage.
-
 ## Configuration
 
 You must set the values for `web.extraEnvs`.

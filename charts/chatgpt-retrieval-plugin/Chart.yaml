@@ -2,7 +2,7 @@ apiVersion: v2
 name: chatgpt-retrieval-plugin
 description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
 type: application
-version: 0.0.2
+version: 0.0.3
 appVersion: "0.0.1"
 keywords:
   - docker
@@ -20,8 +20,8 @@ sources:
 annotations:
   artifacthub.io/license: "MIT"
   artifacthub.io/category: ai-machine-learning
-dependencies:
-  - name: redis
-    version: "17.11.3"
-    repository: oci://registry-1.docker.io/bitnamicharts
-    condition: redis.enabled
+# dependencies:
+#   - name: redis-stack
+#     version: "0.3.2"
+#     repository: oci://registry-1.docker.io/bitnamicharts
+#     condition: redis.enabled

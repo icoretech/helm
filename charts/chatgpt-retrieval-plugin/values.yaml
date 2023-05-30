@@ -72,6 +72,7 @@ web:
   #     value: "xxxxx"
 
 redis:
+  image: redis/redis-stack-server:latest
   master:
     disableCommands: []
     persistence:
