@@ -25,6 +25,21 @@ helm install mychatgpt icoretech/chatgpt-retrieval-plugin
 
 Please ensure that you select the correct Docker image flavor based on the supported vector database provider you intend to use. Refer to the [Supported Vector Database Providers](https://github.com/icoretech/chatgpt-retrieval-plugin-docker#supported-vector-database-providers) for more information.
 
+### Redis Configuration
+
+The chart includes a Redis setup for quick experiments with the ChatGPT Retrieval Plugin.
+You can configure the Redis deployment by modifying the `redis` values in the `values.yaml` file. By default, Redis is not enabled (`redis.enabled: false`).
+
+If you enable Redis, it will be deployed in `standalone` mode with the following configurations:
+
+- Redis Master:
+  - Persistence: 1Gi
+  - Resources:
+    - Requests: CPU: 200m, Memory: 100Mi
+    - Limits: CPU: 200m, Memory: 100Mi
+
+Please note that this Redis setup is intended for quick experiments and is not be suitable for production environments. Adjust the Redis configuration accordingly for production usage.
+
 ## Configuration
 
 You must set the values for `web.extraEnvs`.
@@ -35,7 +50,7 @@ The following table lists the configurable parameters of the ChatGPT Retrieval P
 | --------- | ----------- | ------- |
 | `nameOverride` | String to partially override the chart's fullname | `""` |
 | `fullnameOverride` | String to fully override the chart's fullname | `""` |
-| `web.image` | Docker image for the web application | `ghcr.io/icoretech/chatgpt-retrieval-plugin-docker:postgres-9969191-1685433326` |
+| `web.image` | Docker image for the web application | `ghcr.io/icoretech/chatgpt-retrieval-plugin-docker:redis-9969191-1685433326` |
 | `web.replicaCount` | Number of replicas to run | `1` |
 | `web.updateStrategy` | Update strategy to use | `RollingUpdate` |
 | `web.hpa.enabled` | Enables the Horizontal Pod Autoscaler | `false` |
@@ -73,17 +88,17 @@ spec:
 ```
 
 ```yaml
-# postgres flavour
+# redis flavour
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImagePolicy
 metadata:
-  name: chatgpt-retrieval-plugin-postgres
+  name: chatgpt-retrieval-plugin-redis
   namespace: flux-system
 spec:
   imageRepositoryRef:
     name: chatgpt-retrieval-plugin-docker
   filterTags:
-    pattern: '^postgres-[a-fA-F0-9]+-(?P<ts>.*)'
+    pattern: '^redis-[a-fA-F0-9]+-(?P<ts>.*)'
     extract: '$ts'
   policy:
     numerical:
@@ -115,7 +130,7 @@ spec:
       retries: 4
   values:
     web:
-      image: ghcr.io/icoretech/chatgpt-retrieval-plugin-docker:postgres-9969191-1685433326 # {"$imagepolicy": "flux-system:chatgpt-retrieval-plugin-postgres"}
+      image: ghcr.io/icoretech/chatgpt-retrieval-plugin-docker:redis-9969191-1685433326 # {"$imagepolicy": "flux-system:chatgpt-retrieval-plugin-redis"}
       replicaCount: 1
       hpa:
         enabled: true
