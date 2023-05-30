@@ -49,11 +49,8 @@ Shorthand for component names
 {{- define "app.web.port" -}}
 {{- .Values.web.service.port -}}
 {{- end -}}
-{{- define "app.configmap.openapi.name" -}}
-{{- include "app.fullname" . -}}-openapi
-{{- end -}}
-{{- define "app.configmap.ai-plugin.name" -}}
-{{- include "app.fullname" . -}}-ai-plugin
+{{- define "app.configmap.name" -}}
+{{- include "app.fullname" . -}}-config
 {{- end -}}
 
 {{/*

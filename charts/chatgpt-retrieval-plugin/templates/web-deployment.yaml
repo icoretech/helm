@@ -23,6 +23,7 @@ spec:
         {{- include "app.web.selectorLabels" . | nindent 8 }}
       annotations:
         checksum/env-cm: {{ include (print $.Template.BasePath "/web-env-cm.yaml") . | sha256sum }}
+        checksum/env-config: {{ include (print $.Template.BasePath "/web-config.yaml") . | sha256sum }}
         checksum/env-secret: {{ include (print $.Template.BasePath "/web-env-secret.yaml") . | sha256sum }}
     spec:
       {{- if (not (empty .Values.web.imagePullSecrets)) }}
@@ -43,10 +44,8 @@ spec:
             containerPort: {{ .Values.web.service.port }}
             protocol: TCP
         volumeMounts:
-          - name: ai-plugin-config
-            mountPath: /code/.well-known/ai-plugin.json
-          - name: openapi-config
-            mountPath: /code/.well-known/openapi.yaml
+          - name: config
+            mountPath: /code/.well-known
         {{- if .Values.web.livenessProbe.enabled }}
         livenessProbe:
           httpGet:
@@ -87,9 +86,6 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       volumes:
-        - name: ai-plugin-config
+        - name: config
           configMap:
-            name: {{ template "app.configmap.ai-plugin.name" . }}
-        - name: openapi-config
-          configMap:
-            name: {{ template "app.configmap.openapi.name" . }}
+            name: {{ template "app.configmap.name" . }}
