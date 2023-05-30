@@ -42,6 +42,11 @@ spec:
           - name: http
             containerPort: {{ .Values.web.service.port }}
             protocol: TCP
+        volumeMounts:
+          - name: ai-plugin-config
+            mountPath: /code/.well-known/ai-plugin.json
+          - name: openapi-config
+            mountPath: /code/.well-known/openapi.yaml
         {{- if .Values.web.livenessProbe.enabled }}
         livenessProbe:
           httpGet:
@@ -81,3 +86,10 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+      volumes:
+        - name: ai-plugin-config
+          configMap:
+            name: ai-plugin-configmap
+        - name: openapi-config
+          configMap:
+            name: openapi-configmap

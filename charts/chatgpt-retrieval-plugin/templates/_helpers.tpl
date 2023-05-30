@@ -49,6 +49,12 @@ Shorthand for component names
 {{- define "app.web.port" -}}
 {{- .Values.web.service.port -}}
 {{- end -}}
+{{- define "app.configmap.openapi.name" -}}
+{{- include "app.fullname" . -}}-openapi
+{{- end -}}
+{{- define "app.configmap.ai-plugin.name" -}}
+{{- include "app.fullname" . -}}-ai-plugin
+{{- end -}}
 
 {{/*
 Common labels
@@ -82,7 +88,6 @@ Create the name of the service account to use
 {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
-
 
 {{/*
 Return the target Kubernetes version

@@ -47,6 +47,22 @@ The following table lists the configurable parameters of the ChatGPT Retrieval P
 | `web.readinessProbe.enabled` | Enables the readiness probe | `false` |
 | `web.resources` | Resource limits and requests for the web application | `{}` |
 | `web.extraEnvs` | Additional environment variables for the web application | `[]` |
+| `web.config.aiPluginJson` | Content of ai-plugin.json file | `""` |
+| `web.config.openApiYaml` | Content of openapi.yaml file | `""` |
+
+To customize the configuration, you can provide your own values by creating a `values.yaml` file and overriding the desired parameters.
+
+Here's an example `values.yaml` file with the `web.config` options:
+
+```yaml
+web:
+  config:
+    aiPluginJson: |
+      # Content of ai-plugin.json file goes here
+
+    openApiYaml: |
+      # Content of openapi.yaml file goes here
+```
 
 ## Example using Flux
 

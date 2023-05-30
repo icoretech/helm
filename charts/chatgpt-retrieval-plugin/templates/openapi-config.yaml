@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "app.configmap.openapi.name" . }}
+data:
+  openapi.yaml: |
+    {{ .Values.web.config.openapiYaml | quote }}

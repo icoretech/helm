@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "app.configmap.ai-plugin.name" . }}
+data:
+  ai-plugin.json: |
+    {{ .Values.web.config.aiPluginJson | quote }}
