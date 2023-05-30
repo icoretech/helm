@@ -9,11 +9,8 @@ web:
   replicaCount: 1
 
   config:
-    aiPluginJson: |
-      # Content of ai-plugin.json file goes here
-
-    openApiYaml: |
-      # Content of openapi.yaml file goes here
+    aiPluginJson:
+    openApiYaml:
 
   updateStrategy:
     type: RollingUpdate

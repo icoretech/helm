@@ -117,7 +117,7 @@ spec:
   chart:
     spec:
       chart: chatgpt-retrieval-plugin
-      version: ">= 0.0.1"
+      version: ">= 0.0.8"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -133,6 +133,26 @@ spec:
     web:
       image: ghcr.io/icoretech/chatgpt-retrieval-plugin-docker:redis-9969191-1685433326 # {"$imagepolicy": "flux-system:chatgpt-retrieval-plugin-redis"}
       replicaCount: 1
+      config:
+        aiPluginJson: |
+          {
+            "schema_version": "v1",
+            "name_for_model": "retrieval",
+            "name_for_human": "Retrieval Plugin",
+            "description_for_model": "Plugin for searching through the user's documents (such as files, emails, and more) to find answers to questions and retrieve relevant information. Use it whenever a user asks something that might be found in their personal information.",
+            "description_for_human": "Search through your documents.",
+            "auth": {
+              "type": "none"
+            },
+            "api": {
+              "type": "openapi",
+              "url": "https://mychatgpt.mydomain.com/.well-known/openapi.yaml"
+            },
+            "logo_url": "https://mychatgpt.mydomain.com/.well-known/logo.png",
+            "contact_email": "hello@icorete.ch",
+            "legal_info_url": "hello@icorete.ch"
+          }
+        # openApiYa
       hpa:
         enabled: true
         maxReplicas: 5
