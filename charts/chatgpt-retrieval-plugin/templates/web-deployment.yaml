@@ -47,8 +47,6 @@ spec:
           - name: well-known
             mountPath: /code/.well-known
             readOnly: true
-          - name: well-known-override
-            mountPath: /override/.well-known
         {{- if .Values.web.livenessProbe.enabled }}
         livenessProbe:
           httpGet:
@@ -90,14 +88,14 @@ spec:
     {{- end }}
       initContainers:
       - name: copy-override-files
-        image: busybox
+        image: "{{ .Values.web.image }}"
         command: ["/bin/sh", "-c"]
         args: ["cp -R /override/.well-known/. /code/.well-known"]
         volumeMounts:
-          - name: original-files
-            mountPath: /original/.well-known
+          - name: well-known
+            mountPath: /code/.well-known
             readOnly: true
-          - name: override-files
+          - name: well-known-override
             mountPath: /override/.well-known
       volumes:
         - name: well-known
