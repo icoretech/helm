@@ -89,17 +89,17 @@ spec:
 ```
 
 ```yaml
-# redis flavour
+# weaviate flavour
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImagePolicy
 metadata:
-  name: chatgpt-retrieval-plugin-redis
+  name: chatgpt-retrieval-plugin-weaviate
   namespace: flux-system
 spec:
   imageRepositoryRef:
     name: chatgpt-retrieval-plugin-docker
   filterTags:
-    pattern: '^redis-[a-fA-F0-9]+-(?P<ts>.*)'
+    pattern: '^weaviate-[a-fA-F0-9]+-(?P<ts>.*)'
     extract: '$ts'
   policy:
     numerical:
@@ -131,7 +131,7 @@ spec:
       retries: 4
   values:
     web:
-      image: ghcr.io/icoretech/chatgpt-retrieval-plugin-docker:redis-9969191-1685433326 # {"$imagepolicy": "flux-system:chatgpt-retrieval-plugin-redis"}
+      image: ghcr.io/icoretech/chatgpt-retrieval-plugin-docker:weaviate-9969191-1685462163 # {"$imagepolicy": "flux-system:chatgpt-retrieval-plugin-weaviate"}
       replicaCount: 1
       config:
         aiPluginJson: |
@@ -171,6 +171,8 @@ spec:
           value: "xxxxx"
         - name: OPENAI_API_KEY
           value: "xxxxx"
+        - name: WEAVIATE_URL
+          value: http://weaviate:8080
         # and more https://github.com/openai/chatgpt-retrieval-plugin/tree/main#quickstart
       ingress:
         enabled: true
