@@ -5,7 +5,11 @@ metadata:
   labels:
     {{- include "app.labels" . | nindent 4 }}
 data:
+{{- if .Values.web.config.openapiYaml }}
   openapi.yaml: |
     {{ .Values.web.config.openapiYaml | quote }}
+{{- end }}
+{{- if .Values.web.config.aiPluginJson }}
   ai-plugin.json: |
     {{ .Values.web.config.aiPluginJson | quote }}
+{{- end }}
