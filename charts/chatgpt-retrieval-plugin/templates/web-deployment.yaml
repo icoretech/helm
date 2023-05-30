@@ -89,7 +89,7 @@ spec:
       volumes:
         - name: ai-plugin-config
           configMap:
-            name: ai-plugin-configmap
+            name: {{ template "app.configmap.ai-plugin.name" . }}
         - name: openapi-config
           configMap:
-            name: openapi-configmap
+            name: {{ template "app.configmap.openapi.name" . }}
