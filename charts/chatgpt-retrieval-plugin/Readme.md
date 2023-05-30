@@ -25,6 +25,11 @@ helm install mychatgpt icoretech/chatgpt-retrieval-plugin
 
 Please ensure that you select the correct Docker image flavor based on the supported vector database provider you intend to use. Refer to the [Supported Vector Database Providers](https://github.com/icoretech/chatgpt-retrieval-plugin-docker#supported-vector-database-providers) for more information.
 
+## Endpoints to test
+
+- https://youringress/openapi.json
+- https://youringress/docs
+
 ## Configuration
 
 You must set the values for `web.extraEnvs`.
@@ -172,7 +177,7 @@ spec:
         - name: OPENAI_API_KEY
           value: "xxxxx"
         - name: WEAVIATE_URL
-          value: http://weaviate:8080
+          value: http://weaviate:80
         # and more https://github.com/openai/chatgpt-retrieval-plugin/tree/main#quickstart
       ingress:
         enabled: true
