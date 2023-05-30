@@ -89,10 +89,10 @@ spec:
       - name: copy-override-files
         image: "{{ .Values.web.image }}"
         command: ["/bin/sh", "-c"]
-        args: ["cp -R /override/.well-known/. /code/.well-known"]
+        args: ["cp -Rv /override/.well-known/. /original/.well-known"]
         volumeMounts:
           - name: well-known
-            mountPath: /code/.well-known
+            mountPath: /original/.well-known
           - name: well-known-override
             mountPath: /override/.well-known
       volumes:
