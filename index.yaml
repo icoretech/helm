@@ -1,0 +1,921 @@
+apiVersion: v1
+entries:
+  airbroke:
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.22
+    created: "2023-05-29T05:59:22.148268899Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: 626a35c6680061d6caca6386c5f6f780efc19e89fa9372ec4065774b1b28c9a5
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.14/airbroke-1.1.14.tgz
+    version: 1.1.14
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.22
+    created: "2023-05-29T05:54:34.546897335Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: d54d5c4c85d0a7c091ffd699e62996a0f91c9565857528bbd3c9fa5040bdb029
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.13/airbroke-1.1.13.tgz
+    version: 1.1.13
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.18
+    created: "2023-05-28T08:37:55.09621339Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: 26e3a44c33fa4dd75c7de49879357d4de0a301b7f8ed80cc66a0088126cd3101
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.12/airbroke-1.1.12.tgz
+    version: 1.1.12
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.11
+    created: "2023-05-22T21:37:56.52175134Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: 66f37f1dc1e29877464527041f723215d8c70e686b644056bbeb0949a2429c09
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.11/airbroke-1.1.11.tgz
+    version: 1.1.11
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.9
+    created: "2023-05-22T01:00:35.426542431Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: fc09c2423a909460a70d4db9ceac878d35d4912c1f0621cfb68f25b8c6ed8b33
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.10/airbroke-1.1.10.tgz
+    version: 1.1.10
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.7
+    created: "2023-05-21T21:12:19.332268801Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: 209394d582d2ee4b9bc316205a761d2a59ca3672a6d8b3f5f6924923353024f8
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.9/airbroke-1.1.9.tgz
+    version: 1.1.9
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.6
+    created: "2023-05-21T21:06:04.178758843Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: ee6996160be94af76e77a0b355f1d70641a2b2430e0301fca60c37025cc7e9bc
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.8/airbroke-1.1.8.tgz
+    version: 1.1.8
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.5
+    created: "2023-05-21T20:49:25.892489314Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: a940f250f4d25abfda94cc5a583768aedda887af42f8cc9ee9544e5053c33b16
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.7/airbroke-1.1.7.tgz
+    version: 1.1.7
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.5
+    created: "2023-05-21T20:46:43.818155589Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: 33d33366cb14d657c3beb04269bf04f2f4354e88e532ce11d005a3b183590b7f
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.6/airbroke-1.1.6.tgz
+    version: 1.1.6
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.2
+    created: "2023-05-20T21:56:44.249545681Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: 6fe3627bf4d09e6748e61557ded5f13d93cee55a25ba89a04d4f35ee4afe893a
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.5/airbroke-1.1.5.tgz
+    version: 1.1.5
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.2
+    created: "2023-05-20T14:25:58.097241985Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: 86cf3bc068e8defd4e7b7de310183e6a50702de01387d9f2179a233b36f94a35
+    home: https://github.com/icoretech/airbroke
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.3/airbroke-1.1.3.tgz
+    version: 1.1.3
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.2
+    created: "2023-05-20T14:21:13.671446343Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: 9faf7cfc3878ad3e9b8dc9b722ff6c185edf28006fae9420f8e3c79b137d58f6
+    home: https://github.com/icoretech/airbroke
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.2/airbroke-1.1.2.tgz
+    version: 1.1.2
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
+    appVersion: 1.1.2
+    created: "2023-05-20T14:10:55.993053458Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: a16a7b9c3f3a509f88189fc60e3c796b6d3d1026c2ee48ef182896f19fb6bfd2
+    home: https://github.com/icoretech/airbroke
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.1/airbroke-1.1.1.tgz
+    version: 1.1.1
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+    apiVersion: v2
+    appVersion: 1.1.1
+    created: "2023-05-19T16:23:24.840702852Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: bae2ef8c1dd5d774e9a296c7ee9a0a4060f597b697cef87f9b4796b5cfdb69ad
+    home: https://github.com/icoretech/airbroke
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.0/airbroke-1.1.0.tgz
+    version: 1.1.0
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2023-05-18T22:04:44.269702282Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: c897fb3f1d3b2c25c6d823b266d7585feb576a490f920ef8fd1f97f026a81016
+    home: https://github.com/icoretech/airbroke
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.0.26/airbroke-1.0.26.tgz
+    version: 1.0.26
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2023-05-17T20:30:42.277656565Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: ac64ad6019ff3aa0dff2014d4a94a632c1d81b1a292a9bb1f6d5416f9fff5184
+    home: https://github.com/icoretech/airbroke
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.0.25/airbroke-1.0.25.tgz
+    version: 1.0.25
+  chatgpt-retrieval-plugin:
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 0.0.1
+    created: "2023-05-30T13:06:44.296221933Z"
+    description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
+    digest: 0b7a06c5ad63fa29ba1aa110ed443ccb10318e257e449a0b943a36e59d4a4a62
+    home: https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    keywords:
+    - docker
+    - openai
+    - chatgpt
+    - chatgpt-plugin
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: chatgpt-retrieval-plugin
+    sources:
+    - https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    - https://github.com/icoretech/helm/tree/main/charts/chatgpt-retrieval-plugin
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/chatgpt-retrieval-plugin-0.0.5/chatgpt-retrieval-plugin-0.0.5.tgz
+    version: 0.0.5
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 0.0.1
+    created: "2023-05-30T11:01:45.785764674Z"
+    description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
+    digest: a8540879659871aaf2bc5ea2f6d0b6532f21ac9559b1129211ad396196fc37c9
+    home: https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    keywords:
+    - docker
+    - openai
+    - chatgpt
+    - chatgpt-plugin
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: chatgpt-retrieval-plugin
+    sources:
+    - https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    - https://github.com/icoretech/helm/tree/main/charts/chatgpt-retrieval-plugin
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/chatgpt-retrieval-plugin-0.0.4/chatgpt-retrieval-plugin-0.0.4.tgz
+    version: 0.0.4
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 0.0.1
+    created: "2023-05-30T11:00:53.004061286Z"
+    description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
+    digest: b9f08094587b5264613a2492f5b3bcb1629a327ac92b8915208ae658ef38ddad
+    home: https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    keywords:
+    - docker
+    - openai
+    - chatgpt
+    - chatgpt-plugin
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: chatgpt-retrieval-plugin
+    sources:
+    - https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    - https://github.com/icoretech/helm/tree/main/charts/chatgpt-retrieval-plugin
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/chatgpt-retrieval-plugin-0.0.3/chatgpt-retrieval-plugin-0.0.3.tgz
+    version: 0.0.3
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 0.0.1
+    created: "2023-05-30T10:42:18.365775971Z"
+    dependencies:
+    - condition: redis.enabled
+      name: redis
+      repository: oci://registry-1.docker.io/bitnamicharts
+      version: 17.11.3
+    description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
+    digest: b381b77f81e3cc59a246b211432ff3494024f761d50f5064a8217ef7588f1d19
+    home: https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    keywords:
+    - docker
+    - openai
+    - chatgpt
+    - chatgpt-plugin
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: chatgpt-retrieval-plugin
+    sources:
+    - https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    - https://github.com/icoretech/helm/tree/main/charts/chatgpt-retrieval-plugin
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/chatgpt-retrieval-plugin-0.0.2/chatgpt-retrieval-plugin-0.0.2.tgz
+    version: 0.0.2
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 0.0.1
+    created: "2023-05-30T10:17:10.219372213Z"
+    description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
+    digest: a9239c0883d613011fe50eb0d52dcd304ae2c5fc4592b48669426adb43f3a6f5
+    home: https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    keywords:
+    - docker
+    - openai
+    - chatgpt
+    - chatgpt-plugin
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: chatgpt-retrieval-plugin
+    sources:
+    - https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    - https://github.com/icoretech/helm/tree/main/charts/chatgpt-retrieval-plugin
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/chatgpt-retrieval-plugin-0.0.1/chatgpt-retrieval-plugin-0.0.1.tgz
+    version: 0.0.1
+  pgbouncer:
+  - annotations:
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 1.18.0
+    created: "2023-05-17T20:14:35.465508692Z"
+    description: A Helm chart for deploying pgBouncer, a PostgreSQL connection pooler,
+      on Kubernetes
+    digest: b90d0ee37a70b6e094e598d6a1fcffd207fedbe15e364bb134673929c4cd20af
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/pgbouncer/logo.png
+    keywords:
+    - pgBouncer
+    - PostgreSQL
+    - Kubernetes
+    kubeVersion: '>= 1.20.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: pgbouncer
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/pgbouncer
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.4/pgbouncer-1.8.4.tgz
+    version: 1.8.4
+  - annotations:
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 1.18.0
+    created: "2023-05-16T00:23:25.582458752Z"
+    description: A Helm chart for deploying pgBouncer, a PostgreSQL connection pooler,
+      on Kubernetes
+    digest: 7271dc8a5abfe54afd35b7ab13934459fe5eff66e6f13a04f7ef6b9dd65a445c
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/pgbouncer/logo.png
+    keywords:
+    - pgBouncer
+    - PostgreSQL
+    - Kubernetes
+    kubeVersion: '>= 1.20.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: pgbouncer
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/pgbouncer
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.3/pgbouncer-1.8.3.tgz
+    version: 1.8.3
+  - annotations:
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 1.18.0
+    created: "2023-05-16T00:14:29.135914475Z"
+    description: A Helm chart for deploying pgBouncer, a PostgreSQL connection pooler,
+      on Kubernetes
+    digest: 14d055465037fb40d05244f4a88dfe6077099d1018b593d61e2bd5ab544c6067
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/pgbouncer/logo.png
+    keywords:
+    - pgBouncer
+    - PostgreSQL
+    - Kubernetes
+    kubeVersion: '>= 1.20.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: pgbouncer
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/pgbouncer
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.2/pgbouncer-1.8.2.tgz
+    version: 1.8.2
+  - annotations:
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 1.18.0
+    created: "2023-05-16T00:00:27.250566574Z"
+    description: A Helm chart for deploying pgBouncer, a PostgreSQL connection pooler,
+      on Kubernetes
+    digest: 4c7e5933c735b235b118be1f9a8e2b863c72d41e1f956ef872b508177391a78f
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/pgbouncer/logo.png
+    keywords:
+    - pgBouncer
+    - PostgreSQL
+    - Kubernetes
+    kubeVersion: '>= 1.20.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: pgbouncer
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/pgbouncer
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
+    version: 1.8.1
+generated: "2023-05-30T13:06:44.296275735Z"
