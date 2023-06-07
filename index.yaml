@@ -683,6 +683,32 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.0.1
+    created: "2023-06-07T08:01:33.565411853Z"
+    description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
+    digest: 560ab4a9e42c8fbe241135367af143c14dc9e872d388416a5679f936903862a4
+    home: https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    keywords:
+    - docker
+    - openai
+    - chatgpt
+    - chatgpt-plugin
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: chatgpt-retrieval-plugin
+    sources:
+    - https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    - https://github.com/icoretech/helm/tree/main/charts/chatgpt-retrieval-plugin
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/chatgpt-retrieval-plugin-0.0.18/chatgpt-retrieval-plugin-0.0.18.tgz
+    version: 0.0.18
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 0.0.1
     created: "2023-05-30T13:06:44.296221933Z"
     description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
     digest: 0b7a06c5ad63fa29ba1aa110ed443ccb10318e257e449a0b943a36e59d4a4a62
@@ -918,4 +944,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2023-05-30T13:06:44.296275735Z"
+generated: "2023-06-07T08:01:33.565600752Z"
