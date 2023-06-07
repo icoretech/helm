@@ -27,8 +27,8 @@ Please ensure that you select the correct Docker image flavor based on the suppo
 
 ## Endpoints to test
 
-- https://youringress/openapi.json
-- https://youringress/docs
+- <https://youringress/openapi.json>
+- <https://youringress/docs>
 
 ## Configuration
 
