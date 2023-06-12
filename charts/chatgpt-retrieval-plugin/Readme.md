@@ -23,7 +23,7 @@ helm install mychatgpt icoretech/chatgpt-retrieval-plugin
 
 ## Note about Docker Image
 
-Please ensure that you select the correct Docker image flavor based on the supported vector database provider you intend to use. Refer to the [Supported Vector Database Providers](https://github.com/icoretech/chatgpt-retrieval-plugin-docker#supported-vector-database-providers) for more information.
+Please ensure that you select the correct Docker image flavor based on the supported vector database provider you intend to use. Refer to the [Supported Vector Database Providers](https://github.com/icoretech/chatgpt-retrieval-plugin-docker#-supported-vector-database-providers) for more information.
 
 ## Endpoints to test
 
