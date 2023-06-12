@@ -9,7 +9,7 @@ database:
 web:
   imagePullPolicy: IfNotPresent
   imagePullSecrets: "" # must be present in namespace
-  image: ghcr.io/icoretech/airbroke:1.1.22
+  image: ghcr.io/icoretech/airbroke:1.1.31
   terminationGracePeriodSeconds: 0
   replicaCount: 1
 
@@ -19,6 +19,8 @@ web:
       maxUnavailable: 0
       maxSurge: 1
 
+  # not sure about the usefulness of this - we are trying to solve some caching issues with next.js
+  # so this should be considered experimental.
   cachePersistentVolume:
     enabled: false # If set to true, a PersistentVolumeClaim (PVC) will be created for caching
     storageClass: "" # The storage class to use for the PVC. If not set, the default StorageClass will be used
@@ -57,6 +59,7 @@ web:
   livenessProbe:
     enabled: true
     httpGet:
+      endpoint: /api/hc?source=livenessProbe
       httpHeaders: []
     initialDelaySeconds: 0
     periodSeconds: 10
@@ -66,6 +69,7 @@ web:
   readinessProbe:
     enabled: true
     httpGet:
+      endpoint: /api/hc?source=readinessProbe
       httpHeaders: []
     initialDelaySeconds: 0
     periodSeconds: 10

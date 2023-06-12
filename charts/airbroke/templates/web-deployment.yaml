@@ -45,7 +45,7 @@ spec:
         {{- if .Values.web.livenessProbe.enabled }}
         livenessProbe:
           httpGet:
-            path: /api/hc?source=livenessProbe
+            path: {{ .Values.web.livenessProbe.httpGet.endpoint }}
             port: http
             httpHeaders: {{ .Values.web.livenessProbe.httpGet.httpHeaders }}
           initialDelaySeconds: {{ .Values.web.livenessProbe.initialDelaySeconds }}
@@ -57,7 +57,7 @@ spec:
         {{- if .Values.web.readinessProbe.enabled }}
         readinessProbe:
           httpGet:
-            path: /api/hc?source=readinessProbe
+            path: {{ .Values.web.readinessProbe.httpGet.endpoint }}
             port: http
             httpHeaders: {{ .Values.web.readinessProbe.httpGet.httpHeaders }}
           initialDelaySeconds: {{ .Values.web.readinessProbe.initialDelaySeconds }}
