@@ -35,8 +35,8 @@ imagePullSecrets: []
 ##
 image:
   registry: ""
-  repository: ghcr.io/airflow-helm/pgbouncer
-  tag: 1.18.0-patch.1
+  repository: ghcr.io/icoretech/pgbouncer-docker
+  tag: 1.19.1
   pullPolicy: IfNotPresent
 
 ## Service configuration
