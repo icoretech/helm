@@ -35,8 +35,8 @@ The following table lists the configurable parameters of the pgBouncer chart and
 | `revisionHistoryLimit` | Rollback limit | `10` |
 | `imagePullSecrets` | Optional array of imagePullSecrets containing private registry credentials | `[]` |
 | `image.registry` | Registry for the pgBouncer image | `""` |
-| `image.repository` | Repository for the pgBouncer image | `ghcr.io/airflow-helm/pgbouncer` |
-| `image.tag` | Tag for the pgBouncer image | `1.18.0-patch.1` |
+| `image.repository` | Repository for the pgBouncer image | `ghcr.io/icoretech/pgbouncer-docker` |
+| `image.tag` | Tag for the pgBouncer image | `1.19.1` |
 | `image.pullPolicy` | Pull policy for the pgBouncer image | `IfNotPresent` |
 | `service.type` | Service type | `ClusterIP` |
 | `service.port` | Service port | `5432` |
