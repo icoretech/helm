@@ -9,7 +9,7 @@ database:
 web:
   imagePullPolicy: IfNotPresent
   imagePullSecrets: "" # must be present in namespace
-  image: ghcr.io/icoretech/airbroke:1.1.31
+  image: ghcr.io/icoretech/airbroke:1.1.38
   terminationGracePeriodSeconds: 0
   replicaCount: 1
 
@@ -106,7 +106,6 @@ pgbouncer:
         host: postgres-postgresql.postgres.svc.cluster.local
         port: 5432
     pgbouncer:
-      server_tls_sslmode: prefer
       # max_client_conn: 500
       ignore_startup_parameters: extra_float_digits
       pool_mode: transaction

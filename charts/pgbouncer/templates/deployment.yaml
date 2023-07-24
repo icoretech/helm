@@ -63,19 +63,6 @@ spec:
       - name: pgbouncer
         image: {{ template "pgbouncer.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command:
-          - "/usr/bin/dumb-init"
-          ## rewrite SIGTERM as SIGINT, so pgbouncer does a safe shutdown
-          - "--rewrite=15:2"
-          - "--"
-        args:
-          - "/bin/sh"
-          - "-c"
-          - |-
-            exec pgbouncer /etc/pgbouncer/pgbouncer.ini
-        # command:
-        # - /opt/pgbouncer/pgbouncer
-        # - /etc/pgbouncer/pgbouncer.ini
         {{- if .Values.lifecycle }}
         lifecycle: {{ toYaml .Values.lifecycle | trimSuffix "\n" | nindent 10 }}
         {{- end }}
