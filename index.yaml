@@ -13,6 +13,49 @@ entries:
         - title: Toolbox
           url: https://i.imgur.com/b2NBh2i.png
     apiVersion: v2
+    appVersion: 1.1.46
+    created: "2023-08-14T11:10:06.87298217Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 1.8.3
+    description: Airbroke Helm chart for Kubernetes
+    digest: 0566dae90b119a278b2534cffb92fc4292d538c082377a8092f7f8e63aa4ad57
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.1.21/airbroke-1.1.21.tgz
+    version: 1.1.21
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+        - url: https://artifacthub.io/packages/helm/bitnami/postgresql
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+    apiVersion: v2
     appVersion: 1.1.42
     created: "2023-08-02T13:07:31.625416238Z"
     dependencies:
@@ -1306,4 +1349,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2023-08-14T11:06:20.648635476Z"
+generated: "2023-08-14T11:10:06.873471174Z"
