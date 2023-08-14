@@ -36,7 +36,7 @@ imagePullSecrets: []
 image:
   registry: ""
   repository: ghcr.io/icoretech/pgbouncer-docker
-  tag: 1.20.0-fixed
+  tag: 1.20.1
   pullPolicy: IfNotPresent
 
 ## Service configuration
