@@ -39,6 +39,10 @@ spec:
               name: {{ template "app.web-env.name" . }}
           - secretRef:
               name: {{ template "app.web-env.name" . }}
+        {{- range .Values.web.extraEnvFromSecret }}
+          - secretRef:
+              name: {{ tpl . $ }}
+        {{- end }}
         ports:
           - name: http
             containerPort: {{ .Values.web.service.port }}
