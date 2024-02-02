@@ -1226,6 +1226,28 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/chatgpt-retrieval-plugin-0.0.1/chatgpt-retrieval-plugin-0.0.1.tgz
     version: 0.0.1
+  nextjs:
+  - annotations:
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2024-02-02T18:12:58.481470236Z"
+    description: Generic Helm chart for Nextjs apps on Kubernetes
+    digest: c612433e49de7a079138d1038dfdb94dfff5f8c8a7c8f49d08e0231f86ba44a6
+    home: https://github.com/icoretech/helm
+    keywords:
+    - nextjs
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: nextjs
+    sources:
+    - https://github.com/icoretech/helm
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/nextjs-1.0.0/nextjs-1.0.0.tgz
+    version: 1.0.0
   pgbouncer:
   - annotations:
       artifacthub.io/license: MIT
@@ -1435,4 +1457,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2024-02-02T17:05:32.847075192Z"
+generated: "2024-02-02T18:12:58.481577216Z"
