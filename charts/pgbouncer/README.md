@@ -36,7 +36,7 @@ The following table lists the configurable parameters of the pgBouncer chart and
 | `imagePullSecrets` | Optional array of imagePullSecrets containing private registry credentials | `[]` |
 | `image.registry` | Registry for the pgBouncer image | `""` |
 | `image.repository` | Repository for the pgBouncer image | `ghcr.io/icoretech/pgbouncer-docker` |
-| `image.tag` | Tag for the pgBouncer image | `1.20.1` |
+| `image.tag` | Tag for the pgBouncer image | `1.22.0` |
 | `image.pullPolicy` | Pull policy for the pgBouncer image | `IfNotPresent` |
 | `service.type` | Service type | `ClusterIP` |
 | `service.port` | Service port | `5432` |
