@@ -21,7 +21,7 @@ spec:
       labels:
         {{- include "pgbouncer.selectorLabels" . | nindent 8 }}
         {{- if .Values.podLabels }}
-        {{ range $key, $value := .Values.podLabels -}}
+        {{- range $key, $value := .Values.podLabels }}
         {{ $key }}: {{ $value | quote }}
         {{- end -}}
         {{- end }}
@@ -32,7 +32,7 @@ spec:
         prometheus.io/port: "{{ .Values.pgbouncerExporter.port }}"
         prometheus.io/path: "/metrics"
         {{- end }}
-        {{ range $key, $value := .Values.podAnnotations -}}
+        {{- range $key, $value := .Values.podAnnotations }}
         {{ $key }}: {{ $value | quote }}
         {{- end }}
     spec:
