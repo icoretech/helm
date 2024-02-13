@@ -23,7 +23,6 @@ spec:
         {{- include "app.web.selectorLabels" . | nindent 8 }}
       annotations:
         checksum/env-cm: {{ include (print $.Template.BasePath "/web-env-cm.yaml") . | sha256sum }}
-        checksum/env-config: {{ include (print $.Template.BasePath "/web-config.yaml") . | sha256sum }}
         checksum/env-secret: {{ include (print $.Template.BasePath "/web-env-secret.yaml") . | sha256sum }}
     spec:
       {{- if (not (empty .Values.web.imagePullSecrets)) }}
@@ -39,21 +38,14 @@ spec:
               name: {{ template "app.web-env.name" . }}
           - secretRef:
               name: {{ template "app.web-env.name" . }}
-        {{- range .Values.web.extraEnvFromSecret }}
-          - secretRef:
-              name: {{ tpl . $ }}
-        {{- end }}
         ports:
           - name: http
             containerPort: {{ .Values.web.service.port }}
             protocol: TCP
-        volumeMounts:
-          - name: well-known
-            mountPath: /code/.well-known
         {{- if .Values.web.livenessProbe.enabled }}
         livenessProbe:
           httpGet:
-            path: /hc?source=livenessProbe
+            path: {{ .Values.web.livenessProbe.httpGet.endpoint }}
             port: http
             httpHeaders: {{ .Values.web.livenessProbe.httpGet.httpHeaders }}
           initialDelaySeconds: {{ .Values.web.livenessProbe.initialDelaySeconds }}
@@ -65,7 +57,7 @@ spec:
         {{- if .Values.web.readinessProbe.enabled }}
         readinessProbe:
           httpGet:
-            path: /hc?source=readinessProbe
+            path: {{ .Values.web.readinessProbe.httpGet.endpoint }}
             port: http
             httpHeaders: {{ .Values.web.readinessProbe.httpGet.httpHeaders }}
           initialDelaySeconds: {{ .Values.web.readinessProbe.initialDelaySeconds }}
@@ -76,6 +68,11 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.web.resources | nindent 12 }}
+        {{- if .Values.web.cachePersistentVolume.enabled }}
+        volumeMounts:
+          - name: next-cache
+            mountPath: {{ .Values.web.cachePersistentVolume.mountPath }}
+        {{- end }}
       terminationGracePeriodSeconds: {{ .Values.web.terminationGracePeriodSeconds | default 30 }}
       {{- with .Values.web.nodeSelector }}
       nodeSelector:
@@ -89,22 +86,9 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      initContainers:
-      - name: copy-override-files
-        image: "{{ .Values.web.image }}"
-        command: ["/bin/sh", "-c"]
-        args:
-          - >
-            cp -Rv /code/.well-known/. /original/.well-known &&
-            cp -Rv /override/.well-known/. /original/.well-known
-        volumeMounts:
-          - name: well-known
-            mountPath: /original/.well-known
-          - name: well-known-override
-            mountPath: /override/.well-known
+      {{- if .Values.web.cachePersistentVolume.enabled }}
       volumes:
-        - name: well-known
-          emptyDir: {}
-        - name: well-known-override
-          configMap:
-            name: {{ template "app.configmap.name" . }}
+        - name: next-cache
+          persistentVolumeClaim:
+            claimName: {{ include "app.web.name" . }}-next-cache
+      {{- end }}
