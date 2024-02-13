@@ -96,3 +96,6 @@ web:
   #     value: "xxxxx"
   #   - name: OPENAI_API_KEY
   #     value: "xxxxx"
+  extraEnvFromSecret: []
+  # extraEnvFromSecret:
+  #   - custom-secret    
