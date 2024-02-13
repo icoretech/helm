@@ -1,10 +1,10 @@
-nameOverride: ""
-fullnameOverride: ""
+nameOverride: ''
+fullnameOverride: ''
 
 web:
   imagePullPolicy: IfNotPresent
-  imagePullSecrets: "" # must be present in namespace
-  image: ghcr.io/icoretech/nextjs:1.1.46
+  imagePullSecrets: '' # must be present in namespace
+  image: ''
   terminationGracePeriodSeconds: 0
   replicaCount: 1
 
@@ -18,13 +18,13 @@ web:
   # so this should be considered experimental.
   cachePersistentVolume:
     enabled: false # If set to true, a PersistentVolumeClaim (PVC) will be created for caching
-    storageClass: "" # The storage class to use for the PVC. If not set, the default StorageClass will be used
-    existingClaim: "" # If set, this existing PVC will be used instead of creating a new one
+    storageClass: '' # The storage class to use for the PVC. If not set, the default StorageClass will be used
+    existingClaim: '' # If set, this existing PVC will be used instead of creating a new one
     accessModes:
       - ReadWriteOnce # The access modes for the PVC. Can be ReadWriteOnce, ReadOnlyMany, or ReadWriteMany. If cachePersistentVolume is enabled and replicaCount is more than 1, this should be set to ReadWriteMany
     annotations: {} # Annotations to add to the PVC
     size: 1Gi # The requested storage size for the PVC
-    volumeMode: "" # The volume mode for the PVC. Can be either "Filesystem" (default) or "Block"
+    volumeMode: '' # The volume mode for the PVC. Can be either "Filesystem" (default) or "Block"
     mountPath: /app/.next/cache # The path to mount the volume in the container
 
   hpa:
