@@ -36,7 +36,7 @@ imagePullSecrets: []
 image:
   registry: ""
   repository: ghcr.io/icoretech/pgbouncer-docker
-  tag: 1.22.0
+  tag: 1.22.1
   pullPolicy: IfNotPresent
 
 ## Service configuration
@@ -190,6 +190,7 @@ extraVolumes: []
 ##
 pgbouncerExporter:
   enabled: false
+  podMonitor: false
   port: 9127
   image:
     registry: ""
