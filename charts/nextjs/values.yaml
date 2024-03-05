@@ -52,7 +52,7 @@ web:
     annotations: {}
 
   livenessProbe:
-    enabled: true
+    enabled: false
     httpGet:
       endpoint: /api/hc?source=livenessProbe
       httpHeaders: []
@@ -62,7 +62,7 @@ web:
     failureThreshold: 2
     successThreshold: 1
   readinessProbe:
-    enabled: true
+    enabled: false
     httpGet:
       endpoint: /api/hc?source=readinessProbe
       httpHeaders: []
