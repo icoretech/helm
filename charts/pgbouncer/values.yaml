@@ -190,7 +190,7 @@ extraVolumes: []
 ##
 pgbouncerExporter:
   enabled: false
-  podMonitor: true
+  podMonitor: false
   port: 9127
   image:
     registry: ""

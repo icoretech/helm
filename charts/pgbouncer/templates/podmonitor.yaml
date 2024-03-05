@@ -11,4 +11,4 @@ spec:
       {{- include "pgbouncer.selectorLabels" . | nindent 8 }}
   podMetricsEndpoints:
     - port: exporter
-  {{- end }}
+{{- end }}
