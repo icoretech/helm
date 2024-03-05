@@ -58,7 +58,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | `web.service.enabled` | Enables service | `true` |
 | `web.service.type` | Type of service | `ClusterIP` |
 | `web.service.port` | Service port | `3000` |
-| `web.livenessProbe.enabled` | Enables liveness probe | `true` |
+| `web.livenessProbe.enabled` | Enables liveness probe | `false` |
 | `web.livenessProbe.httpGet.endpoint` | Endpoint for liveness probe | `/api/hc?source=livenessProbe` |
 | `web.livenessProbe.httpGet.httpHeaders` | HTTP headers for liveness probe | `[]` |
 | `web.livenessProbe.initialDelaySeconds` | Initial delay for liveness probe | `0` |
@@ -66,7 +66,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | `web.livenessProbe.timeoutSeconds` | Timeout seconds for liveness probe | `5` |
 | `web.livenessProbe.failureThreshold` | Failure threshold for liveness probe | `2` |
 | `web.livenessProbe.successThreshold` | Success threshold for liveness probe | `1` |
-| `web.readinessProbe.enabled` | Enables readiness probe | `true` |
+| `web.readinessProbe.enabled` | Enables readiness probe | `false` |
 | `web.readinessProbe.httpGet.endpoint` | Endpoint for readiness probe | `/api/hc?source=readinessProbe` |
 | `web.readinessProbe.httpGet.httpHeaders` | HTTP headers for readiness probe | `[]` |
 | `web.readinessProbe.initialDelaySeconds` | Initial delay for readiness probe | `0` |
