@@ -96,14 +96,14 @@ web:
   ## https://kubernetes.io/docs/tasks/run-application/configure-pdb/
   ##
   podDisruptionBudget:
-    ## if a PodDisruptionBudget resource is created for the pgbouncer Deployment
+    ## if a PodDisruptionBudget resource is created for the Deployment
     ##
     enabled: false
 
-    ## the maximum unavailable pods/percentage for the pgbouncer Deployment
+    ## the maximum unavailable pods/percentage for the Deployment
     ##
     maxUnavailable:
 
-    ## the minimum available pods/percentage for the pgbouncer Deployment
+    ## the minimum available pods/percentage for the Deployment
     ##
     minAvailable:
