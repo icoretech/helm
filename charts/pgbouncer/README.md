@@ -29,40 +29,45 @@ The following table lists the configurable parameters of the pgBouncer chart and
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `replicaCount` | Number of replicas for the pgBouncer deployment | `1` |
-| `updateStrategy` | Update strategy for the deployment | `{}` |
-| `minReadySeconds` | Interval between discrete pods transitions | `0` |
-| `revisionHistoryLimit` | Rollback limit | `10` |
-| `imagePullSecrets` | Optional array of imagePullSecrets containing private registry credentials | `[]` |
-| `image.registry` | Registry for the pgBouncer image | `""` |
-| `image.repository` | Repository for the pgBouncer image | `ghcr.io/icoretech/pgbouncer-docker` |
-| `image.tag` | Tag for the pgBouncer image | `1.22.1` |
-| `image.pullPolicy` | Pull policy for the pgBouncer image | `IfNotPresent` |
-| `service.type` | Service type | `ClusterIP` |
-| `service.port` | Service port | `5432` |
-| `podLabels` | Labels to add to the pod metadata | `{}` |
-| `podAnnotations` | Annotations to add to the pod metadata | `{}` |
-| `extraEnvs` | Additional environment variables to set | `[]` |
-| `resources` | Pod resources for scheduling/limiting | `{}` |
-| `nodeSelector` | Node labels for pod assignment | `{}` |
-| `lifecycle` | Lifecycle hooks | `{}` |
-| `tolerations` | Tolerations for pod assignment | `[]` |
-| `affinity` | Affinity and anti-affinity | `{}` |
-| `priorityClassName` | Priority of pods | `""` |
-| `runtimeClassName` | Runtime class for pods | `""` |
-| `config.adminUser` | Admin user for pgBouncer | `admin` |
-| `config.adminPassword` | Admin password for pgBouncer | `undefined` |
-| `config.authUser` | Auth user for pgBouncer | `undefined` |
-| `config.authPassword` | Auth password for pgBouncer | `undefined` |
-| `config.databases` | Database configuration | `{}` |
-| `config.pgbouncer` | pgBouncer specific configuration | `{}` |
-| `config.userlist` | User list for pgBouncer | `{}` |
-| `extraContainers` | Additional containers to be added to the pods | `[]` |
-| `extraInitContainers` | Containers which are run before the app containers are started | `[]` |
-| `extraVolumeMounts` | Additional volumeMounts to the main container | `[]` |
-| `extraVolumes` | Additional volumes to the pods | `[]` |
-| `pgbouncerExporter.enabled` | Enable pgBouncer exporter | `false` |
-| `pgbouncerExporter.port` | pgBouncer exporter port | `9127` |
+| `replicaCount` | Number of pgBouncer replicas; adjust for scalability. | `1` |
+| `updateStrategy` | Strategy for updating pods. Use `Recreate` or specify `RollingUpdate` settings. | `{}` |
+| `minReadySeconds` | Seconds to wait before marking a pod as ready. Helps manage rollouts. | `0` |
+| `revisionHistoryLimit` | Number of old ReplicaSets to retain for rollback. | `10` |
+| `imagePullSecrets` | Secrets for accessing private image registries. Format: `[{"name": "mySecret"}]`. | `[]` |
+| `image.registry` | Registry URL for the pgBouncer image. | `""` |
+| `image.repository` | Image repository for pgBouncer. | `ghcr.io/icoretech/pgbouncer-docker` |
+| `image.tag` | Specific image tag to use. | `1.22.1` |
+| `image.pullPolicy` | Image pull policy. Options: `Always`, `Never`, `IfNotPresent`. | `IfNotPresent` |
+| `service.type` | Kubernetes Service type (e.g., `ClusterIP`, `NodePort`). | `ClusterIP` |
+| `service.port` | Port for the pgBouncer service. | `5432` |
+| `podLabels` | Custom labels for pods. Format: `key: value`. | `{}` |
+| `podAnnotations` | Annotations for pods, e.g., for Prometheus. | `{}` |
+| `extraEnvs` | Extra environment variables for the pod. Format: `[{"name": "VAR", "value": "value"}]`. | `[]` |
+| `resources` | CPU and memory resources for the container. Example: `limits: { cpu: "100m", memory: "200Mi" }`. | `{}` |
+| `nodeSelector` | Node labels for pod assignment. Format: `key: value`. | `{}` |
+| `lifecycle` | Custom lifecycle hooks. | `{}` |
+| `tolerations` | Tolerations for pod scheduling. | `[]` |
+| `affinity` | Pod affinity and anti-affinity rules. | `{}` |
+| `priorityClassName` | Sets priority class for the pod. | `""` |
+| `runtimeClassName` | Runtime class for pods (e.g., for using gVisor). | `""` |
+| `config.adminUser` | Admin username required by pgBouncer. | `admin` |
+| `config.adminPassword` | Admin password; use with a secret for security. | `undefined` |
+| `config.authUser` | Auth user for client connections; set if different from `adminUser`. | `undefined` |
+| `config.authPassword` | Password for the `authUser`. | `undefined` |
+| `config.databases` | Database connection info. Format: `dbName: {host: "host", port: "port"}`. | `{}` |
+| `config.pgbouncer` | pgBouncer-specific settings. Example: `pool_mode: transaction`. | `{}` |
+| `extraContainers` | Additional containers in the pod. Useful for sidecars. | `[]` |
+| `extraInitContainers` | Init containers to run before main containers start. | `[]` |
+| `extraVolumeMounts` | Additional volume mounts for containers. | `[]` |
+| `extraVolumes` | Additional volumes for the pod. Useful for configs or secrets. | `[]` |
+| `pgbouncerExporter.enabled` | Enables pgBouncer metrics exporter for Prometheus. | `false` |
+| `pgbouncerExporter.port` | Port for the metrics exporter. | `9127` |
+| `pgbouncerExporter.podMonitor` | Create a PodMonitor resource for Prometheus scraping. Requires `pgbouncerExporter.enabled: true`. | `false` |
+| `serviceAccount.create` | Whether to create a new service account. Set to `false` if using an existing one. | `true` |
+| `serviceAccount.name` | The service account's name. Leave blank to auto-generate. | `""` |
+| `serviceAccount.annotations` | Annotations for the service account. | `{}` |
+| `podDisruptionBudget.enabled` | Enable PDB to ensure availability during disruptions. | `false` |
+
 
 ## Example using Flux
 
