@@ -12,5 +12,4 @@ spec:
       protocol: TCP
       name: psql
   selector:
-    app.kubernetes.io/name: {{ template "pgbouncer.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "pgbouncer.selectorLabels" . | nindent 4 }}
