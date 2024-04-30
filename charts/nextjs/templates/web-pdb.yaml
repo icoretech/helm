@@ -1,0 +1,18 @@
+{{- if .Values.web.podDisruptionBudget.enabled }}
+apiVersion: {{ template "podDisruptionBudget.apiVersion" . }}
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "app.web.name" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.web.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.web.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  {{- if .Values.web.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.web.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "app.web.selectorLabels" . | nindent 6 }}
+{{- end }}

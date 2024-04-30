@@ -91,3 +91,19 @@ web:
   #     value: "https://xxxxxx"
   #   - name: AIRBROKE_OPENAI_API_KEY
   #     value: "sk-xxxxxxx"
+
+  ## Pod Disruption Budget
+  ## https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  ##
+  podDisruptionBudget:
+    ## if a PodDisruptionBudget resource is created for the Deployment
+    ##
+    enabled: false
+
+    ## the maximum unavailable pods/percentage for the Deployment
+    ##
+    maxUnavailable:
+
+    ## the minimum available pods/percentage for the Deployment
+    ##
+    minAvailable:

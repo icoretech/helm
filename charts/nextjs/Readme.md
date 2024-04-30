@@ -29,8 +29,8 @@ The following table lists the configurable parameters of the Airbroke chart and 
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `nameOverride` | String to partially override airbroke.fullname | `""` |
-| `fullnameOverride` | String to fully override airbroke.fullname | `""` |
+| `nameOverride` | String to partially override app.fullname | `""` |
+| `fullnameOverride` | String to fully override app.fullname | `""` |
 | `web.image` | Docker image for the web application | `""` |
 | `web.imagePullPolicy` | Image pull policy | `IfNotPresent` |
 | `web.imagePullSecrets` | Image pull secrets, must be present in namespace | `""` |
@@ -79,3 +79,4 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | `web.tolerations` | Tolerations for pod assignment | `[]` |
 | `web.affinity` | Affinity settings for pod assignment | `{}` |
 | `web.extraEnvs` | Additional environment variables | `[]` |
+| `web.podDisruptionBudget.enabled` | Enable PDB to ensure availability during disruptions. | `false` |

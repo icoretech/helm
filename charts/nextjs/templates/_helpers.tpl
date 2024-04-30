@@ -86,6 +86,20 @@ Create the name of the service account to use
 {{- end -}}
 {{- end -}}
 
+{{/*
+Return the appropriate apiVersion for PodDisruptionBudget kind of objects.
+*/}}
+{{- define "podDisruptionBudget.apiVersion" -}}
+{{- if .Capabilities.APIVersions.Has "policy/v1/PodDisruptionBudget" -}}
+{{- print "policy/v1" -}}
+{{- else -}}
+{{- if .Capabilities.APIVersions.Has "policy/v1beta1/PodDisruptionBudget" -}}
+{{- print "policy/v1beta1" -}}
+{{- else -}}
+{{- print "extensions/v1beta1" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 
 {{/*
 Return the target Kubernetes version

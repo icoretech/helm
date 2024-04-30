@@ -38,22 +38,28 @@ The following table lists the configurable parameters of the ChatGPT Retrieval P
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `nameOverride` | String to partially override the chart's fullname | `""` |
-| `fullnameOverride` | String to fully override the chart's fullname | `""` |
-| `web.image` | Docker image for the web application | `ghcr.io/icoretech/chatgpt-retrieval-plugin-docker:redis-9969191-1685433326` |
-| `web.replicaCount` | Number of replicas to run | `1` |
-| `web.updateStrategy` | Update strategy to use | `RollingUpdate` |
-| `web.hpa.enabled` | Enables the Horizontal Pod Autoscaler | `false` |
-| `web.ingress.enabled` | Enables Ingress | `false` |
-| `web.service.enabled` | Enables the Kubernetes service | `true` |
-| `web.service.type` | Kubernetes service type | `ClusterIP` |
-| `web.service.port` | Port for the Kubernetes service | `8080` |
-| `web.livenessProbe.enabled` | Enables the liveness probe | `false` |
-| `web.readinessProbe.enabled` | Enables the readiness probe | `false` |
-| `web.resources` | Resource limits and requests for the web application | `{}` |
-| `web.extraEnvs` | Additional environment variables for the web application | `[]` |
-| `web.config.aiPluginJson` | Content of ai-plugin.json file | `""` |
-| `web.config.openApiYaml` | Content of openapi.yaml file | `""` |
+| `nameOverride` | Overrides part of the chart's fullname. Useful when integrating with other charts. | `""` |
+| `fullnameOverride` | Completely overrides the chart's fullname. Useful for custom naming conventions. | `""` |
+| `web.image` | Docker image for the plugin, including the tag. | `ghcr.io/icoretech/chatgpt-retrieval-plugin-docker:postgres-9969191-1685433326` |
+| `web.imagePullPolicy` | Policy for pulling images: `Always`, `IfNotPresent`, `Never`. | `IfNotPresent` |
+| `web.imagePullSecrets` | Secrets for pulling images from private registries. Must exist in namespace. Format as string name of the secret. | `""` |
+| `web.replicaCount` | Number of pod replicas for the deployment. | `1` |
+| `web.updateStrategy` | Strategy for updating pods. Supports `RollingUpdate` (default) or `Recreate`. | `RollingUpdate` |
+| `web.hpa.enabled` | Enables horizontal pod autoscaling based on CPU/memory usage or HTTP requests. | `false` |
+| `web.ingress.enabled` | Enables ingress for external access. Configure `hosts` and `tls` as needed. | `false` |
+| `web.service.enabled` | Enables a Kubernetes service for internal networking. | `true` |
+| `web.service.type` | Type of the Kubernetes service, e.g., `ClusterIP`, `NodePort`, `LoadBalancer`. | `ClusterIP` |
+| `web.service.port` | Port exposed by the service. | `8080` |
+| `web.livenessProbe.enabled` | Enables a liveness probe. Currently not available (`false`). | `false` |
+| `web.readinessProbe.enabled` | Enables a readiness probe. Currently not available (`false`). | `false` |
+| `web.resources` | CPU/memory resources allocation. Use for limits and requests. | `{}` |
+| `web.nodeSelector` | Node labels for pod assignment. Helps ensure pods are deployed on specified nodes. | `{}` |
+| `web.tolerations` | Tolerations for pod assignment. Allows scheduling on tainted nodes. | `[]` |
+| `web.affinity` | Affinity and anti-affinity rules. Controls pod scheduling preferences. | `{}` |
+| `web.extraEnvs` | Additional environment variables for customization. Useful for setting up external integrations. | `[]` |
+| `web.extraEnvFromSecret` | Sources environment variables from a Kubernetes secret. Useful for sensitive configs. Format as list of secret names. | `[]` |
+| `web.config.aiPluginJson` | Configuration for the AI plugin in JSON format. Defines plugin metadata and API details. | `""` |
+| `web.config.openApiYaml` | OpenAPI spec for the plugin's API. Defines endpoints and operations. | `""` |
 
 To customize the configuration, you can provide your own values by creating a `values.yaml` file and overriding the desired parameters.
 
