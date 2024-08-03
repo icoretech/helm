@@ -36,7 +36,7 @@ The following table lists the configurable parameters of the pgBouncer chart and
 | `imagePullSecrets` | Secrets for accessing private image registries. Format: `[{"name": "mySecret"}]`. | `[]` |
 | `image.registry` | Registry URL for the pgBouncer image. | `""` |
 | `image.repository` | Image repository for pgBouncer. | `ghcr.io/icoretech/pgbouncer-docker` |
-| `image.tag` | Specific image tag to use. | `1.23.0` |
+| `image.tag` | Specific image tag to use. | `1.23.1-fixed` |
 | `image.pullPolicy` | Image pull policy. Options: `Always`, `Never`, `IfNotPresent`. | `IfNotPresent` |
 | `service.type` | Kubernetes Service type (e.g., `ClusterIP`, `NodePort`). | `ClusterIP` |
 | `service.port` | Port for the pgBouncer service. | `5432` |
