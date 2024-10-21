@@ -133,7 +133,7 @@ spec:
           name: {{ template "pgbouncer.fullname" . }}-configmap
       - name: userlist
         secret:
-          secretName: {{ template "pgbouncer.fullname" . }}-userlist-secret
+          secretName: {{ .Values.config.existingUserlistSecret | default (printf "%s-userlist-secret" (include "pgbouncer.fullname" .)) }}
       {{- if .Values.extraVolumes -}}
       {{ toYaml .Values.extraVolumes | trimSuffix "\n" | nindent 6 }}
       {{ end -}}
