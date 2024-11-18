@@ -64,11 +64,11 @@ spec:
         image: {{ template "pgbouncer.image" . }}
         {{- if .Values.command }}
         command:
-        {{ .Values.command | toYaml | indent 10 }}
+        {{ toYaml .Values.command | nindent 10 }}
         {{- end }}
         {{- if .Values.args }}
         args:
-        {{ .Values.args | toYaml | indent 10 }}
+        {{ toYaml .Values.args | nindent 10 }}
         {{- end }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         {{- if .Values.lifecycle }}
