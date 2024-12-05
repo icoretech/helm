@@ -62,6 +62,14 @@ spec:
       containers:
       - name: pgbouncer
         image: {{ template "pgbouncer.image" . }}
+        {{- if .Values.command }}
+        command:
+        {{ toYaml .Values.command | nindent 10 }}
+        {{- end }}
+        {{- if .Values.args }}
+        args:
+        {{ toYaml .Values.args | nindent 10 }}
+        {{- end }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         {{- if .Values.lifecycle }}
         lifecycle: {{ toYaml .Values.lifecycle | trimSuffix "\n" | nindent 10 }}

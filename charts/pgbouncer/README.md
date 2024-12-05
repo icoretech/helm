@@ -38,6 +38,8 @@ The following table lists the configurable parameters of the pgBouncer chart and
 | `image.repository`              | Image repository for pgBouncer.                                                                                                       | `ghcr.io/icoretech/pgbouncer-docker` |
 | `image.tag`                     | Specific image tag to use.                                                                                                            | `1.23.1-fixed`                       |
 | `image.pullPolicy`              | Image pull policy. Options: `Always`, `Never`, `IfNotPresent`.                                                                        | `IfNotPresent`                       |
+| `command`                       | Custom entrypoint command for pgbouncer container                                                                                     | `[]`                       |
+| `args`                          | Custom entrypoint args for pgbouncer container                                                                                        | `[]`                       |
 | `service.type`                  | Kubernetes Service type (e.g., `ClusterIP`, `NodePort`).                                                                              | `ClusterIP`                          |
 | `service.port`                  | Port for the pgBouncer service.                                                                                                       | `5432`                               |
 | `podLabels`                     | Custom labels for pods. Format: `key: value`.                                                                                         | `{}`                                 |
