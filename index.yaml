@@ -1511,6 +1511,27 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 1.0.0
+    created: "2024-12-27T15:31:33.428018964Z"
+    description: Generic Helm chart for Nextjs apps on Kubernetes
+    digest: 86569424a810ad01e35954175f646d5d4ed07eee2adba69e3df124027f91e6ff
+    home: https://github.com/icoretech/helm
+    keywords:
+    - nextjs
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: nextjs
+    sources:
+    - https://github.com/icoretech/helm
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/nextjs-1.1.4/nextjs-1.1.4.tgz
+    version: 1.1.4
+  - annotations:
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 1.0.0
     created: "2024-12-27T13:47:51.222020826Z"
     description: Generic Helm chart for Nextjs apps on Kubernetes
     digest: 28ff5a138fe7f37c7a308f2aa745c457ca7eae960df7666e544dea4ba4cabe24
@@ -2149,4 +2170,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2024-12-27T13:47:51.222148366Z"
+generated: "2024-12-27T15:31:33.428428702Z"
