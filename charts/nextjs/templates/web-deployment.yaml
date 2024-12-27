@@ -73,6 +73,11 @@ spec:
             - name: next-cache
               mountPath: {{ .Values.web.cachePersistentVolume.mountPath }}
           {{- end }}
+          {{- if .Values.web.dataVolume.enabled }}
+          volumeMounts:
+            - name: next-data
+              mountPath: {{ .Values.web.dataVolume.mountPath }}
+          {{- end }}
         {{- if .Values.web.extraContainers }}
         {{- range .Values.web.extraContainers }}
         - name: {{ .name | quote }}
@@ -119,4 +124,10 @@ spec:
         - name: next-cache
           persistentVolumeClaim:
             claimName: {{ include "app.web.name" . }}-next-cache
+      {{- end }}
+      {{- if .Values.web.dataVolume.enabled }}
+      volumes:
+        - name: next-data
+          persistentVolumeClaim:
+            claimName: {{ include "app.web.name" . }}-next-data
       {{- end }}

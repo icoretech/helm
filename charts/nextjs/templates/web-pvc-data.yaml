@@ -1,0 +1,20 @@
+{{- if .Values.web.dataVolume.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "app.fullname" . }}-web-next-data
+  annotations:
+    {{- toYaml .Values.web.dataVolume.annotations | nindent 4 }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  accessModes: {{ toYaml .Values.web.dataVolume.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.web.dataVolume.size }}
+  storageClassName: {{ .Values.web.dataVolume.storageClass }}
+  volumeMode: {{ .Values.web.dataVolume.volumeMode }}
+  {{- if .Values.web.dataVolume.existingClaim }}
+  volumeName: {{ .Values.web.dataVolume.existingClaim }}
+  {{- end }}
+{{- end }}
