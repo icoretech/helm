@@ -12,6 +12,7 @@ For detailed information on the individual charts and their usage, please naviga
 - [pgBouncer](https://icoretech.github.io/helm/charts/pgbouncer): A lightweight connection pooler for PostgreSQL.
 - [ChatGPT Retrieval Plugin](https://icoretech.github.io/helm/charts/chatgpt-retrieval-plugin): A Helm chart for deploying the ChatGPT Retrieval Plugin.
 - [Next.js](https://icoretech.github.io/helm/charts/nextjs): Generic, no-database Helm chart for Next.js standalone apps.
+- [Inngest Server](https://icoretech.github.io/helm/charts/inngest): An event-driven durable execution platform that allows you to run fast, reliable code on any platform, without managing queues, infra, or state.
 
 ## Getting Started
 
