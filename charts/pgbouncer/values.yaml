@@ -39,6 +39,13 @@ image:
   tag: 1.23.1-fixed
   pullPolicy: IfNotPresent
 
+# If a custom entrypoint is needed/desired to configure pgbouncer container it can be configured with a combination of command and args lists
+# command:
+#   - "/bin/myapp"
+# args:
+#   - "--config"
+#   - "/etc/config.yaml"
+
 ## Service configuration
 ## https://kubernetes.io/docs/concepts/services-networking/service/
 ##
@@ -151,7 +158,12 @@ config:
     # pool_mode: transaction
     # max_client_conn: 1024
     # default_pool_size: 20
-    # ignore_startup_parameters = extra_float_digits
+    # ignore_startup_parameters: extra_float_digits
+
+  ## Existing `Secret` containing `userlist.txt` key with value following
+  ## https://www.pgbouncer.org/config.html#authentication-file-format
+  existingUserlistSecret: ""
+  # Alternatively, provide userlist directly
   userlist: {}
     # <USERNAME>: <PASSWORD>
 

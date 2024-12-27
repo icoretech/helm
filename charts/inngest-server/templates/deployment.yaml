@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "inngest.fullname" . }}
+  labels:
+    {{- include "inngest.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      {{- include "inngest.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if hasKey .Values.config "eventKey" }}
+        checksum/env-secret: "{{ include "inngest.secretChecksum" . }}"
+        {{- end }}
+      labels:
+        {{- include "inngest.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "inngest.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["inngest"]
+          args: ["start", "--json=true"]
+          env:
+            {{- if eq .Values.config.dev "0" }}
+            - name: INNGEST_EVENT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inngest.fullname" . }}-secret
+                  key: eventKey
+            - name: INNGEST_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inngest.fullname" . }}-secret
+                  key: signingKey
+            {{- end }}
+            - name: INNGEST_DEV
+              value: {{ .Values.config.dev | quote }}
+            - name: INNGEST_SQLITE_DIR
+              value: "/data"
+            {{- if .Values.config.redisUri }}
+            - name: INNGEST_REDIS_URI
+              value: {{ .Values.config.redisUri | quote }}
+            {{- end }}
+            {{- range .Values.extraEnv }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          volumeMounts:
+            {{- if .Values.persistence.enabled }}
+            - name: data
+              mountPath: /data
+            {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        {{- if .Values.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "inngest.fullname" . }}-pvc
+        {{- else }}
+        - name: data
+          emptyDir: {}
+        {{- end }}

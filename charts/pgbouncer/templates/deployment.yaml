@@ -62,6 +62,14 @@ spec:
       containers:
       - name: pgbouncer
         image: {{ template "pgbouncer.image" . }}
+        {{- if .Values.command }}
+        command:
+        {{ toYaml .Values.command | nindent 10 }}
+        {{- end }}
+        {{- if .Values.args }}
+        args:
+        {{ toYaml .Values.args | nindent 10 }}
+        {{- end }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         {{- if .Values.lifecycle }}
         lifecycle: {{ toYaml .Values.lifecycle | trimSuffix "\n" | nindent 10 }}
@@ -133,7 +141,7 @@ spec:
           name: {{ template "pgbouncer.fullname" . }}-configmap
       - name: userlist
         secret:
-          secretName: {{ template "pgbouncer.fullname" . }}-userlist-secret
+          secretName: {{ .Values.config.existingUserlistSecret | default (printf "%s-userlist-secret" (include "pgbouncer.fullname" .)) }}
       {{- if .Values.extraVolumes -}}
       {{ toYaml .Values.extraVolumes | trimSuffix "\n" | nindent 6 }}
       {{ end -}}
