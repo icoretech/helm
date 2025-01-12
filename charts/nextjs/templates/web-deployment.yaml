@@ -30,65 +30,104 @@ spec:
       - name: {{ .Values.web.imagePullSecrets }}
       {{- end }}
       containers:
-      - name: {{ include "app.web.name" . }}
-        image: "{{ .Values.web.image }}"
-        imagePullPolicy: {{ .Values.web.imagePullPolicy }}
-        envFrom:
-          - configMapRef:
-              name: {{ template "app.web-env.name" . }}
-          - secretRef:
-              name: {{ template "app.web-env.name" . }}
-        ports:
-          - name: http
-            containerPort: {{ .Values.web.service.port }}
-            protocol: TCP
-        {{- if .Values.web.livenessProbe.enabled }}
-        livenessProbe:
-          httpGet:
-            path: {{ .Values.web.livenessProbe.httpGet.endpoint }}
-            port: http
-            httpHeaders: {{ .Values.web.livenessProbe.httpGet.httpHeaders }}
-          initialDelaySeconds: {{ .Values.web.livenessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.web.livenessProbe.periodSeconds }}
-          timeoutSeconds: {{ .Values.web.livenessProbe.timeoutSeconds }}
-          failureThreshold: {{ .Values.web.livenessProbe.failureThreshold }}
-          successThreshold: {{ .Values.web.livenessProbe.successThreshold }}
+        - name: {{ include "app.web.name" . }}
+          image: "{{ .Values.web.image }}"
+          imagePullPolicy: {{ .Values.web.imagePullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ template "app.web-env.name" . }}
+            - secretRef:
+                name: {{ template "app.web-env.name" . }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.web.service.port }}
+              protocol: TCP
+          {{- if .Values.web.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.web.livenessProbe.httpGet.endpoint }}
+              port: http
+              httpHeaders: {{ .Values.web.livenessProbe.httpGet.httpHeaders }}
+            initialDelaySeconds: {{ .Values.web.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.web.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.web.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.web.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.web.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.web.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.web.readinessProbe.httpGet.endpoint }}
+              port: http
+              httpHeaders: {{ .Values.web.readinessProbe.httpGet.httpHeaders }}
+            initialDelaySeconds: {{ .Values.web.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.web.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.web.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.web.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.web.readinessProbe.successThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+          {{- if .Values.web.cachePersistentVolume.enabled }}
+          volumeMounts:
+            - name: next-cache
+              mountPath: {{ .Values.web.cachePersistentVolume.mountPath }}
+          {{- end }}
+          {{- if .Values.web.dataVolume.enabled }}
+          volumeMounts:
+            - name: next-data
+              mountPath: {{ .Values.web.dataVolume.mountPath }}
+          {{- end }}
+        {{- if .Values.web.extraContainers }}
+        {{- range .Values.web.extraContainers }}
+        - name: {{ .name | quote }}
+          image: {{ .image | quote }}
+          {{- if .command }}
+          command:
+            {{- toYaml .command | nindent 12 }}
+          {{- end }}
+          {{- if .args }}
+          args:
+            {{- toYaml .args | nindent 12 }}
+          {{- end }}
+          {{- if .env }}
+          env:
+            {{- toYaml .env | nindent 12 }}
+          {{- end }}
+          {{- if .resources }}
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+          {{- end }}
+          {{- if .volumeMounts }}
+          volumeMounts:
+            {{- toYaml .volumeMounts | nindent 12 }}
+          {{- end }}
         {{- end }}
-        {{- if .Values.web.readinessProbe.enabled }}
-        readinessProbe:
-          httpGet:
-            path: {{ .Values.web.readinessProbe.httpGet.endpoint }}
-            port: http
-            httpHeaders: {{ .Values.web.readinessProbe.httpGet.httpHeaders }}
-          initialDelaySeconds: {{ .Values.web.readinessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.web.readinessProbe.periodSeconds }}
-          timeoutSeconds: {{ .Values.web.readinessProbe.timeoutSeconds }}
-          failureThreshold: {{ .Values.web.readinessProbe.failureThreshold }}
-          successThreshold: {{ .Values.web.readinessProbe.successThreshold }}
         {{- end }}
-        resources:
-          {{- toYaml .Values.web.resources | nindent 12 }}
-        {{- if .Values.web.cachePersistentVolume.enabled }}
-        volumeMounts:
-          - name: next-cache
-            mountPath: {{ .Values.web.cachePersistentVolume.mountPath }}
-        {{- end }}
+
       terminationGracePeriodSeconds: {{ .Values.web.terminationGracePeriodSeconds | default 30 }}
       {{- with .Values.web.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-    {{- with .Values.web.affinity }}
+      {{- with .Values.web.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with .Values.web.tolerations }}
+      {{- end }}
+      {{- with .Values.web.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
-    {{- end }}
+      {{- end }}
+
       {{- if .Values.web.cachePersistentVolume.enabled }}
       volumes:
         - name: next-cache
           persistentVolumeClaim:
             claimName: {{ include "app.web.name" . }}-next-cache
+      {{- end }}
+      {{- if .Values.web.dataVolume.enabled }}
+      volumes:
+        - name: next-data
+          persistentVolumeClaim:
+            claimName: {{ include "app.web.name" . }}-next-data
       {{- end }}

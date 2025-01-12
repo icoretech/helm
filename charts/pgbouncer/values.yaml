@@ -36,7 +36,7 @@ imagePullSecrets: []
 image:
   registry: ""
   repository: ghcr.io/icoretech/pgbouncer-docker
-  tag: 1.23.1-fixed
+  tag: 1.24.0
   pullPolicy: IfNotPresent
 
 # If a custom entrypoint is needed/desired to configure pgbouncer container it can be configured with a combination of command and args lists

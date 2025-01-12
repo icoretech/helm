@@ -82,7 +82,7 @@ spec:
       retries: 4
   values:
     database:
-      url: 'postgresql://xxxx:xxxx@pgbouncer.default.svc.cluster.local:5432/airbroke_production?pgbouncer=true&connection_limit=100&pool_timeout=10&application_name=airbroke&schema=public'
+      url: 'postgresql://xxxx:xxxx@pgbouncer.default.svc.cluster.local:5432/airbroke_production?connection_limit=100&pool_timeout=10&application_name=airbroke&schema=public'
       migrations_url: 'postgresql://xxxx:xxxx@postgres-postgresql.postgres.svc.cluster.local:5432/airbroke_production?schema=public'
     web:
       image: ghcr.io/icoretech/airbroke:1.1.22 # {"$imagepolicy": "flux-system:airbroke"}

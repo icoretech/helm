@@ -14,6 +14,30 @@ web:
       maxUnavailable: 0
       maxSurge: 1
 
+  # optional array of additional containers
+  extraContainers: []
+  # Example usage:
+  # extraContainers:
+  #   - name: inngest-sync-sidecar
+  #     image: curlimages/curl:latest
+  #     command:
+  #       - /bin/sh
+  #       - -c
+  #       - |
+  #         echo "Sidecar waiting for Next.js readiness..."
+  #         # simple poll
+  #         for i in $(seq 1 30); do
+  #           if curl -fsS localhost:3000/api/health; then
+  #             echo "Next.js is ready, calling /api/inngest..."
+  #             curl -X PUT localhost:3000/api/inngest
+  #             echo "Sync done."
+  #             exit 0
+  #           fi
+  #           sleep 2
+  #         done
+  #         echo "Sidecar: Next.js never became ready, giving up."
+  #         exit 1
+
   # not sure about the usefulness of this - we are trying to solve some caching issues with next.js
   # so this should be considered experimental.
   cachePersistentVolume:
@@ -26,6 +50,17 @@ web:
     size: 1Gi # The requested storage size for the PVC
     volumeMode: '' # The volume mode for the PVC. Can be either "Filesystem" (default) or "Block"
     mountPath: /app/.next/cache # The path to mount the volume in the container
+
+  dataVolume:
+    enabled: false # If set to true, a PersistentVolumeClaim (PVC) will be created
+    storageClass: '' # The storage class to use for the PVC. If not set, the default StorageClass will be used
+    existingClaim: '' # If set, this existing PVC will be used instead of creating a new one
+    accessModes:
+      - ReadWriteOnce # The access modes for the PVC. Can be ReadWriteOnce, ReadOnlyMany, or ReadWriteMany. If dataVolume is enabled and replicaCount is more than 1, this should be set to ReadWriteMany
+    annotations: {} # Annotations to add to the PVC
+    size: 1Gi # The requested storage size for the PVC
+    volumeMode: '' # The volume mode for the PVC. Can be either "Filesystem" (default) or "Block"
+    mountPath: /app/data # The path to mount the volume in the container
 
   hpa:
     enabled: false

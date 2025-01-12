@@ -2,14 +2,14 @@ nameOverride: ""
 fullnameOverride: ""
 
 database:
-  url: "" # postgres://airbroke:airbroke@airbroke-pgbouncer/airbroke_production?pgbouncer=true&connection_limit=100&pool_timeout=10&application_name=nextjs&schema=public
-  migrations_url: "" # postgres://airbroke:airbroke@pg/airbroke_production?schema=public
+  url: "" # postgres://airbroke:airbroke@airbroke-pgbouncer/airbroke_production?connection_limit=100&pool_timeout=10&application_name=airbroke
+  migrations_url: "" # postgres://airbroke:airbroke@pg/airbroke_production
   enable_migration: true
 
 web:
   imagePullPolicy: IfNotPresent
   imagePullSecrets: "" # must be present in namespace
-  image: ghcr.io/icoretech/airbroke:1.1.63
+  image: ghcr.io/icoretech/airbroke:1.1.70
   terminationGracePeriodSeconds: 0
   replicaCount: 1
 

@@ -75,7 +75,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | web.hpa.maxReplicas | int | `10` |  |
 | web.hpa.memory | string | `nil` |  |
 | web.hpa.requests | string | `nil` |  |
-| web.image | string | `"ghcr.io/icoretech/airbroke:1.1.63"` |  |
+| web.image | string | `"ghcr.io/icoretech/airbroke:1.1.70"` |  |
 | web.imagePullPolicy | string | `"IfNotPresent"` |  |
 | web.imagePullSecrets | string | `""` |  |
 | web.ingress.annotations | object | `{}` |  |
@@ -156,7 +156,7 @@ spec:
       retries: 4
   values:
     database:
-      url: 'postgresql://xxxx:xxxx@pgbouncer.default.svc.cluster.local:5432/airbroke_production?pgbouncer=true&connection_limit=100&pool_timeout=10&application_name=airbroke&schema=public'
+      url: 'postgresql://xxxx:xxxx@pgbouncer.default.svc.cluster.local:5432/airbroke_production?connection_limit=100&pool_timeout=10&application_name=airbroke&schema=public'
       migrations_url: 'postgresql://xxxx:xxxx@postgres-postgresql.postgres.svc.cluster.local:5432/airbroke_production?schema=public'
     web:
       image: ghcr.io/icoretech/airbroke:1.1.22 # {"$imagepolicy": "flux-system:airbroke"}
