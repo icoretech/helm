@@ -2,8 +2,8 @@ nameOverride: ""
 fullnameOverride: ""
 
 database:
-  url: "" # postgres://airbroke:airbroke@airbroke-pgbouncer/airbroke_production?connection_limit=100&pool_timeout=10&application_name=nextjs&schema=public
-  migrations_url: "" # postgres://airbroke:airbroke@pg/airbroke_production?schema=public
+  url: "" # postgres://airbroke:airbroke@airbroke-pgbouncer/airbroke_production?connection_limit=100&pool_timeout=10&application_name=airbroke
+  migrations_url: "" # postgres://airbroke:airbroke@pg/airbroke_production
   enable_migration: true
 
 web:
