@@ -75,7 +75,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | web.hpa.maxReplicas | int | `10` |  |
 | web.hpa.memory | string | `nil` |  |
 | web.hpa.requests | string | `nil` |  |
-| web.image | string | `"ghcr.io/icoretech/airbroke:1.1.70"` |  |
+| web.image | string | `"ghcr.io/icoretech/airbroke:1.1.72"` |  |
 | web.imagePullPolicy | string | `"IfNotPresent"` |  |
 | web.imagePullSecrets | string | `""` |  |
 | web.ingress.annotations | object | `{}` |  |
