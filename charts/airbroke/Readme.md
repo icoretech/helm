@@ -75,7 +75,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | web.hpa.maxReplicas | int | `10` |  |
 | web.hpa.memory | string | `nil` |  |
 | web.hpa.requests | string | `nil` |  |
-| web.image | string | `"ghcr.io/icoretech/airbroke:1.1.72"` |  |
+| web.image | string | `"ghcr.io/icoretech/airbroke:1.1.73"` |  |
 | web.imagePullPolicy | string | `"IfNotPresent"` |  |
 | web.imagePullSecrets | string | `""` |  |
 | web.ingress.annotations | object | `{}` |  |
@@ -142,7 +142,7 @@ spec:
   chart:
     spec:
       chart: airbroke
-      version: ">= 1.1.3"
+      version: ">= 1.2.2"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -159,7 +159,7 @@ spec:
       url: 'postgresql://xxxx:xxxx@pgbouncer.default.svc.cluster.local:5432/airbroke_production?connection_limit=100&pool_timeout=10&application_name=airbroke&schema=public'
       migrations_url: 'postgresql://xxxx:xxxx@postgres-postgresql.postgres.svc.cluster.local:5432/airbroke_production?schema=public'
     web:
-      image: ghcr.io/icoretech/airbroke:1.1.22 # {"$imagepolicy": "flux-system:airbroke"}
+      image: ghcr.io/icoretech/airbroke:1.1.73 # {"$imagepolicy": "flux-system:airbroke"}
       replicaCount: 2
       cachePersistentVolume:
         enabled: true
@@ -185,10 +185,12 @@ spec:
           value: "xxxxx"
         - name: AIRBROKE_GITHUB_ORGS
           value: "xxxxx"
-        - name: NEXTAUTH_SECRET
+        - name: AUTH_SECRET
           value: "xxxxxxx"
-        - name: NEXTAUTH_URL
-          value: "https://xxxxxx"
+        - name: AUTH_URL
+          value: "https://myingress.domain.com"
+        - name: AIRBROKE_CORS_ORIGINS
+          value: "https://myingress.domain.com"
         - name: AIRBROKE_OPENAI_API_KEY
           value: "sk-xxxxxxx"
       ingress:
