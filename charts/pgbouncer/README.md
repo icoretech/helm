@@ -1,6 +1,6 @@
 # pgBouncer Helm Chart
 
-This chart deploys a [pgBouncer](https://www.pgbouncer.org/) instance to your Kubernetes cluster via Helm.
+This chart deploys a [PgBouncer](https://www.pgbouncer.org/) instance to your Kubernetes cluster via Helm.
 
 ## Prerequisites
 
@@ -21,27 +21,27 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm install my-pgbouncer icoretech/pgbouncer
 ```
 
-This command deploys a pgBouncer instance with default configuration.
+This command deploys a PgBouncer instance with default configuration.
 
 ## Configuration
 
-The following table lists the configurable parameters of the pgBouncer chart and their default values.
+The following table lists the configurable parameters of the PgBouncer chart and their default values.
 
 | Parameter                       | Description                                                                                                                           | Default                              |
 |---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------|
-| `replicaCount`                  | Number of pgBouncer replicas; adjust for scalability.                                                                                 | `1`                                  |
+| `replicaCount`                  | Number of PgBouncer replicas; adjust for scalability.                                                                                 | `1`                                  |
 | `updateStrategy`                | Strategy for updating pods. Use `Recreate` or specify `RollingUpdate` settings.                                                       | `{}`                                 |
 | `minReadySeconds`               | Seconds to wait before marking a pod as ready. Helps manage rollouts.                                                                 | `0`                                  |
 | `revisionHistoryLimit`          | Number of old ReplicaSets to retain for rollback.                                                                                     | `10`                                 |
 | `imagePullSecrets`              | Secrets for accessing private image registries. Format: `[{"name": "mySecret"}]`.                                                     | `[]`                                 |
-| `image.registry`                | Registry URL for the pgBouncer image.                                                                                                 | `""`                                 |
-| `image.repository`              | Image repository for pgBouncer.                                                                                                       | `ghcr.io/icoretech/pgbouncer-docker` |
+| `image.registry`                | Registry URL for the PgBouncer image.                                                                                                 | `""`                                 |
+| `image.repository`              | Image repository for PgBouncer.                                                                                                       | `ghcr.io/icoretech/pgbouncer-docker` |
 | `image.tag`                     | Specific image tag to use.                                                                                                            | `1.24.0`                       |
 | `image.pullPolicy`              | Image pull policy. Options: `Always`, `Never`, `IfNotPresent`.                                                                        | `IfNotPresent`                       |
 | `command`                       | Custom entrypoint command for pgbouncer container                                                                                     | `[]`                       |
 | `args`                          | Custom entrypoint args for pgbouncer container                                                                                        | `[]`                       |
 | `service.type`                  | Kubernetes Service type (e.g., `ClusterIP`, `NodePort`).                                                                              | `ClusterIP`                          |
-| `service.port`                  | Port for the pgBouncer service.                                                                                                       | `5432`                               |
+| `service.port`                  | Port for the PgBouncer service.                                                                                                       | `5432`                               |
 | `podLabels`                     | Custom labels for pods. Format: `key: value`.                                                                                         | `{}`                                 |
 | `podAnnotations`                | Annotations for pods, e.g., for Prometheus.                                                                                           | `{}`                                 |
 | `extraEnvs`                     | Extra environment variables for the pod. Format: `[{"name": "VAR", "value": "value"}]`.                                               | `[]`                                 |
@@ -54,17 +54,17 @@ The following table lists the configurable parameters of the pgBouncer chart and
 | `runtimeClassName`              | Runtime class for pods (e.g., for using gVisor).                                                                                      | `""`                                 |
 | `config.userlist`               | Mapping of usernames to credentials following https://www.pgbouncer.org/config.html#authentication-file-format                        | `{}`                                 |
 | `config.existingUserlistSecret` | Existing `Secret` containing `userlist.txt` key with value following https://www.pgbouncer.org/config.html#authentication-file-format | `{}`                                 |
-| `config.adminUser`              | Admin username required by pgBouncer.                                                                                                 | `admin`                              |
+| `config.adminUser`              | Admin username required by PgBouncer.                                                                                                 | `admin`                              |
 | `config.adminPassword`          | Admin password; use with a secret for security.                                                                                       | `undefined`                          |
 | `config.authUser`               | Auth user for client connections; set if different from `adminUser`. Ignored if `existingUserlistSecret` is set.                      | `undefined`                          |
 | `config.authPassword`           | Password for the `authUser`. Ignored if `existingUserlistSecret` is set.                                                              | `undefined`                          |
 | `config.databases`              | Database connection info. Format: `dbName: {host: "host", port: "port"}`.                                                             | `{}`                                 |
-| `config.pgbouncer`              | pgBouncer-specific settings. Example: `pool_mode: transaction`.                                                                       | `{}`                                 |
+| `config.pgbouncer`              | PgBouncer-specific settings. Example: `pool_mode: transaction`.                                                                       | `{}`                                 |
 | `extraContainers`               | Additional containers in the pod. Useful for sidecars.                                                                                | `[]`                                 |
 | `extraInitContainers`           | Init containers to run before main containers start.                                                                                  | `[]`                                 |
 | `extraVolumeMounts`             | Additional volume mounts for containers.                                                                                              | `[]`                                 |
 | `extraVolumes`                  | Additional volumes for the pod. Useful for configs or secrets.                                                                        | `[]`                                 |
-| `pgbouncerExporter.enabled`     | Enables pgBouncer metrics exporter for Prometheus.                                                                                    | `false`                              |
+| `pgbouncerExporter.enabled`     | Enables PgBouncer metrics exporter for Prometheus.                                                                                    | `false`                              |
 | `pgbouncerExporter.port`        | Port for the metrics exporter.                                                                                                        | `9127`                               |
 | `pgbouncerExporter.podMonitor`  | Create a PodMonitor resource for Prometheus scraping. Requires `pgbouncerExporter.enabled: true`.                                     | `false`                              |
 | `serviceAccount.create`         | Whether to create a new service account. Set to `false` if using an existing one.                                                     | `true`                               |
