@@ -9,7 +9,7 @@ database:
 web:
   imagePullPolicy: IfNotPresent
   imagePullSecrets: "" # must be present in namespace
-  image: ghcr.io/icoretech/airbroke:1.1.72
+  image: ghcr.io/icoretech/airbroke:1.1.73
   terminationGracePeriodSeconds: 0
   replicaCount: 1
 
