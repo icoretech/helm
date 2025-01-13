@@ -1561,6 +1561,44 @@ entries:
         - url: https://artifacthub.io/packages/helm/bitnami/redis
     apiVersion: v2
     appVersion: 1.3.3
+    created: "2025-01-13T17:41:17.941805345Z"
+    description: Inngest Server Helm chart for Kubernetes
+    digest: 888295c2bbdd5851336140aecda48b8ab85e05ae49ac0443ddbbbf0fb8d849c6
+    home: https://github.com/inngest/inngest
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - inngest
+    - serverless
+    - event-driven
+    - workflow
+    - function-orchestration
+    - async
+    - queue
+    - event-processing
+    - background-jobs
+    - microservices
+    - faas
+    - triggers
+    - helm-chart
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: inngest-server
+    sources:
+    - https://github.com/inngest/inngest
+    - https://github.com/icoretech/helm/tree/main/charts/inngest-server
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/inngest-server-1.0.1/inngest-server-1.0.1.tgz
+    version: 1.0.1
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/bitnami/redis
+    apiVersion: v2
+    appVersion: 1.3.3
     created: "2024-12-27T10:28:44.734017643Z"
     description: Inngest Server Helm chart for Kubernetes
     digest: 470de9188e0f0429c590e90426f5519c7531d3cd8371f52ce014a7bd33b34444
@@ -1593,6 +1631,28 @@ entries:
     - https://github.com/icoretech/helm/releases/download/inngest-server-1.0.0/inngest-server-1.0.0.tgz
     version: 1.0.0
   nextjs:
+  - annotations:
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-01-13T17:41:18.128588181Z"
+    description: Generic Helm chart for Nextjs apps on Kubernetes
+    digest: b9678b10bdbb7723e9e98d38cc0a8fba64bd8344c9292f0cb9965424f97a4f33
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/nextjs/logo.png
+    keywords:
+    - nextjs
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: nextjs
+    sources:
+    - https://github.com/icoretech/helm
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/nextjs-1.1.5/nextjs-1.1.5.tgz
+    version: 1.1.5
   - annotations:
       artifacthub.io/license: MIT
     apiVersion: v2
@@ -1762,6 +1822,32 @@ entries:
     - https://github.com/icoretech/helm/releases/download/nextjs-1.0.0/nextjs-1.0.0.tgz
     version: 1.0.0
   pgbouncer:
+  - annotations:
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 1.24.0
+    created: "2025-01-13T17:41:18.284785953Z"
+    description: A Helm chart for deploying PgBouncer, a PostgreSQL connection pooler,
+      on Kubernetes
+    digest: 7c68d7bd5441a5c40ed9288fb97f79049fc984af9dbe6ddc43ad7c360b799362
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/pgbouncer/logo.png
+    keywords:
+    - PgBouncer
+    - PostgreSQL
+    - Kubernetes
+    kubeVersion: '>= 1.20.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: pgbouncer
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/pgbouncer
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/pgbouncer-2.3.7/pgbouncer-2.3.7.tgz
+    version: 2.3.7
   - annotations:
       artifacthub.io/license: MIT
     apiVersion: v2
@@ -2308,4 +2394,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2025-01-13T16:31:10.022807014Z"
+generated: "2025-01-13T17:41:18.285050114Z"
