@@ -4,6 +4,7 @@ description: Inngest Server Helm chart for Kubernetes
 type: application
 version: 1.0.0
 appVersion: "1.3.3"
+icon: https://icoretech.github.io/helm/charts/inngest-server/logo.png
 keywords:
   - inngest
   - serverless
