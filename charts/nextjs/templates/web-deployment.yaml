@@ -29,6 +29,10 @@ spec:
       imagePullSecrets:
       - name: {{ .Values.web.imagePullSecrets }}
       {{- end }}
+      {{- if .Values.web.initContainers }}
+      initContainers:
+        {{ toYaml .Values.web.initContainers | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ include "app.web.name" . }}
           image: "{{ .Values.web.image }}"
