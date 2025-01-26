@@ -9,10 +9,10 @@ spec:
   replicas: {{ .Values.web.replicaCount }}
   strategy:
     type: {{ .Values.web.updateStrategy.type }}
-    {{- with .Values.web.updateStrategy.rollingUpdate }}
+    {{- if eq .Values.web.updateStrategy.type "RollingUpdate" }}
     rollingUpdate:
-      maxUnavailable: {{ .maxUnavailable }}
-      maxSurge: {{ .maxSurge }}
+      maxUnavailable: {{ default 0 .Values.web.updateStrategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ default 1 .Values.web.updateStrategy.rollingUpdate.maxSurge }}
     {{- end }}
   selector:
     matchLabels:
