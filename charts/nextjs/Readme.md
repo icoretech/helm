@@ -36,6 +36,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | `web.imagePullSecrets` | Image pull secrets, must be present in namespace | `""` |
 | `web.terminationGracePeriodSeconds` | Grace period for shutdown | `0` |
 | `web.replicaCount` | Number of replicas to run | `1` |
+| `web.runtimeClassName` | Select the container runtime configuration | `` |
 | `web.updateStrategy` | Update strategy to use | `{type: RollingUpdate, rollingUpdate: {maxUnavailable: 0, maxSurge: 1}}` |
 | `web.cachePersistentVolume.enabled` | Enables a PersistentVolumeClaim for caching | `false` |
 | `web.cachePersistentVolume.storageClass` | The storage class to use for the PVC | `""` |

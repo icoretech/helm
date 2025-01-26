@@ -25,6 +25,9 @@ spec:
         checksum/env-cm: {{ include (print $.Template.BasePath "/web-env-cm.yaml") . | sha256sum }}
         checksum/env-secret: {{ include (print $.Template.BasePath "/web-env-secret.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.web.runtimeClassName }}
+      runtimeClassName: {{ .Values.web.runtimeClassName }}
+      {{- end }}
       {{- if (not (empty .Values.web.imagePullSecrets)) }}
       imagePullSecrets:
       - name: {{ .Values.web.imagePullSecrets }}
