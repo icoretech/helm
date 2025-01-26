@@ -75,16 +75,15 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.web.resources | nindent 12 }}
-          {{- if .Values.web.cachePersistentVolume.enabled }}
           volumeMounts:
+            {{- if .Values.web.cachePersistentVolume.enabled }}
             - name: next-cache
               mountPath: {{ .Values.web.cachePersistentVolume.mountPath }}
-          {{- end }}
-          {{- if .Values.web.dataVolume.enabled }}
-          volumeMounts:
+            {{- end }}
+            {{- if .Values.web.dataVolume.enabled }}
             - name: next-data
               mountPath: {{ .Values.web.dataVolume.mountPath }}
-          {{- end }}
+            {{- end }}
         {{- if .Values.web.extraContainers }}
         {{- range .Values.web.extraContainers }}
         - name: {{ .name | quote }}
@@ -125,16 +124,14 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
-      {{- if .Values.web.cachePersistentVolume.enabled }}
       volumes:
+        {{- if .Values.web.cachePersistentVolume.enabled }}
         - name: next-cache
           persistentVolumeClaim:
             claimName: {{ include "app.web.name" . }}-next-cache
-      {{- end }}
-      {{- if .Values.web.dataVolume.enabled }}
-      volumes:
+        {{- end }}
+        {{- if .Values.web.dataVolume.enabled }}
         - name: next-data
           persistentVolumeClaim:
             claimName: {{ include "app.web.name" . }}-next-data
-      {{- end }}
+        {{- end }}
