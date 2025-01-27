@@ -9,10 +9,10 @@ spec:
   replicas: {{ .Values.web.replicaCount }}
   strategy:
     type: {{ .Values.web.updateStrategy.type }}
-    {{- with .Values.web.updateStrategy.rollingUpdate }}
+    {{- if eq .Values.web.updateStrategy.type "RollingUpdate" }}
     rollingUpdate:
-      maxUnavailable: {{ .maxUnavailable }}
-      maxSurge: {{ .maxSurge }}
+      maxUnavailable: {{ default 0 .Values.web.updateStrategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ default 1 .Values.web.updateStrategy.rollingUpdate.maxSurge }}
     {{- end }}
   selector:
     matchLabels:
@@ -25,9 +25,16 @@ spec:
         checksum/env-cm: {{ include (print $.Template.BasePath "/web-env-cm.yaml") . | sha256sum }}
         checksum/env-secret: {{ include (print $.Template.BasePath "/web-env-secret.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.web.runtimeClassName }}
+      runtimeClassName: {{ .Values.web.runtimeClassName }}
+      {{- end }}
       {{- if (not (empty .Values.web.imagePullSecrets)) }}
       imagePullSecrets:
       - name: {{ .Values.web.imagePullSecrets }}
+      {{- end }}
+      {{- if .Values.web.initContainers }}
+      initContainers:
+        {{ toYaml .Values.web.initContainers | nindent 8 }}
       {{- end }}
       containers:
         - name: {{ include "app.web.name" . }}
@@ -68,16 +75,15 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.web.resources | nindent 12 }}
-          {{- if .Values.web.cachePersistentVolume.enabled }}
           volumeMounts:
+            {{- if .Values.web.cachePersistentVolume.enabled }}
             - name: next-cache
               mountPath: {{ .Values.web.cachePersistentVolume.mountPath }}
-          {{- end }}
-          {{- if .Values.web.dataVolume.enabled }}
-          volumeMounts:
+            {{- end }}
+            {{- if .Values.web.dataVolume.enabled }}
             - name: next-data
               mountPath: {{ .Values.web.dataVolume.mountPath }}
-          {{- end }}
+            {{- end }}
         {{- if .Values.web.extraContainers }}
         {{- range .Values.web.extraContainers }}
         - name: {{ .name | quote }}
@@ -118,16 +124,14 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
-      {{- if .Values.web.cachePersistentVolume.enabled }}
       volumes:
+        {{- if .Values.web.cachePersistentVolume.enabled }}
         - name: next-cache
           persistentVolumeClaim:
             claimName: {{ include "app.web.name" . }}-next-cache
-      {{- end }}
-      {{- if .Values.web.dataVolume.enabled }}
-      volumes:
+        {{- end }}
+        {{- if .Values.web.dataVolume.enabled }}
         - name: next-data
           persistentVolumeClaim:
             claimName: {{ include "app.web.name" . }}-next-data
-      {{- end }}
+        {{- end }}

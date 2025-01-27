@@ -7,12 +7,29 @@ web:
   image: ''
   terminationGracePeriodSeconds: 0
   replicaCount: 1
+  runtimeClassName:
 
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0
       maxSurge: 1
+
+  # optional array of additional initcontainers
+  initContainers: []
+  # Example usage:
+    # initContainers:
+    # - name: init-mydb
+    #   image: busybox:1.36
+    #   command: ["/bin/sh"]
+    #   args: ["-c", "echo Setting up DB; sleep 5"]
+    #   volumeMounts:
+    #     - name: next-data
+    #       mountPath: /data
+    # - name: wait-for-service
+    #   image: busybox:1.36
+    #   command: ["/bin/sh"]
+    #   args: ["-c", "until nc -z some-service 5432; do sleep 3; done"]
 
   # optional array of additional containers
   extraContainers: []
@@ -83,7 +100,7 @@ web:
     enabled: true
     type: ClusterIP
     port: 3000
-    # nodePort: 31198
+    nodePort:
     annotations: {}
 
   livenessProbe:
