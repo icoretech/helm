@@ -117,13 +117,13 @@ spec:
         - name: PGBOUNCER_USER
           valueFrom:
             secretKeyRef:
-              name: {{ template "pgbouncer.fullname" . }}-secret
-              key: adminUser
+              name: {{ .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) }}
+              key: {{ .Values.config.adminUserKey | default "adminUser" }}
         - name: PGBOUNCER_PASS
           valueFrom:
             secretKeyRef:
-              name: {{ template "pgbouncer.fullname" . }}-secret
-              key: adminPassword
+              name: {{ .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) }}
+              key: {{ .Values.config.adminPasswordKey | default "adminPassword" }}
         {{- if .Values.pgbouncerExporter.resources }}
         resources: {{ toYaml .Values.pgbouncerExporter.resources | trimSuffix "\n" | nindent 10 }}
         {{- end }}
