@@ -95,7 +95,12 @@ spec:
         {{- if .Values.resources }}
         resources: {{ toYaml .Values.resources | trimSuffix "\n" | nindent 10 }}
         {{- end }}
+        {{- if .Values.securityContext }}
+        securityContext: {{ toYaml .Values.securityContext | trimSuffix "\n" | nindent 10 }}
+        {{- end }}
         volumeMounts:
+        - name: tmp
+          mountPath: /tmp
         - name: config
           mountPath: /etc/pgbouncer/
         - name: userlist
@@ -127,6 +132,9 @@ spec:
         {{- if .Values.pgbouncerExporter.resources }}
         resources: {{ toYaml .Values.pgbouncerExporter.resources | trimSuffix "\n" | nindent 10 }}
         {{- end }}
+        {{- if .Values.securityContext }}
+        securityContext: {{ toYaml .Values.pgbouncerExporter.securityContext | trimSuffix "\n" | nindent 10 }}
+        {{- end }}
         ports:
         - name: exporter
           containerPort: {{ .Values.pgbouncerExporter.port }}
@@ -136,6 +144,8 @@ spec:
       {{ toYaml .Values.extraContainers | trimSuffix "\n" | indent 6 | trimPrefix "      " }}
       {{ end -}}
       volumes:
+      - name: tmp
+        emptyDir: {}
       - name: config
         configMap:
           name: {{ template "pgbouncer.fullname" . }}-configmap
