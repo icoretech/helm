@@ -175,6 +175,7 @@ config:
   userlist: {}
     # someUser: secretPassword
 
+# -- Pod security context for the main PgBouncer container. By default, this forces the container to run without root privileges and with a read-only root filesystem.
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:
@@ -241,6 +242,7 @@ pgbouncerExporter:
     requests:
       cpu: 30m
       memory: 40Mi
+  # -- Pod security context for the exporter container.
   securityContext:
     allowPrivilegeEscalation: false
     capabilities:

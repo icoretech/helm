@@ -70,6 +70,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | pgbouncerExporter.podMonitor | bool | `false` | Whether to create a PodMonitor for scraping metrics (Prometheus Operator). |
 | pgbouncerExporter.port | int | `9127` | The container port for the exporter. |
 | pgbouncerExporter.resources | object | `{"limits":{"cpu":"250m","memory":"150Mi"},"requests":{"cpu":"30m","memory":"40Mi"}}` | Resource requests and limits for the exporter container. |
+| pgbouncerExporter.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsGroup":65534,"runAsNonRoot":true,"runAsUser":65534}` | Pod security context for the exporter container. |
 | podAnnotations | object | `{}` | Additional annotations to add to each PgBouncer pod. |
 | podDisruptionBudget | object | `{"enabled":false,"maxUnavailable":null,"minAvailable":null}` | Pod Disruption Budget configuration. |
 | podDisruptionBudget.enabled | bool | `false` | If true, create a PDB to protect PgBouncer pods from voluntary disruptions. |
@@ -79,6 +80,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | resources | object | `{}` | See Kubernetes docs on managing container resources. |
 | revisionHistoryLimit | int | `10` | How many old ReplicaSets to retain for rollbacks. |
 | runtimeClassName | string | `""` | Runtime class for the PgBouncer pods (e.g. gvisor). |
+| securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsGroup":70,"runAsNonRoot":true,"runAsUser":70}` | Pod security context for the main PgBouncer container. By default, this forces the container to run without root privileges and with a read-only root filesystem: |
 | service.port | int | `5432` | The service port for PgBouncer. |
 | service.type | string | `"ClusterIP"` | Service type (e.g. ClusterIP, NodePort, LoadBalancer). |
 | serviceAccount.annotations | object | `{}` | Annotations for the created ServiceAccount. |
