@@ -175,6 +175,16 @@ config:
   userlist: {}
     # someUser: secretPassword
 
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 70
+  runAsGroup: 70
+
 # -- Extra containers to run within the PgBouncer pod.
 extraContainers: []
 # - name: some-container
@@ -231,6 +241,15 @@ pgbouncerExporter:
     requests:
       cpu: 30m
       memory: 40Mi
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
 
 # -- Pod Disruption Budget configuration.
 podDisruptionBudget:
