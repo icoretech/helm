@@ -1,0 +1,87 @@
+# PgBouncer Helm Chart
+
+This chart deploys a [PgBouncer](https://www.pgbouncer.org/) instance to your Kubernetes cluster via Helm.
+
+## Prerequisites
+
+- Kubernetes 1.20+
+- Helm 3.10+
+
+## Installing the Chart
+
+To install the chart with the release name `my-pgbouncer`:
+
+```bash
+# OCI
+helm install my-pgbouncer oci://ghcr.io/icoretech/charts/pgbouncer
+```
+
+```bash
+helm repo add icoretech https://icoretech.github.io/helm
+helm install my-pgbouncer icoretech/pgbouncer
+```
+
+This command deploys a PgBouncer instance with default configuration.
+
+## Configuration
+
+The following table lists the configurable parameters of the PgBouncer chart and their default values.
+
+{{ template "chart.valuesSection" . }}
+
+## Example using Flux
+
+```yaml
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: icoretech
+spec:
+  interval: 30m
+  type: oci
+  url: oci://ghcr.io/icoretech/charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: pgbouncer
+  namespace: default
+spec:
+  releaseName: pgbouncer
+  chart:
+    spec:
+      chart: pgbouncer
+      version: ">= 2.4.0"
+      sourceRef:
+        kind: HelmRepository
+        name: icoretech
+        namespace: flux-system
+  interval: 3m0s
+  install:
+    remediation:
+      retries: 3
+  values:
+    config:
+      adminPassword: myadminpassword
+      databases:
+        mydb_production:
+          host: postgresql
+          port: 5432
+      pgbouncer:
+        server_tls_sslmode: prefer
+        ignore_startup_parameters: search_path,extra_float_digits
+        pool_mode: transaction
+        auth_type: scram-sha-256
+        max_client_conn: 8192
+        max_db_connections: 200
+        default_pool_size: 100
+        log_connections: 1
+        log_disconnections: 1
+        log_pooler_errors: 1
+        application_name_add_host: 1
+        max_prepared_statements: 4000
+        # verbose: 1
+      userlist:
+        # SELECT rolname, rolpassword FROM pg_authid;
+        myuser: SCRAM-SHA-256$4096:xxxxx=
+```

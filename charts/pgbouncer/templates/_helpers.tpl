@@ -35,7 +35,9 @@ Create chart name and version as used by the chart label.
 Create content for userlist.txt secret
 */}}
 {{- define "pgbouncer.secret.userlist" }}
+{{- if not .Values.config.existingAdminSecret -}}
 "{{ .Values.config.adminUser }}" "{{ required "A valid .Values.config.adminPassword entry required!" .Values.config.adminPassword }}"
+{{- end }}
 {{- if .Values.config.authUser }}
 "{{ .Values.config.authUser }}" "{{ required "A valid .Values.config.authPassword entry required!" .Values.config.authPassword }}"
 {{- end }}

@@ -1,14 +1,13 @@
-## Replica count for Deployment
-## https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#deploymentspec-v1-apps
-##
+# -- Overrides the chart name for resources. If set, takes precedence over the chart's name.
+nameOverride: ""
+
+# -- Completely overrides the generated name. If set, takes precedence over nameOverride and chart name.
+fullnameOverride: ""
+
+# -- Number of replicas for the PgBouncer Deployment (see Kubernetes docs for Deployments).
 replicaCount: 1
 
-## Deployment or DaemonSet
-kind: Deployment
-
-## The update strategy to apply to the Deployment
-## https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#deploymentstrategy-v1-apps
-##
+# -- The update strategy to apply to the Deployment (e.g. Recreate or RollingUpdate).
 updateStrategy: {}
 #  type: Recreate
 #
@@ -17,52 +16,58 @@ updateStrategy: {}
 #    maxUnavailable: 1
 #    maxSurge: 25%
 
-## Interval between discrete pods transitions
-## https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#deploymentspec-v1-apps
-##
+# -- Minimum number of seconds for which a newly created pod should be ready without crashing, before being considered available.
 minReadySeconds: 0
 
-## Rollback limit
-## https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#deploymentspec-v1-apps
-##
+# -- How many old ReplicaSets to retain for rollbacks.
 revisionHistoryLimit: 10
 
-## Optional array of imagePullSecrets containing private registry credentials
-## https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-##
+# -- Array of imagePullSecrets to use for pulling private images.
 imagePullSecrets: []
 # - name: "image-pull-secret"
 
-## Container image to run
-## https://kubernetes.io/docs/concepts/containers/images/
-##
+# -- Time (in seconds) to allow graceful shutdown before force-terminating the container.
+terminationGracePeriodSeconds: 30
+
 image:
+  # -- Container image registry
   registry: ""
+  # -- Container image repository
   repository: ghcr.io/icoretech/pgbouncer-docker
-  tag: 1.22.1
+  # -- Container image tag
+  tag: 1.24.0
+  # -- Container image pull policy: Always, IfNotPresent, or Never
   pullPolicy: IfNotPresent
 
-## Service configuration
-## https://kubernetes.io/docs/concepts/services-networking/service/
-##
+# If a custom entrypoint is needed to configure PgBouncer, you can set `command` and `args`:
+# command:
+#   - "/bin/myapp"
+# args:
+#   - "--config"
+#   - "/etc/config.yaml"
+
 service:
+  # -- Service type (e.g. ClusterIP, NodePort, LoadBalancer).
   type: ClusterIP
+  # -- The service port for PgBouncer.
   port: 5432
-  internalTrafficPolicy: Cluster
 
-## Labels to add to the pod metadata
-##
+# -- Additional labels to add to each PgBouncer pod.
 podLabels: {}
-# key: value
+#  key: value
 
-## Annotations to add to the pod metadata
-##
+# -- Additional annotations to add to each PgBouncer pod.
 podAnnotations: {}
 # prometheus.io/scrape: true
-# prometheus.io/port: "{{ .Values.pgbouncerExporter.port }}"
+# prometheus.io/port: "9127"
 
-## Additional environment variables to set
-##
+# -- Override the default container command (entrypoint).
+command: []
+
+# -- Override the default container arguments.
+args: []
+
+# -- Additional environment variables to set in the PgBouncer container.
 extraEnvs: []
 # - name: FOO
 #   value: FOO
@@ -72,33 +77,27 @@ extraEnvs: []
 #       key: BAR
 #       name: bar-secret
 
-## Pod resources for scheduling/limiting
-## https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-##
+# -- Pod resource requests and limits for the PgBouncer container.
+# -- See Kubernetes docs on managing container resources.
 resources: {}
 
-## Node labels for pod assignment
-## https://kubernetes.io/docs/user-guide/node-selection/
-##
+# -- Node labels for pod assignment.
 nodeSelector: {}
 
-## Lifecycle hooks
-## https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
-##
+# -- Container lifecycle hooks for the PgBouncer container.
+# -- See Kubernetes docs on lifecycle hooks.
 lifecycle: {}
 
-## Tolerations for pod assignment
-## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-##
+# -- Tolerations for pod assignment (e.g. NoSchedule, PreferNoSchedule).
+# -- See Kubernetes docs on taints and tolerations.
 tolerations: []
 # - key: "key"
 #   operator: "Equal|Exists"
 #   value: "value"
 #   effect: "NoSchedule|PreferNoSchedule"
 
-## Affinity and anti-affinity
-## https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
-##
+# -- Affinity/anti-affinity rules for pod assignment.
+# -- See Kubernetes docs on affinity rules.
 affinity: {}
 # podAntiAffinity:
 #   preferredDuringSchedulingIgnoredDuringExecution:
@@ -129,38 +128,65 @@ affinity: {}
 #         - pgbouncer
 #     topologyKey: "kubernetes.io/hostname"
 
-## Priority of pods
-## https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
-##
+# -- Priority class for PgBouncer pods (for scheduling priority).
 priorityClassName: ""
 
-## Runtime class for pods
-## https://kubernetes.io/docs/concepts/containers/runtime-class/
-##
+# -- Runtime class for the PgBouncer pods (e.g. gvisor).
 runtimeClassName: ""
 
-## PGBouncer Settings
-##
 config:
+  # -- If set, skip creating a new secret for admin credentials, and reference this existing Secret name instead.
+  existingAdminSecret: ""
+
+  # -- The key in the existingAdminSecret that corresponds to the admin username.
+  adminUserKey: adminUser
+
+  # -- The key in the existingAdminSecret that corresponds to the admin password.
+  adminPasswordKey: adminPassword
+
+  # -- If no existingAdminSecret is used, this admin username is placed in a new Secret.
   adminUser: admin
+
+  # -- If no existingAdminSecret is used, this admin password is placed in a new Secret.
   adminPassword:
+
+  # -- If set, PgBouncer will use this user to authenticate client connections.
   authUser:
+
+  # -- Password for the authUser above, if used.
   authPassword:
+
+  # -- Mapping of database names to connection parameters. E.g.: mydb: host=postgresql port=5432
   databases: {}
-    # <DB_NAME>:
-    #  host: <DB_HOST>
-    #  port: <DB_PORT>
+
+  # -- Additional PgBouncer parameters (e.g. auth_type, pool_mode).
   pgbouncer: {}
     # auth_type: md5
     # pool_mode: transaction
     # max_client_conn: 1024
     # default_pool_size: 20
-    # ignore_startup_parameters = extra_float_digits
-  userlist: {}
-    # <USERNAME>: <PASSWORD>
+    # ignore_startup_parameters: extra_float_digits
 
-## Additional containers to be added to the pods
-##
+  # -- Reference to an existing Secret that contains a userlist.txt file, with entries for other users/passwords.
+  existingUserlistSecret: ""
+
+  # -- Dictionary of additional users/passwords to embed in userlist.txt
+  # -- if existingUserlistSecret isn't used.
+  userlist: {}
+    # someUser: secretPassword
+
+# -- Pod security context for the main PgBouncer container. By default, this forces the container to run without root privileges and with a read-only root filesystem.
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 70
+  runAsGroup: 70
+
+# -- Extra containers to run within the PgBouncer pod.
 extraContainers: []
 # - name: some-container
 #   image: some/image:latest
@@ -171,39 +197,44 @@ extraContainers: []
 #   - name: bar-volume
 #     mountPath: /mnt
 
-## Containers, which are run before the app containers are started
-##
+# -- Init containers to run before the PgBouncer container starts.
 extraInitContainers: []
 # - name: init
 #   image: busybox
-#   command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+#   command: ['sh', '-c', 'until nslookup myservice; do echo waiting; sleep 2; done;']
 
-## Additional volumeMounts to the main container
-##
+# -- Additional volume mounts for the main PgBouncer container.
 extraVolumeMounts: []
 # - name: something
 #   mountPath: /mnt/something
 
-## Additional volumes to the pods
-##
+# -- Additional volumes for the PgBouncer pod.
 extraVolumes: []
 # - name: something
 #   emptyDir: {}
 
-## PGBouncer Exporter container image and configuration
-##
 pgbouncerExporter:
+  # -- Enable or disable the PgBouncer exporter sidecar container.
   enabled: false
+  # -- Whether to create a PodMonitor for scraping metrics (Prometheus Operator).
   podMonitor: false
+  # -- The container port for the exporter.
   port: 9127
   image:
+    # -- Exporter image registry
     registry: ""
+    # -- Exporter image repository
     repository: prometheuscommunity/pgbouncer-exporter
-    tag: v0.6.0
+    # -- Exporter image tag
+    tag: v0.10.2
+    # -- Exporter image pull policy
     pullPolicy: IfNotPresent
   log:
-    level: info # or debug, warn, error
-    format: logfmt # or json
+    # -- Exporter log level (debug, info, warn, error)
+    level: info
+    # -- Exporter log format (logfmt or json)
+    format: logfmt
+  # -- Resource requests and limits for the exporter container.
   resources:
     limits:
       cpu: 250m
@@ -211,30 +242,26 @@ pgbouncerExporter:
     requests:
       cpu: 30m
       memory: 40Mi
+  # -- Pod security context for the exporter container.
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
 
-## Pod Disruption Budget
-## https://kubernetes.io/docs/tasks/run-application/configure-pdb/
-##
+# -- Pod Disruption Budget configuration.
 podDisruptionBudget:
-  ## if a PodDisruptionBudget resource is created for the pgbouncer Deployment
-  ##
+  # -- If true, create a PDB to protect PgBouncer pods from voluntary disruptions.
   enabled: false
-
-  ## the maximum unavailable pods/percentage for the pgbouncer Deployment
-  ##
   maxUnavailable:
-
-  ## the minimum available pods/percentage for the pgbouncer Deployment
-  ##
   minAvailable:
 
-## Service Account for pods
-## https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
-##
 serviceAccount:
-  ## Creates new ServiceAccount if empty string
-  ##
+  # -- Creates a new ServiceAccount if this is empty.
   name: ""
-  ## Annotations for created ServiceAccount
-  ##
+  # -- Annotations for the created ServiceAccount.
   annotations: {}
