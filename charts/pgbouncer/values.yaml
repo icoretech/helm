@@ -7,6 +7,8 @@ fullnameOverride: ""
 # -- Number of replicas for the PgBouncer Deployment (see Kubernetes docs for Deployments).
 replicaCount: 1
 
+kind: Deployment
+
 # -- The update strategy to apply to the Deployment (e.g. Recreate or RollingUpdate).
 updateStrategy: {}
 #  type: Recreate
@@ -51,6 +53,7 @@ service:
   type: ClusterIP
   # -- The service port for PgBouncer.
   port: 5432
+  internalTrafficPolicy: Cluster
 
 # -- Additional labels to add to each PgBouncer pod.
 podLabels: {}

@@ -59,6 +59,14 @@ spec:
       containers:
       - name: pgbouncer
         image: {{ template "pgbouncer.image" . }}
+        {{- if .Values.command }}
+        command:
+        {{ toYaml .Values.command | nindent 10 }}
+        {{- end }}
+        {{- if .Values.args }}
+        args:
+        {{ toYaml .Values.args | nindent 10 }}
+        {{- end }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         {{- if .Values.lifecycle }}
         lifecycle: {{ toYaml .Values.lifecycle | trimSuffix "\n" | nindent 10 }}
@@ -84,7 +92,12 @@ spec:
         {{- if .Values.resources }}
         resources: {{ toYaml .Values.resources | trimSuffix "\n" | nindent 10 }}
         {{- end }}
+        {{- if .Values.securityContext }}
+        securityContext: {{ toYaml .Values.securityContext | trimSuffix "\n" | nindent 10 }}
+        {{- end }}
         volumeMounts:
+        - name: tmp
+          mountPath: /tmp
         - name: config
           mountPath: /etc/pgbouncer/
         - name: userlist
@@ -106,15 +119,18 @@ spec:
         - name: PGBOUNCER_USER
           valueFrom:
             secretKeyRef:
-              name: {{ template "pgbouncer.fullname" . }}-secret
-              key: adminUser
+              name: {{ .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) }}
+              key: {{ .Values.config.adminUserKey | default "adminUser" }}
         - name: PGBOUNCER_PASS
           valueFrom:
             secretKeyRef:
-              name: {{ template "pgbouncer.fullname" . }}-secret
-              key: adminPassword
+              name: {{ .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) }}
+              key: {{ .Values.config.adminPasswordKey | default "adminPassword" }}
         {{- if .Values.pgbouncerExporter.resources }}
         resources: {{ toYaml .Values.pgbouncerExporter.resources | trimSuffix "\n" | nindent 10 }}
+        {{- end }}
+        {{- if .Values.securityContext }}
+        securityContext: {{ toYaml .Values.pgbouncerExporter.securityContext | trimSuffix "\n" | nindent 10 }}
         {{- end }}
         ports:
         - name: exporter
@@ -125,12 +141,14 @@ spec:
       {{ toYaml .Values.extraContainers | trimSuffix "\n" | indent 6 | trimPrefix "      " }}
       {{ end -}}
       volumes:
+      - name: tmp
+        emptyDir: {}
       - name: config
         configMap:
           name: {{ template "pgbouncer.fullname" . }}-configmap
       - name: userlist
         secret:
-          secretName: {{ template "pgbouncer.fullname" . }}-userlist-secret
+          secretName: {{ .Values.config.existingUserlistSecret | default (printf "%s-userlist-secret" (include "pgbouncer.fullname" .)) }}
       {{- if .Values.extraVolumes -}}
       {{ toYaml .Values.extraVolumes | trimSuffix "\n" | nindent 6 }}
       {{ end -}}
