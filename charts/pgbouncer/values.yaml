@@ -3,6 +3,9 @@
 ##
 replicaCount: 1
 
+## Deployment or DaemonSet
+kind: Deployment
+
 ## The update strategy to apply to the Deployment
 ## https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#deploymentstrategy-v1-apps
 ##
@@ -45,6 +48,7 @@ image:
 service:
   type: ClusterIP
   port: 5432
+  internalTrafficPolicy: Cluster
 
 ## Labels to add to the pod metadata
 ##

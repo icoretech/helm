@@ -1,16 +1,12 @@
-{{- if eq .Values.kind "Deployment" }}
+{{- if eq .Values.kind "DaemonSet" }}
 apiVersion: {{ template "deployment.apiVersion" . }}
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: {{ include "pgbouncer.fullname" . }}
   labels:
     {{- include "pgbouncer.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
-  {{ if .Values.updateStrategy -}}
-  strategy: {{ .Values.updateStrategy | toYaml | trimSuffix "\n" | nindent 4 }}
-  {{ end -}}
   {{ if .Values.minReadySeconds -}}
   minReadySeconds: {{ .Values.minReadySeconds }}
   {{ end -}}
