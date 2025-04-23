@@ -6,6 +6,7 @@ metadata:
     {{- include "pgbouncer.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
+  internalTrafficPolicy: {{ .Values.service.internalTrafficPolicy | default "Cluster" }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: psql
