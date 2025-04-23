@@ -56,6 +56,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | image.repository | string | `"ghcr.io/icoretech/pgbouncer-docker"` | Container image repository |
 | image.tag | string | `"1.24.0"` | Container image tag |
 | imagePullSecrets | list | `[]` | Array of imagePullSecrets to use for pulling private images. |
+| kind | string | `"Deployment"` | Resource type for PgBouncer (Deployment, DaemonSet). Defaults to Deployment. |
 | lifecycle | object | `{}` | See Kubernetes docs on lifecycle hooks. |
 | minReadySeconds | int | `0` | Minimum number of seconds for which a newly created pod should be ready without crashing, before being considered available. |
 | nameOverride | string | `""` | Overrides the chart name for resources. If set, takes precedence over the chart's name. |
@@ -80,7 +81,8 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | resources | object | `{}` | See Kubernetes docs on managing container resources. |
 | revisionHistoryLimit | int | `10` | How many old ReplicaSets to retain for rollbacks. |
 | runtimeClassName | string | `""` | Runtime class for the PgBouncer pods (e.g. gvisor). |
-| securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsGroup":70,"runAsNonRoot":true,"runAsUser":70}` | Pod security context for the main PgBouncer container. By default, this forces the container to run without root privileges and with a read-only root filesystem: |
+| securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsGroup":70,"runAsNonRoot":true,"runAsUser":70}` | Pod security context for the main PgBouncer container. By default, this forces the container to run without root privileges and with a read-only root filesystem. |
+| service.internalTrafficPolicy | string | `"Cluster"` | Internal traffic policy for the Service (Cluster or Local). |
 | service.port | int | `5432` | The service port for PgBouncer. |
 | service.type | string | `"ClusterIP"` | Service type (e.g. ClusterIP, NodePort, LoadBalancer). |
 | serviceAccount.annotations | object | `{}` | Annotations for the created ServiceAccount. |
