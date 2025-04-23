@@ -52,8 +52,6 @@ spec:
                   name: {{ include "inngest.fullname" . }}-secret
                   key: signingKey
             {{- end }}
-            - name: INNGEST_DEV
-              value: {{ .Values.config.dev | quote }}
             - name: INNGEST_LOG_LEVEL
               value: {{ .Values.config.logLevel | quote }}
             - name: INNGEST_SQLITE_DIR

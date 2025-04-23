@@ -42,9 +42,6 @@ config:
   # -- Signing key for authenticating traffic between Inngest and your app.
   signingKey: ""
 
-  # -- Set to "1" to skip requiring the event/signing keys, and run in dev mode. For production, typically "0".
-  dev: "0"
-
   # -- If you want the server to use an external Redis, you can specify that here, otherwise leave empty string
   redisUri: ""
 
