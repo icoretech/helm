@@ -54,7 +54,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy: Always, IfNotPresent, or Never |
 | image.registry | string | `""` | Container image registry |
 | image.repository | string | `"ghcr.io/icoretech/pgbouncer-docker"` | Container image repository |
-| image.tag | string | `"1.24.0"` | Container image tag |
+| image.tag | string | `"1.24.1"` | Container image tag |
 | imagePullSecrets | list | `[]` | Array of imagePullSecrets to use for pulling private images. |
 | kind | string | `"Deployment"` | Resource type for PgBouncer (Deployment, DaemonSet). Defaults to Deployment. |
 | lifecycle | object | `{}` | See Kubernetes docs on lifecycle hooks. |
