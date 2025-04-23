@@ -38,7 +38,7 @@ The following table lists the configurable parameters of the inngest-server char
 | fullnameOverride | string | `""` | String to fully override `"inngest.fullname"` |
 | image.pullPolicy | string | `"Always"` | image pull policy |
 | image.repository | string | `"inngest/inngest"` | image repository |
-| image.tag | string | `"v1.5.8"` | Overrides the image tag |
+| image.tag | string | `"v1.5.9"` | Overrides the image tag |
 | imagePullSecrets | list | `[]` | If defined, uses a Secret to pull an image from a private Docker registry or repository. imagePullSecrets:   - name: regcred |
 | ingress.annotations | object | `{}` | Additional annotations for the Ingress resource |
 | ingress.className | string | `""` | IngressClass that will be be used to implement the Ingress |
