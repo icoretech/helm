@@ -1,16 +1,12 @@
-{{- if eq .Values.kind "Deployment" }}
+{{- if eq .Values.kind "DaemonSet" }}
 apiVersion: {{ template "deployment.apiVersion" . }}
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: {{ include "pgbouncer.fullname" . }}
   labels:
     {{- include "pgbouncer.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
-  {{ if .Values.updateStrategy -}}
-  strategy: {{ .Values.updateStrategy | toYaml | trimSuffix "\n" | nindent 4 }}
-  {{ end -}}
   {{ if .Values.minReadySeconds -}}
   minReadySeconds: {{ .Values.minReadySeconds }}
   {{ end -}}
@@ -54,30 +50,9 @@ spec:
       {{ if .Values.runtimeClassName -}}
       runtimeClassName: {{ .Values.runtimeClassName }}
       {{ end -}}
-
-      {{- /* Combine global and exporter-specific imagePullSecrets */}}
-      {{- $allPullSecrets := .Values.imagePullSecrets | default list -}}
-      {{- if and .Values.pgbouncerExporter.enabled .Values.pgbouncerExporter.imagePullSecrets -}}
-        {{- $exporterPullSecrets := .Values.pgbouncerExporter.imagePullSecrets | default list -}}
-        {{- $allPullSecrets = concat $allPullSecrets $exporterPullSecrets -}}
-      {{- end -}}
-
-      {{- /* De-duplicate secrets by name */}}
-      {{- $uniquePullSecrets := list -}}
-      {{- $seenSecretNames := dict -}}
-      {{- range $allPullSecrets -}}
-        {{- if .name -}} {{/* Ensure item is a map with a 'name' key to avoid errors with malformed entries */}}
-          {{- if not (hasKey $seenSecretNames .name) -}}
-            {{- $uniquePullSecrets = append $uniquePullSecrets . -}}
-            {{- $_ := set $seenSecretNames .name true -}}
-          {{- end -}}
-        {{- end -}}
-      {{- end -}}
-
-      {{- if $uniquePullSecrets }}
-      imagePullSecrets: {{- toYaml $uniquePullSecrets | nindent 8 }}
-      {{- end }}
-
+      {{ if len .Values.imagePullSecrets -}}
+      imagePullSecrets: {{ toYaml .Values.imagePullSecrets | trimSuffix "\n" | nindent 6 }}
+      {{ end -}}
       {{ if .Values.extraInitContainers -}}
       initContainers: {{ toYaml .Values.extraInitContainers | trimSuffix "\n" | nindent 6 }}
       {{ end -}}

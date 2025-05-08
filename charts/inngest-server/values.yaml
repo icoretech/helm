@@ -10,7 +10,7 @@ image:
   # -- image pull policy
   pullPolicy: Always
   # -- Overrides the image tag
-  tag: "v1.4.6"
+  tag: "v1.5.11"
 
 # -- If defined, uses a Secret to pull an image from a private Docker registry or repository.
 # imagePullSecrets:
@@ -42,11 +42,10 @@ config:
   # -- Signing key for authenticating traffic between Inngest and your app.
   signingKey: ""
 
-  # -- Set to "1" to skip requiring the event/signing keys, and run in dev mode. For production, typically "0".
-  dev: "0"
-
   # -- If you want the server to use an external Redis, you can specify that here, otherwise leave empty string
   redisUri: ""
+
+  logLevel: 'info'
 
 # -- Additional environment variables to be added to the pods.
 extraEnv: []

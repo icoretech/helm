@@ -30,15 +30,15 @@ The following table lists the configurable parameters of the inngest-server char
 | autoscaling.minReplicas | int | `1` | Minimum number of replicas |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` | Target CPU utilization percentage |
 | autoscaling.targetMemoryUtilizationPercentage | int | `80` | Target Memory utilization percentage |
-| config.dev | string | `"0"` | Set to "1" to skip requiring the event/signing keys, and run in dev mode. For production, typically "0". |
 | config.eventKey | string | `""` | Event key that the server uses for ingesting events. In production, you can generate a random key with: `openssl rand -hex 16` This key must be the same in your code that sends events to Inngest. |
+| config.logLevel | string | `"info"` |  |
 | config.redisUri | string | `""` | If you want the server to use an external Redis, you can specify that here, otherwise leave empty string |
 | config.signingKey | string | `""` | Signing key for authenticating traffic between Inngest and your app. |
 | extraEnv | list | `[]` | Additional environment variables to be added to the pods. |
 | fullnameOverride | string | `""` | String to fully override `"inngest.fullname"` |
 | image.pullPolicy | string | `"Always"` | image pull policy |
 | image.repository | string | `"inngest/inngest"` | image repository |
-| image.tag | string | `"v1.4.6"` | Overrides the image tag |
+| image.tag | string | `"v1.5.11"` | Overrides the image tag |
 | imagePullSecrets | list | `[]` | If defined, uses a Secret to pull an image from a private Docker registry or repository. imagePullSecrets:   - name: regcred |
 | ingress.annotations | object | `{}` | Additional annotations for the Ingress resource |
 | ingress.className | string | `""` | IngressClass that will be be used to implement the Ingress |

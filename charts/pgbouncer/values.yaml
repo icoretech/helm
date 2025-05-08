@@ -7,6 +7,9 @@ fullnameOverride: ""
 # -- Number of replicas for the PgBouncer Deployment (see Kubernetes docs for Deployments).
 replicaCount: 1
 
+# -- Resource type for PgBouncer (Deployment, DaemonSet). Defaults to Deployment.
+kind: Deployment
+
 # -- The update strategy to apply to the Deployment (e.g. Recreate or RollingUpdate).
 updateStrategy: {}
 #  type: Recreate
@@ -35,7 +38,7 @@ image:
   # -- Container image repository
   repository: ghcr.io/icoretech/pgbouncer-docker
   # -- Container image tag
-  tag: 1.24.0
+  tag: 1.24.1
   # -- Container image pull policy: Always, IfNotPresent, or Never
   pullPolicy: IfNotPresent
 
@@ -51,6 +54,8 @@ service:
   type: ClusterIP
   # -- The service port for PgBouncer.
   port: 5432
+  # -- Internal traffic policy for the Service (Cluster or Local).
+  internalTrafficPolicy: Cluster
 
 # -- Additional labels to add to each PgBouncer pod.
 podLabels: {}
@@ -216,6 +221,8 @@ extraVolumes: []
 pgbouncerExporter:
   # -- Enable or disable the PgBouncer exporter sidecar container.
   enabled: false
+  # -- Array of imagePullSecrets to use for pulling the pgbouncer-exporter image.
+  imagePullSecrets: []
   # -- Whether to create a PodMonitor for scraping metrics (Prometheus Operator).
   podMonitor: false
   # -- The container port for the exporter.
