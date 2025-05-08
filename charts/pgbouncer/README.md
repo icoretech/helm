@@ -66,6 +66,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | pgbouncerExporter.image.registry | string | `""` | Exporter image registry |
 | pgbouncerExporter.image.repository | string | `"prometheuscommunity/pgbouncer-exporter"` | Exporter image repository |
 | pgbouncerExporter.image.tag | string | `"v0.10.2"` | Exporter image tag |
+| pgbouncerExporter.imagePullSecrets | list | `[]` | Array of imagePullSecrets to use for pulling the pgbouncer-exporter image. |
 | pgbouncerExporter.log.format | string | `"logfmt"` | Exporter log format (logfmt or json) |
 | pgbouncerExporter.log.level | string | `"info"` | Exporter log level (debug, info, warn, error) |
 | pgbouncerExporter.podMonitor | bool | `false` | Whether to create a PodMonitor for scraping metrics (Prometheus Operator). |
