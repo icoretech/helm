@@ -29,39 +29,47 @@ jobs:
         id: gpg_setup
         run: |
           # 1. CRITICAL: Verify GPG_ARMORED_PRIVATE_KEY_BASE64 secret.
-          # On Mac: gpg --export-secret-keys --armor YOUR_KEY_ID | base64 -b 0 | pbcopy
           echo "Verifying decoded private key (should start with -----BEGIN PGP PRIVATE KEY BLOCK-----):"
           echo "${{ secrets.GPG_ARMORED_PRIVATE_KEY_BASE64 }}" | base64 -d 2>/dev/null | head -n 1
           echo "------------------------------------------------------------------------------------"
 
           # 2. Set up dedicated GPG home.
-          export GNUPGHOME="$(pwd)/.gnupg-helm-direct"
+          export GNUPGHOME="$(pwd)/.gnupg-helm-v2" # New distinct name
           mkdir -p "$GNUPGHOME"
           chmod 700 "$GNUPGHOME"
           echo "GNUPGHOME_PATH=$GNUPGHOME" >> $GITHUB_ENV
           echo "GPG Home set to: $GNUPGHOME"
 
-          # Minimal gpg.conf to ensure loopback pinentry is allowed if an agent auto-launches
-          # Helm's GPG call might trigger an agent; this tries to guide it.
-          echo "allow-loopback-pinentry" >> "$GNUPGHOME/gpg.conf"
-          # echo "pinentry-mode loopback" >> "$GNUPGHOME/gpg-agent.conf" # Not creating gpg-agent.conf explicitly
+          # 3. Create gpg-agent.conf for non-interactive pinentry.
+          echo "allow-loopback-pinentry" > "$GNUPGHOME/gpg-agent.conf"
+          # Optionally add cache TTLs if needed, but keep it minimal for now.
+          # echo "default-cache-ttl 3600" >> "$GNUPGHOME/gpg-agent.conf"
+          # echo "max-cache-ttl 7200" >> "$GNUPGHOME/gpg-agent.conf"
+          chmod 600 "$GNUPGHOME/gpg-agent.conf"
+          echo "Created $GNUPGHOME/gpg-agent.conf with allow-loopback-pinentry."
 
-          # 3. Import your GPG private key.
+          # 4. Ensure GPG agent is (re)started to pick up the conf.
+          # This also helps initialize the GPG directory structure if gpg --import doesn't.
+          echo "Restarting/Launching gpg-agent..."
+          gpgconf --kill gpg-agent || true
+          gpgconf --launch gpg-agent || echo "Warning: gpgconf --launch gpg-agent had an issue."
+          # Wait a brief moment for the agent to be ready (optional, but can help in CI)
+          sleep 1
+
+          # 5. Import your GPG private key.
           echo "Importing GPG private key into $GNUPGHOME..."
-          # Using --passphrase on import command itself for directness
           echo "${{ secrets.GPG_ARMORED_PRIVATE_KEY_BASE64 }}" | base64 -d | \
             gpg --batch --yes --verbose \
               --pinentry-mode loopback \
               --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
               --import
-          if [ $? -ne 0 ]; then echo "::error::GPG Import Failed"; exit 1; fi
-          echo "GPG Key Imported. Verifying presence:"
-          gpg --batch --list-secret-keys "${{ secrets.CR_KEY }}" || { echo "::error::Secret key not found after import"; exit 1; }
+          if [ $? -ne 0 ]; then echo "::error::GPG Import Failed"; gpg --version; exit 1; fi
+          echo "GPG Key Imported. Verifying presence of secret key for ${{ secrets.CR_KEY }}:"
+          gpg --batch --list-secret-keys "${{ secrets.CR_KEY }}" || { echo "::error::Secret key ${{ secrets.CR_KEY }} not found after import"; exit 1; }
 
-          # 4. Export keys to LEGACY GPG formats directly into $GNUPGHOME.
+          # 6. Export keys to LEGACY GPG formats directly into $GNUPGHOME.
           echo "Exporting keys to legacy formats in $GNUPGHOME for key: ${{ secrets.CR_KEY }}"
 
-          # Public keyring
           gpg --batch --yes --verbose \
             --pinentry-mode loopback \
             --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
@@ -69,8 +77,6 @@ jobs:
           if [ $? -ne 0 ]; then echo "::error::Failed to export $GNUPGHOME/pubring.gpg"; exit 1; fi
           echo "Created $GNUPGHOME/pubring.gpg"
 
-          # Secret keyring - this is what Helm needs for the private key operation
-          # Passphrase must be available for this to work without a fully interactive agent.
           gpg --batch --yes --verbose \
             --pinentry-mode loopback \
             --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
@@ -82,13 +88,13 @@ jobs:
           echo "Files in $GNUPGHOME:"
           ls -la "$GNUPGHOME"
 
-          # 5. Prepare passphrase file for chart-releaser
-          CR_GPG_DIR_IN_WORKSPACE=".cr-helm-pass"
+          # 7. Prepare passphrase file for chart-releaser
+          CR_GPG_DIR_IN_WORKSPACE=".cr-helm-assets" # Renamed for clarity
           mkdir -p "$CR_GPG_DIR_IN_WORKSPACE"
-          echo "${{ secrets.GPG_PASSPHRASE }}" > "$(pwd)/$CR_GPG_DIR_IN_WORKSPACE/passphrase"
-          echo "CR_PASSPHRASE_FILE_PATH=$(pwd)/$CR_GPG_DIR_IN_WORKSPACE/passphrase" >> $GITHUB_ENV
+          echo "${{ secrets.GPG_PASSPHRASE }}" > "$(pwd)/$CR_GPG_DIR_IN_WORKSPACE/helm_gpg_passphrase"
+          echo "CR_PASSPHRASE_FILE_PATH=$(pwd)/$CR_GPG_DIR_IN_WORKSPACE/helm_gpg_passphrase" >> $GITHUB_ENV
 
-          echo "CR_KEYRING_PATH=$GNUPGHOME/pubring.gpg" >> $GITHUB_ENV
+          echo "CR_KEYRING_PATH=$GNUPGHOME/pubring.gpg" >> $GITHUB_ENV # Point to the legacy public keyring
           echo "GPG_TTY_VALUE=$(tty)" >> $GITHUB_ENV
         env:
           GPG_ARMORED_PRIVATE_KEY_BASE64: ${{ secrets.GPG_ARMORED_PRIVATE_KEY_BASE64 }}
@@ -105,7 +111,7 @@ jobs:
           CR_SIGN:              true
           CR_PASSPHRASE_FILE:   ${{ env.CR_PASSPHRASE_FILE_PATH }}
           CR_KEYRING:           ${{ env.CR_KEYRING_PATH }} # $GNUPGHOME/pubring.gpg
-          GNUPGHOME:            ${{ env.GNUPGHOME_PATH }}  # Critical
+          GNUPGHOME:            ${{ env.GNUPGHOME_PATH }}  # Helm uses this GPG home
           GPG_TTY:              ${{ env.GPG_TTY_VALUE }}
 
       - name: Login to GitHub Container Registry
