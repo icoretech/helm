@@ -23,17 +23,88 @@ jobs:
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
       - name: Install Helm
-        id: install
-        uses: azure/setup-helm@v4.2.0
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        uses: azure/setup-helm@v4.3.0
 
-      - name: Run chart-releaser
+      - name: Setup GPG for Helm Legacy Format
+        id: gpg_setup
+        run: |
+          # 1. Create a dedicated GPG home directory
+          export GNUPGHOME="$(pwd)/.gnupg-helm-legacy"
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+          echo "GNUPGHOME_PATH=$GNUPGHOME" >> $GITHUB_ENV
+          echo "GPG Home for this job: $GNUPGHOME"
+
+          # 2. Minimal gpg-agent.conf for non-interactive pinentry.
+          # This is primarily to assist GPG if it tries to use an agent.
+          echo "allow-loopback-pinentry" > "$GNUPGHOME/gpg-agent.conf"
+          chmod 600 "$GNUPGHOME/gpg-agent.conf"
+          # Try to ensure agent uses this config if it auto-launches
+          gpgconf --kill gpg-agent || true
+          gpgconf --launch gpg-agent > /dev/null 2>&1 || echo "GPG Agent launch via gpgconf failed or not applicable."
+
+          # 3. Import your GPG private key (which includes public key parts)
+          # This key will be imported into the modern .kbx format initially within $GNUPGHOME
+          echo "Importing GPG private key into $GNUPGHOME..."
+          echo "${{ secrets.GPG_ARMORED_PRIVATE_KEY_BASE64 }}" | base64 -d | \
+            gpg --batch --yes --verbose \
+              --pinentry-mode loopback \
+              --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+              --import
+          if [ $? -ne 0 ]; then echo "::error::GPG Import Failed"; exit 1; fi
+          echo "GPG Key Imported. Verifying presence:"
+          gpg --batch --list-secret-keys "${{ secrets.CR_KEY }}" || { echo "::error::Secret key ${{ secrets.CR_KEY }} not found after import"; exit 1; }
+
+          # 4. Export to LEGACY GPG formats inside $GNUPGHOME
+          # This creates $GNUPGHOME/pubring.gpg and $GNUPGHOME/secring.gpg
+          echo "Exporting keys to legacy formats for key ID: ${{ secrets.CR_KEY }}..."
+
+          gpg --batch --yes --verbose \
+            --pinentry-mode loopback \
+            --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+            --export -o "$GNUPGHOME/pubring.gpg" "${{ secrets.CR_KEY }}"
+          if [ $? -ne 0 ]; then echo "::error::Failed to export $GNUPGHOME/pubring.gpg"; exit 1; fi
+          echo "Created $GNUPGHOME/pubring.gpg"
+
+          gpg --batch --yes --verbose \
+            --pinentry-mode loopback \
+            --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+            --export-secret-keys -o "$GNUPGHOME/secring.gpg" "${{ secrets.CR_KEY }}"
+          if [ $? -ne 0 ]; then echo "::error::Failed to export $GNUPGHOME/secring.gpg"; exit 1; fi
+          chmod 600 "$GNUPGHOME/secring.gpg"
+          echo "Created $GNUPGHOME/secring.gpg"
+
+          echo "Listing relevant files in $GNUPGHOME:"
+          ls -la "$GNUPGHOME"/{pubring.gpg,secring.gpg,gpg-agent.conf,private-keys-v1.d} 2>/dev/null || ls -la "$GNUPGHOME"
+
+          # 5. Prepare passphrase file for chart-releaser (in workspace)
+          # This is for the --passphrase-file argument of Helm/chart-releaser.
+          # Using an absolute path for clarity.
+          CR_GPG_DIR_IN_WORKSPACE=".cr-helm-signing-files"
+          mkdir -p "$CR_GPG_DIR_IN_WORKSPACE"
+          echo "${{ secrets.GPG_PASSPHRASE }}" > "$(pwd)/$CR_GPG_DIR_IN_WORKSPACE/gpg_passphrase"
+          echo "CR_PASSPHRASE_FILE_PATH=$(pwd)/$CR_GPG_DIR_IN_WORKSPACE/gpg_passphrase" >> $GITHUB_ENV
+
+          # Helm will use $GNUPGHOME/pubring.gpg by default if CR_KEYRING is not set,
+          # but explicitly setting it to the legacy file is safer.
+          echo "CR_KEYRING_PATH=$GNUPGHOME/pubring.gpg" >> $GITHUB_ENV
+          echo "GPG_TTY_VALUE=$(tty)" >> $GITHUB_ENV
+
+      - name: Run chart-releaser (package & sign)
         uses: helm/chart-releaser-action@v1.7.0
         with:
           skip_existing: true
         env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          # Helm/Chart-Releaser specific variables
+          CR_TOKEN:             ${{ secrets.GITHUB_TOKEN }}
+          CR_KEY:               ${{ secrets.CR_KEY }}  # Key ID for Helm to select for signing
+          CR_SIGN:              true
+          CR_PASSPHRASE_FILE:   ${{ env.CR_PASSPHRASE_FILE_PATH }}
+          CR_KEYRING:           ${{ env.CR_KEYRING_PATH }} # Points to $GNUPGHOME/pubring.gpg
+
+          # GPG Environment for Helm's GPG invocation
+          GNUPGHOME:            ${{ env.GNUPGHOME_PATH }} # CRITICAL
+          GPG_TTY:              ${{ env.GPG_TTY_VALUE }}  # Good practice
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
