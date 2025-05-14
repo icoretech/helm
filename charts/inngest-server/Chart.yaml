@@ -2,8 +2,8 @@ apiVersion: v2
 name: inngest-server
 description: Inngest Server Helm chart for Kubernetes
 type: application
-version: 1.0.15
-appVersion: "1.5.12"
+version: 1.0.16
+appVersion: "v1.5.13"
 icon: https://icoretech.github.io/helm/charts/inngest-server/logo.png
 keywords:
   - inngest
