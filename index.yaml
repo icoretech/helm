@@ -1603,6 +1603,44 @@ entries:
       artifacthub.io/recommendations: |
         - url: https://artifacthub.io/packages/helm/bitnami/redis
     apiVersion: v2
+    appVersion: v1.6.0
+    created: "2025-05-20T16:06:55.299524041Z"
+    description: Inngest Server Helm chart for Kubernetes
+    digest: 75479949bf4271560d40a3c3eb35e917398096795bb61ca3ac4fe645b9bec996
+    home: https://github.com/inngest/inngest
+    icon: https://icoretech.github.io/helm/charts/inngest-server/logo.png
+    keywords:
+    - inngest
+    - serverless
+    - event-driven
+    - workflow
+    - function-orchestration
+    - async
+    - queue
+    - event-processing
+    - background-jobs
+    - microservices
+    - faas
+    - triggers
+    - helm-chart
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: inngest-server
+    sources:
+    - https://github.com/inngest/inngest
+    - https://github.com/icoretech/helm/tree/main/charts/inngest-server
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/inngest-server-1.1.0/inngest-server-1.1.0.tgz
+    version: 1.1.0
+  - annotations:
+      artifacthub.io/category: streaming-messaging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/bitnami/redis
+    apiVersion: v2
     appVersion: v1.5.13
     created: "2025-05-14T20:27:32.039159379Z"
     description: Inngest Server Helm chart for Kubernetes
@@ -3311,4 +3349,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2025-05-14T20:27:32.039397511Z"
+generated: "2025-05-20T16:06:55.29982778Z"
