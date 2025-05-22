@@ -129,20 +129,24 @@ web:
   tolerations: []
   affinity: {}
 
-  extraEnvs: []
+  envs:
+    AWS_SDK_CONFIG_OPT_OUT: "true"
+    NEXT_TELEMETRY_DISABLED: "1"
+
+  extraEnvs: {}
   # extraEnvs:
-  #   - name: AIRBROKE_GITHUB_ID
-  #     value: "xxxx"
-  #   - name: AIRBROKE_GITHUB_SECRET
-  #     value: "xxxxx"
-  #   - name: AIRBROKE_GITHUB_ORGS
-  #     value: "xxxxx"
-  #   - name: NEXTAUTH_SECRET
-  #     value: "xxxxxxx"
-  #   - name: NEXTAUTH_URL
-  #     value: "https://xxxxxx"
-  #   - name: AIRBROKE_OPENAI_API_KEY
-  #     value: "sk-xxxxxxx"
+  #   DEBUG_LEVEL: xxxx
+  #   MY_COOL_VARIABLE: xxxx
+
+
+  extraSecretEnvs:
+  # extraSecretEnvs:
+  #   AIRBROKE_GITHUB_ID: xxxx
+  #   AIRBROKE_GITHUB_SECRET: xxxx
+  #   AIRBROKE_GITHUB_ORGS: xxxx
+  #   NEXTAUTH_SECRET: xxxx
+  #   NEXTAUTH_URL: xxxx
+  #   AIRBROKE_OPENAI_API_KEY: xxxx
 
   ## Pod Disruption Budget
   ## https://kubernetes.io/docs/tasks/run-application/configure-pdb/
