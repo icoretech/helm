@@ -95,6 +95,13 @@ web:
     annotations: {}
     hosts: []
     tls: []
+      # - hosts:
+      #     - myapp.example.com
+      #   secretName: my-existing-tls-secret # Specify your pre-created secret name here.
+      #                                      # If left empty, the secret name will default to the automatically generated one ($fullTLSName).
+      # - hosts:
+      #     - anotherapp.example.com
+      #   secretName: another-secret
 
   service:
     enabled: true

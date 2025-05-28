@@ -21,7 +21,7 @@ spec:
       {{- range .hosts }}
         - {{ . | quote }}
       {{- end }}
-      secretName: {{ $fullTLSName }}
+      secretName: {{ .secretName | default $fullTLSName }}
   {{- end }}
 {{- end }}
   rules:
