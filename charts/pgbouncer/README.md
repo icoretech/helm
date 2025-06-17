@@ -83,6 +83,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | revisionHistoryLimit | int | `10` | How many old ReplicaSets to retain for rollbacks. |
 | runtimeClassName | string | `""` | Runtime class for the PgBouncer pods (e.g. gvisor). |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsGroup":70,"runAsNonRoot":true,"runAsUser":70}` | Pod security context for the main PgBouncer container. By default, this forces the container to run without root privileges and with a read-only root filesystem. |
+| service.annotations | object | `{}` | Annotations for the Service. |
 | service.internalTrafficPolicy | string | `"Cluster"` | Internal traffic policy for the Service (Cluster or Local). |
 | service.port | int | `5432` | The service port for PgBouncer. |
 | service.type | string | `"ClusterIP"` | Service type (e.g. ClusterIP, NodePort, LoadBalancer). |

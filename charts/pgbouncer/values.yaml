@@ -50,6 +50,8 @@ image:
 #   - "/etc/config.yaml"
 
 service:
+  # -- Annotations for the Service.
+  annotations: {}
   # -- Service type (e.g. ClusterIP, NodePort, LoadBalancer).
   type: ClusterIP
   # -- The service port for PgBouncer.
