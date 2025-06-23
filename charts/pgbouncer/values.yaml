@@ -56,6 +56,8 @@ service:
   type: ClusterIP
   # -- The service port for PgBouncer.
   port: 5432
+  # -- Set service nodePort, can be null
+  nodePort:
   # -- Internal traffic policy for the Service (Cluster or Local).
   internalTrafficPolicy: Cluster
 
