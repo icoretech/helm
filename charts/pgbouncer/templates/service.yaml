@@ -13,6 +13,9 @@ spec:
   internalTrafficPolicy: {{ .Values.service.internalTrafficPolicy | default "Cluster" }}
   ports:
     - port: {{ .Values.service.port }}
+      {{- if .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
       targetPort: psql
       protocol: TCP
       name: psql
