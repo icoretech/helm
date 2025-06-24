@@ -5,5 +5,13 @@ metadata:
   labels:
     {{- include "app.labels" . | nindent 4 }}
 data:
-  AWS_SDK_CONFIG_OPT_OUT: "true"
-  NEXT_TELEMETRY_DISABLED: "1"
+  {{- if .Values.web.envs }}
+  {{- range $index, $value := .Values.web.envs }}
+  {{ $index }}: {{ $value | toString | quote }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.web.extraEnvs }}
+  {{- range $index, $value := .Values.web.extraEnvs }}
+  {{ $index | upper | replace "-" "_" }}: {{ $value | toString | quote }}
+  {{- end }}
+  {{- end }}
