@@ -61,7 +61,10 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | minReadySeconds | int | `0` | Minimum number of seconds for which a newly created pod should be ready without crashing, before being considered available. |
 | nameOverride | string | `""` | Overrides the chart name for resources. If set, takes precedence over the chart's name. |
 | nodeSelector | object | `{}` | Node labels for pod assignment. |
+| pgbouncerExporter.connect_timeout | int | `10` |  |
+| pgbouncerExporter.database | string | `"pgbouncer"` |  |
 | pgbouncerExporter.enabled | bool | `false` | Enable or disable the PgBouncer exporter sidecar container. |
+| pgbouncerExporter.host | string | `"127.0.0.1"` |  |
 | pgbouncerExporter.image.pullPolicy | string | `"IfNotPresent"` | Exporter image pull policy |
 | pgbouncerExporter.image.registry | string | `""` | Exporter image registry |
 | pgbouncerExporter.image.repository | string | `"prometheuscommunity/pgbouncer-exporter"` | Exporter image repository |
@@ -70,9 +73,11 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | pgbouncerExporter.log.format | string | `"logfmt"` | Exporter log format (logfmt or json) |
 | pgbouncerExporter.log.level | string | `"info"` | Exporter log level (debug, info, warn, error) |
 | pgbouncerExporter.podMonitor | bool | `false` | Whether to create a PodMonitor for scraping metrics (Prometheus Operator). |
-| pgbouncerExporter.port | int | `9127` | The container port for the exporter. |
+| pgbouncerExporter.port | int | `5432` |  |
 | pgbouncerExporter.resources | object | `{"limits":{"cpu":"250m","memory":"150Mi"},"requests":{"cpu":"30m","memory":"40Mi"}}` | Resource requests and limits for the exporter container. |
 | pgbouncerExporter.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsGroup":65534,"runAsNonRoot":true,"runAsUser":65534}` | Pod security context for the exporter container. |
+| pgbouncerExporter.servicePort | int | `9127` | The container port for the exporter. |
+| pgbouncerExporter.sslmode | string | `"disable"` |  |
 | podAnnotations | object | `{}` | Additional annotations to add to each PgBouncer pod. |
 | podDisruptionBudget | object | `{"enabled":false,"maxUnavailable":null,"minAvailable":null}` | Pod Disruption Budget configuration. |
 | podDisruptionBudget.enabled | bool | `false` | If true, create a PDB to protect PgBouncer pods from voluntary disruptions. |
