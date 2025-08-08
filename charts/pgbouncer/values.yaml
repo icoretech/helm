@@ -229,8 +229,13 @@ pgbouncerExporter:
   imagePullSecrets: []
   # -- Whether to create a PodMonitor for scraping metrics (Prometheus Operator).
   podMonitor: false
+  host: 127.0.0.1
+  port: 5432
+  database: pgbouncer
+  sslmode: "disable"
+  connect_timeout: 10
   # -- The container port for the exporter.
-  port: 9127
+  servicePort: 9127
   image:
     # -- Exporter image registry
     registry: ""
