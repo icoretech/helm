@@ -30,7 +30,7 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- if .Values.pgbouncerExporter.enabled }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ .Values.pgbouncerExporter.servicePort }}"
+        prometheus.io/port: "{{ .Values.pgbouncerExporter.port }}"
         prometheus.io/path: "/metrics"
         {{- end }}
         {{- range $key, $value := .Values.podAnnotations }}
@@ -135,11 +135,11 @@ spec:
         image: {{ template "pgbouncer.exporterImage" . }}
         imagePullPolicy: {{ .Values.pgbouncerExporter.image.pullPolicy }}
         args:
-        - --web.listen-address=:{{ .Values.pgbouncerExporter.servicePort }}
+        - --web.listen-address=:{{ .Values.pgbouncerExporter.port }}
         - --web.telemetry-path=/metrics
         - --log.level={{ .Values.pgbouncerExporter.log.level }}
         - --log.format={{ .Values.pgbouncerExporter.log.format }}
-        - --pgBouncer.connectionString=postgres://$(PGBOUNCER_USER):$(PGBOUNCER_PASS)@{{ .Values.pgbouncerExporter.host }}:{{ .Values.pgbouncerExporter.port }}/{{ .Values.pgbouncerExporter.database }}?sslmode={{ .Values.pgbouncerExporter.sslmode }}&connect_timeout={{ .Values.pgbouncerExporter.connect_timeout }}
+        - --pgBouncer.connectionString=postgres://$(PGBOUNCER_USER):$(PGBOUNCER_PASS)@{{ .Values.pgbouncerExporter.connectionConfig.host }}:{{ .Values.pgbouncerExporter.connectionConfig.port }}/{{ .Values.pgbouncerExporter.connectionConfig.database }}?sslmode={{ .Values.pgbouncerExporter.connectionConfig.sslmode }}&connect_timeout={{ .Values.pgbouncerExporter.connectionConfig.connect_timeout }}
         env:
         - name: PGBOUNCER_USER
           valueFrom:
