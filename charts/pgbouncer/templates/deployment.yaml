@@ -159,7 +159,7 @@ spec:
         {{- end }}
         ports:
         - name: exporter
-          containerPort: {{ .Values.pgbouncerExporter.port }}
+          containerPort: {{ .Values.pgbouncerExporter.servicePort }}
           protocol: TCP
       {{- end }}
       {{ if .Values.extraContainers -}}
