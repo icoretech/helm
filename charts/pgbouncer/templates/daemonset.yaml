@@ -26,7 +26,7 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- if .Values.pgbouncerExporter.enabled }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ .Values.pgbouncerExporter.port }}"
+        prometheus.io/port: "{{ .Values.pgbouncerExporter.servicePort }}"
         prometheus.io/path: "/metrics"
         {{- end }}
         {{- range $key, $value := .Values.podAnnotations }}
@@ -110,7 +110,7 @@ spec:
         image: {{ template "pgbouncer.exporterImage" . }}
         imagePullPolicy: {{ .Values.pgbouncerExporter.image.pullPolicy }}
         args:
-        - --web.listen-address=:{{ .Values.pgbouncerExporter.port }}
+        - --web.listen-address=:{{ .Values.pgbouncerExporter.servicePort }}
         - --web.telemetry-path=/metrics
         - --log.level={{ .Values.pgbouncerExporter.log.level }}
         - --log.format={{ .Values.pgbouncerExporter.log.format }}
@@ -134,7 +134,7 @@ spec:
         {{- end }}
         ports:
         - name: exporter
-          containerPort: {{ .Values.pgbouncerExporter.port }}
+          containerPort: {{ .Values.pgbouncerExporter.servicePort }}
           protocol: TCP
       {{- end }}
       {{ if .Values.extraContainers -}}
