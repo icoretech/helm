@@ -10,6 +10,10 @@ data:
 {{- range $key, $val := .Values.config.databases }}
     {{ $key }} ={{ range $k, $v := $val }} {{ $k }}={{ $v }}{{ end }}
 {{- end }}
+    [users]
+{{- range $key, $val := .Values.config.users }}
+    {{ $key }} ={{ range $k, $v := $val }} {{ $k }}={{ $v }}{{ end }}
+{{- end }}
     [pgbouncer]
     listen_addr = *
     listen_port = 5432

@@ -165,8 +165,11 @@ config:
   # -- Password for the authUser above, if used.
   authPassword:
 
-  # -- Mapping of database names to connection parameters. E.g.: mydb: host=postgresql port=5432
+  # -- Mapping of database names to connection parameters. E.g.: mydb = host=postgresql port=5432
   databases: {}
+
+  # -- Mapping of usernames to connection parameters. E.g.: someUser = pool_mode=session
+  users: {}
 
   # -- Additional PgBouncer parameters (e.g. auth_type, pool_mode).
   pgbouncer: {}
