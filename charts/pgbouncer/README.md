@@ -40,11 +40,12 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | config.adminUserKey | string | `"adminUser"` | The key in the existingAdminSecret that corresponds to the admin username. |
 | config.authPassword | string | `nil` | Password for the authUser above, if used. |
 | config.authUser | string | `nil` | If set, PgBouncer will use this user to authenticate client connections. |
-| config.databases | object | `{}` | Mapping of database names to connection parameters. E.g.: mydb: host=postgresql port=5432 |
+| config.databases | object | `{}` | Mapping of database names to connection parameters. E.g.: mydb = host=postgresql port=5432 |
 | config.existingAdminSecret | string | `""` | If set, skip creating a new secret for admin credentials, and reference this existing Secret name instead. |
 | config.existingUserlistSecret | string | `""` | Reference to an existing Secret that contains a userlist.txt file, with entries for other users/passwords. |
 | config.pgbouncer | object | `{}` | Additional PgBouncer parameters (e.g. auth_type, pool_mode). |
 | config.userlist | object | `{}` | if existingUserlistSecret isn't used. |
+| config.users | object | `{}` | Mapping of usernames to connection parameters. E.g.: someUser = pool_mode=session |
 | extraContainers | list | `[]` | Extra containers to run within the PgBouncer pod. |
 | extraEnvs | list | `[]` | Additional environment variables to set in the PgBouncer container. |
 | extraInitContainers | list | `[]` | Init containers to run before the PgBouncer container starts. |
