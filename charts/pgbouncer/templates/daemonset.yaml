@@ -114,7 +114,7 @@ spec:
         - --web.telemetry-path=/metrics
         - --log.level={{ .Values.pgbouncerExporter.log.level }}
         - --log.format={{ .Values.pgbouncerExporter.log.format }}
-        - --pgBouncer.connectionString=postgres://$(PGBOUNCER_USER):$(PGBOUNCER_PASS)@127.0.0.1:5432/pgbouncer?sslmode=disable&connect_timeout=10
+        - --pgBouncer.connectionString=postgres://127.0.0.1:5432/pgbouncer?sslmode=disable&connect_timeout=10
         env:
         - name: PGBOUNCER_USER
           valueFrom:
@@ -122,6 +122,16 @@ spec:
               name: {{ .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) }}
               key: {{ .Values.config.adminUserKey | default "adminUser" }}
         - name: PGBOUNCER_PASS
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) }}
+              key: {{ .Values.config.adminPasswordKey | default "adminPassword" }}
+        - name: PGUSER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) }}
+              key: {{ .Values.config.adminUserKey | default "adminUser" }}
+        - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) }}
