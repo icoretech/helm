@@ -254,6 +254,22 @@ pgbouncerExporter:
     # -- Exporter log format (logfmt or json)
     format: logfmt
   # -- Resource requests and limits for the exporter container.
+  config:
+    # -- If set, skip creating a new secret for admin credentials, and reference this existing Secret name instead.
+    existingStatsSecret: "pgbouncer-stats-user"
+
+    # -- The key in the existingAdminSecret that corresponds to the admin username.
+    statsUserKey: statsUser
+
+    # -- The key in the existingAdminSecret that corresponds to the admin password.
+    statsPasswordKey: statsPassword
+
+    # -- If no existingAdminSecret is used, this admin username is placed in a new Secret.
+    statsUser: {{ .Values.config.adminUser }}
+
+    # -- If no existingAdminSecret is used, this admin password is placed in a new Secret.
+    statsPassword: {{ .Values.config.adminPassword }}
+
   resources:
     limits:
       cpu: 250m
