@@ -2,7 +2,7 @@ apiVersion: v2
 name: airbroke
 description: Airbroke Helm chart for Kubernetes
 type: application
-version: 1.2.3
+version: 1.2.4
 appVersion: "1.1.80"
 keywords:
   - open
@@ -33,7 +33,7 @@ annotations:
   artifacthub.io/category: monitoring-logging
 dependencies:
   - name: pgbouncer
-    version: "2.3.2"
+    version: "3.1.2"
     repository: oci://ghcr.io/icoretech/charts
     condition: pgbouncer.enabled
 icon: https://icoretech.github.io/helm/charts/airbroke/logo.png

@@ -143,7 +143,7 @@ spec:
   chart:
     spec:
       chart: airbroke
-      version: ">= 1.2.3"
+      version: ">= 1.2.4"
       sourceRef:
         kind: HelmRepository
         name: icoretech
