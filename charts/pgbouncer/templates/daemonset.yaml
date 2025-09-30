@@ -24,6 +24,8 @@ spec:
         {{- end }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/userlist: {{ include (print $.Template.BasePath "/userlist-secret.yaml") . | sha256sum }}
+        checksum/adminsecret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- if .Values.pgbouncerExporter.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{ .Values.pgbouncerExporter.servicePort }}"
