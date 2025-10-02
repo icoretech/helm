@@ -52,9 +52,28 @@ spec:
       {{ if .Values.runtimeClassName -}}
       runtimeClassName: {{ .Values.runtimeClassName }}
       {{ end -}}
-      {{ if len .Values.imagePullSecrets -}}
-      imagePullSecrets: {{ toYaml .Values.imagePullSecrets | trimSuffix "\n" | nindent 6 }}
-      {{ end -}}
+      {{- /* Combine global and exporter-specific imagePullSecrets */}}
+      {{- $allPullSecrets := .Values.imagePullSecrets | default list -}}
+      {{- if and .Values.pgbouncerExporter.enabled .Values.pgbouncerExporter.imagePullSecrets -}}
+        {{- $exporterPullSecrets := .Values.pgbouncerExporter.imagePullSecrets | default list -}}
+        {{- $allPullSecrets = concat $allPullSecrets $exporterPullSecrets -}}
+      {{- end -}}
+
+      {{- /* De-duplicate secrets by name */}}
+      {{- $uniquePullSecrets := list -}}
+      {{- $seenSecretNames := dict -}}
+      {{- range $allPullSecrets -}}
+        {{- if .name -}}
+          {{- if not (hasKey $seenSecretNames .name) -}}
+            {{- $uniquePullSecrets = append $uniquePullSecrets . -}}
+            {{- $_ := set $seenSecretNames .name true -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+
+      {{- if $uniquePullSecrets }}
+      imagePullSecrets: {{- toYaml $uniquePullSecrets | nindent 6 }}
+      {{- end }}
       {{ if .Values.extraInitContainers -}}
       initContainers: {{ toYaml .Values.extraInitContainers | trimSuffix "\n" | nindent 6 }}
       {{ end -}}
@@ -116,7 +135,7 @@ spec:
         - --web.telemetry-path=/metrics
         - --log.level={{ .Values.pgbouncerExporter.log.level }}
         - --log.format={{ .Values.pgbouncerExporter.log.format }}
-        - --pgBouncer.connectionString=postgres://127.0.0.1:5432/pgbouncer?sslmode=disable&connect_timeout=10
+        - --pgBouncer.connectionString=postgres://{{ .Values.pgbouncerExporter.host }}:{{ .Values.pgbouncerExporter.port }}/{{ .Values.pgbouncerExporter.database }}?sslmode={{ .Values.pgbouncerExporter.sslmode }}&connect_timeout={{ .Values.pgbouncerExporter.connect_timeout }}
         env:
         - name: PGBOUNCER_USER
           valueFrom:
