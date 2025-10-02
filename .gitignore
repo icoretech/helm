@@ -9,3 +9,5 @@ charts/*/Chart.lock
 .cr-release-packages/
 
 node_modules/
+
+.serena
