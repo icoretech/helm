@@ -55,6 +55,9 @@ spec:
       {{ if len .Values.imagePullSecrets -}}
       imagePullSecrets: {{ toYaml .Values.imagePullSecrets | trimSuffix "\n" | nindent 6 }}
       {{ end -}}
+      {{ if .Values.shareProcessNamespace -}}
+      shareProcessNamespace: true
+      {{ end -}}
       {{ if .Values.extraInitContainers -}}
       initContainers: {{ toYaml .Values.extraInitContainers | trimSuffix "\n" | nindent 6 }}
       {{ end -}}

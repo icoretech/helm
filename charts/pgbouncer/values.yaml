@@ -187,6 +187,9 @@ config:
   userlist: {}
     # someUser: secretPassword
 
+# -- Allow containers in the pod to share the same process namespace.
+shareProcessNamespace: false
+
 # -- Pod security context for the main PgBouncer container. By default, this forces the container to run without root privileges and with a read-only root filesystem.
 securityContext:
   allowPrivilegeEscalation: false
