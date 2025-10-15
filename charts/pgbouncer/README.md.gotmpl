@@ -4,7 +4,7 @@ This chart deploys a [PgBouncer](https://www.pgbouncer.org/) instance to your Ku
 
 ## Prerequisites
 
-- Kubernetes 1.20+
+- Kubernetes 1.31+
 - Helm 3.10+
 
 ## Installing the Chart
