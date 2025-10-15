@@ -1454,6 +1454,37 @@ entries:
   chatgpt-retrieval-plugin:
   - annotations:
       artifacthub.io/category: ai-machine-learning
+      artifacthub.io/deprecated: "true"
+      artifacthub.io/deprecationMessage: This Helm chart is deprecated and no longer
+        maintained by iCoreTech. No further support is planned; avoid new deployments
+        and plan migrations.
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 0.0.1
+    created: "2025-10-15T12:27:28.067416297Z"
+    deprecated: true
+    description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
+    digest: bb621a621a72e4c8ec714de48a8040db82e062e116f3ff303f1ae03ff488d5d9
+    home: https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    keywords:
+    - docker
+    - openai
+    - chatgpt
+    - chatgpt-plugin
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: chatgpt-retrieval-plugin
+    sources:
+    - https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    - https://github.com/icoretech/helm/tree/main/charts/chatgpt-retrieval-plugin
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/chatgpt-retrieval-plugin-0.0.20/chatgpt-retrieval-plugin-0.0.20.tgz
+    version: 0.0.20
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.0.1
@@ -1640,6 +1671,50 @@ entries:
     - https://github.com/icoretech/helm/releases/download/chatgpt-retrieval-plugin-0.0.1/chatgpt-retrieval-plugin-0.0.1.tgz
     version: 0.0.1
   inngest-server:
+  - annotations:
+      artifacthub.io/category: streaming-messaging
+      artifacthub.io/deprecated: "true"
+      artifacthub.io/deprecationMessage: This Helm chart is deprecated because an
+        official Inngest Helm chart is available at https://github.com/inngest/inngest-helm.
+        Please use the official chart for new deployments and plan migrations from
+        this one.
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/bitnami/redis
+    apiVersion: v2
+    appVersion: v1.6.2
+    created: "2025-10-15T12:27:28.23949575Z"
+    deprecated: true
+    description: Inngest Server Helm chart for Kubernetes
+    digest: ac66f9788d00aa9b89a832acc903df38c675cfabcb224d5818c1914998c0e1fa
+    home: https://github.com/inngest/inngest
+    icon: https://icoretech.github.io/helm/charts/inngest-server/logo.png
+    keywords:
+    - inngest
+    - serverless
+    - event-driven
+    - workflow
+    - function-orchestration
+    - async
+    - queue
+    - event-processing
+    - background-jobs
+    - microservices
+    - faas
+    - triggers
+    - helm-chart
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: inngest-server
+    sources:
+    - https://github.com/inngest/inngest
+    - https://github.com/icoretech/helm/tree/main/charts/inngest-server
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/inngest-server-1.1.2/inngest-server-1.1.2.tgz
+    version: 1.1.2
   - annotations:
       artifacthub.io/category: streaming-messaging
       artifacthub.io/license: MIT
@@ -2728,6 +2803,32 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 1.24.1
+    created: "2025-10-15T12:27:28.421491012Z"
+    description: A Helm chart for deploying PgBouncer, a PostgreSQL connection pooler,
+      on Kubernetes
+    digest: dcde3b1e55e14d066e178c4f7cd545d4fb868b03786a0afbb0813edd27ba797a
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/pgbouncer/logo.png
+    keywords:
+    - pgbouncer
+    - postgresql
+    - kubernetes
+    kubeVersion: '>= 1.31.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: pgbouncer
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/pgbouncer
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/pgbouncer-4.0.1/pgbouncer-4.0.1.tgz
+    version: 4.0.1
+  - annotations:
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 1.24.1
     created: "2025-09-30T21:00:13.099772759Z"
     description: A Helm chart for deploying PgBouncer, a PostgreSQL connection pooler,
       on Kubernetes
@@ -3634,4 +3735,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2025-10-01T11:04:40.989096196Z"
+generated: "2025-10-15T12:27:28.421871443Z"
