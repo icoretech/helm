@@ -112,6 +112,9 @@
         }
       ]
     },
+    "shareProcessNamespace": {
+      "type": "boolean"
+    },
     "securityContext": {
       "type": "object",
       "additionalProperties": false,
