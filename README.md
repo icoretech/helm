@@ -10,15 +10,18 @@ For detailed information on the individual charts and their usage, please naviga
 
 - [Airbroke](https://icoretech.github.io/helm/charts/airbroke): A modern, React-based open-source error catcher web application.
 - [PgBouncer](https://icoretech.github.io/helm/charts/pgbouncer): A lightweight connection pooler for PostgreSQL.
-- [ChatGPT Retrieval Plugin](https://icoretech.github.io/helm/charts/chatgpt-retrieval-plugin): A Helm chart for deploying the ChatGPT Retrieval Plugin.
 - [Next.js](https://icoretech.github.io/helm/charts/nextjs): Generic, no-database Helm chart for Next.js standalone apps.
-- [Inngest Server](https://icoretech.github.io/helm/charts/inngest-server): An event-driven durable execution platform that allows you to run fast, reliable code on any platform, without managing queues, infra, or state.
+
+## Deprecated Charts
+
+- [ChatGPT Retrieval Plugin](https://icoretech.github.io/helm/charts/chatgpt-retrieval-plugin): DEPRECATED — This Helm chart is no longer maintained and will not be supported in the foreseeable future. Do not use it for new deployments.
+- [Inngest Server](https://icoretech.github.io/helm/charts/inngest-server): DEPRECATED — This Helm chart is deprecated because an official Inngest Helm chart is available. Avoid new deployments and plan to migrate to the [official chart](https://github.com/inngest/inngest-helm.).
 
 ## Getting Started
 
 To use the iCoreTech Helm charts, you can add the iCoreTech Helm repository to your local Helm setup:
 
-```bash
+```shell
 helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 ```

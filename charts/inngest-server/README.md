@@ -1,5 +1,9 @@
 # Inngest Server Helm Chart
 
+> DEPRECATION NOTICE
+>
+> This Helm chart is deprecated because Inngest now provides an official Helm chart. Use the official chart here: https://github.com/inngest/inngest-helm. No further support is planned here. Please avoid new deployments and plan to migrate existing ones to the official chart.
+
 This Helm chart deploys [Inngest](https://www.inngest.com/docs/self-hosting) Server.
 
 ## Installing the Chart

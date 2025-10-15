@@ -2,8 +2,9 @@ apiVersion: v2
 name: chatgpt-retrieval-plugin
 description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
 type: application
-version: 0.0.19
+version: 0.0.20
 appVersion: "0.0.1"
+deprecated: true
 keywords:
   - docker
   - openai
@@ -20,6 +21,8 @@ sources:
 annotations:
   artifacthub.io/license: "MIT"
   artifacthub.io/category: ai-machine-learning
+  artifacthub.io/deprecated: "true"
+  artifacthub.io/deprecationMessage: "This Helm chart is deprecated and no longer maintained by iCoreTech. No further support is planned; avoid new deployments and plan migrations."
 # dependencies:
 #   - name: redis-stack
 #     version: "0.3.2"

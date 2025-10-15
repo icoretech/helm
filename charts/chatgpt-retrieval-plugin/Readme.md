@@ -1,5 +1,9 @@
 # ChatGPT Retrieval Plugin Helm Chart
 
+> DEPRECATION NOTICE
+>
+> This Helm chart is deprecated and no longer maintained by iCoreTech. No support is planned in the foreseeable future. Please avoid new deployments and plan to retire or migrate existing installations. This chart may be removed from the repository and registry in a future release.
+
 This Helm chart deploys the [ChatGPT Retrieval Plugin](https://github.com/openai/chatgpt-retrieval-plugin).
 
 ## Prerequisites

@@ -4,7 +4,7 @@ This chart deploys a [PgBouncer](https://www.pgbouncer.org/) instance to your Ku
 
 ## Prerequisites
 
-- Kubernetes 1.20+
+- Kubernetes 1.31+
 - Helm 3.10+
 
 ## Installing the Chart
@@ -43,7 +43,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | config.databases | object | `{}` | Mapping of database names to connection parameters. E.g.: mydb = host=postgresql port=5432 |
 | config.existingAdminSecret | string | `""` | If set, skip creating a new secret for admin credentials, and reference this existing Secret name instead. |
 | config.existingUserlistSecret | string | `""` | Reference to an existing Secret that contains a userlist.txt file, with entries for other users/passwords. |
-| config.pgbouncer | object | `{}` | Additional PgBouncer parameters (e.g. auth_type, pool_mode). |
+| config.pgbouncer | object | `{"ignore_startup_parameters":"extra_float_digits"}` | Additional PgBouncer parameters (e.g. auth_type, pool_mode). |
 | config.userlist | object | `{}` | if existingUserlistSecret isn't used. |
 | config.users | object | `{}` | Mapping of usernames to connection parameters. E.g.: someUser = pool_mode=session |
 | extraContainers | list | `[]` | Extra containers to run within the PgBouncer pod. |
@@ -96,6 +96,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | service.type | string | `"ClusterIP"` | Service type (e.g. ClusterIP, NodePort, LoadBalancer). |
 | serviceAccount.annotations | object | `{}` | Annotations for the created ServiceAccount. |
 | serviceAccount.name | string | `""` | Creates a new ServiceAccount if this is empty. |
+| shareProcessNamespace | bool | `false` | Allow containers in the pod to share the same process namespace. |
 | terminationGracePeriodSeconds | int | `30` | Time (in seconds) to allow graceful shutdown before force-terminating the container. |
 | tolerations | list | `[]` | See Kubernetes docs on taints and tolerations. |
 | updateStrategy | object | `{}` | The update strategy to apply to the Deployment (e.g. Recreate or RollingUpdate). |

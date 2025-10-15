@@ -2,7 +2,7 @@ apiVersion: v2
 name: inngest-server
 description: Inngest Server Helm chart for Kubernetes
 type: application
-version: 1.1.1
+version: 1.1.2
 appVersion: "v1.6.2"
 icon: https://icoretech.github.io/helm/charts/inngest-server/logo.png
 keywords:
@@ -32,3 +32,6 @@ annotations:
   artifacthub.io/recommendations: |
     - url: https://artifacthub.io/packages/helm/bitnami/redis
   artifacthub.io/category: streaming-messaging
+  artifacthub.io/deprecated: "true"
+  artifacthub.io/deprecationMessage: "This Helm chart is deprecated because an official Inngest Helm chart is available at https://github.com/inngest/inngest-helm. Please use the official chart for new deployments and plan migrations from this one."
+deprecated: true
