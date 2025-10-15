@@ -10,4 +10,4 @@ charts/*/Chart.lock
 
 node_modules/
 
-.serena
+.serena/
