@@ -1,0 +1,12 @@
+mode: python
+python:
+  image: ghcr.io/astral-sh/uv:latest
+  package: awslabs.aws-documentation-mcp-server@latest
+  args:
+    - --port
+    - "3000"
+container:
+  port: 3000
+service:
+  port: 3000
+

@@ -1,0 +1,26 @@
+# Minimal Gateway (Gateway API) for local testing
+#
+# - Adjust `gatewayClassName` to match your controller:
+#   - Envoy Gateway:   gatewayClassName: envoy
+#   - NGINX Gateway:   gatewayClassName: nginx
+#   - Cilium:          gatewayClassName: cilium
+# - Apply this in the SAME namespace as your Helm release (default: mcp)
+# - Your HTTPRoute examples in this chart reference a Gateway named "gateway"
+#   with an HTTP listener named "http".
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: gateway
+  namespace: mcp
+spec:
+  gatewayClassName: envoy  # change to your controller
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*"
+      allowedRoutes:
+        namespaces:
+          from: Same
+

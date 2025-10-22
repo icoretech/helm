@@ -1,0 +1,31 @@
+# Example: Gateway API HTTPRoute for SSE/Streamable HTTP
+# Requires a Gateway named "gateway" with an HTTP listener named "http" in your cluster.
+
+service:
+  port: 3000
+
+container:
+  port: 3000
+
+transport:
+  type: http-sse
+  http:
+    path: /sse
+
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: gateway
+      sectionName: http
+  hostnames:
+    - mcp.example.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      # Gateway API v1.2+ timeouts; supported by Envoy Gateway and others
+      timeouts:
+        request: 3600s
+        backendRequest: 3600s
+

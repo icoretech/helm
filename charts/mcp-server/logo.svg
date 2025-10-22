@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6C63FF"/>
+      <stop offset="100%" stop-color="#00D4FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="32" fill="#0B1221"/>
+  <g fill="none" stroke="url(#g)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M64 64h80c24 0 44 20 44 44s-20 44-44 44H96"/>
+    <path d="M192 192h-80c-24 0-44-20-44-44s20-44 44-44h48"/>
+    <circle cx="128" cy="128" r="14" fill="#00E0FF" stroke="none"/>
+  </g>
+  <text x="128" y="223" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans" font-size="26" text-anchor="middle" fill="#D5E1FF">MCP</text>
+</svg>
+

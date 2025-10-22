@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "mcp-server values schema",
+  "type": "object",
+  "properties": {
+    "replicaCount": { "type": "integer", "minimum": 1 },
+    "mode": { "type": "string", "enum": ["image", "node", "python"] },
+    "container": {
+      "type": "object",
+      "properties": {
+        "env": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "name": {"type":"string"}, "value": {"type":"string"} },
+            "required": ["name", "value"]
+          }
+        },
+        "extraEnvFrom": { "type": "array" },
+        "command": { "type": "array", "items": {"type": "string"} },
+        "args": { "type": "array", "items": {"type": "string"} },
+        "workingDir": { "type": "string" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      }
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": {"type": "string"},
+        "tag": {"type": "string"},
+        "pullPolicy": {"type": "string"},
+        "command": { "type": "array", "items": {"type": "string"} },
+        "args": { "type": "array", "items": {"type": "string"} }
+      }
+    },
+    "node": {
+      "type": "object",
+      "properties": {
+        "image": {"type": "string"},
+        "pullPolicy": {"type": "string"},
+        "package": {"type": "string"},
+        "version": {"type": "string"},
+        "args": { "type": "array", "items": {"type": "string"} },
+        "npmrcSecret": {"type": "string"},
+        "npmrcMountPath": {"type": "string"},
+        "preStart": { "type": "array", "items": {"type": "string"} }
+      }
+    },
+    "python": {
+      "type": "object",
+      "properties": {
+        "image": {"type": "string"},
+        "pullPolicy": {"type": "string"},
+        "package": {"type": "string"},
+        "fromGit": {"type": "string"},
+        "usePip": {"type": "boolean"},
+        "args": { "type": "array", "items": {"type": "string"} },
+        "preStart": { "type": "array", "items": {"type": "string"} }
+      }
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "filename": {"type": "string"},
+        "mountPath": {"type": "string"},
+        "contents": {"type": "string"}
+      }
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "type": {"type": "string"},
+        "port": {"type": "integer", "minimum": 1, "maximum": 65535}
+      }
+    },
+    "ingress": { "type": "object" },
+    "httpRoute": { "type": "object" },
+    "resources": {"type": "object"},
+    "autoscaling": {"type": "object"},
+    "volumes": {"type": "array"},
+    "volumeMounts": {"type": "array"}
+  },
+  "required": ["mode"]
+}
+

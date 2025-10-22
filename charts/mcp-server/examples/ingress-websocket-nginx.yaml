@@ -1,0 +1,26 @@
+# Example: expose WebSocket transport via NGINX Ingress
+service:
+  port: 3000
+
+container:
+  port: 3000
+
+transport:
+  type: websocket
+  http:
+    wsPath: /ws
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/enable-websocket: "true"
+    # Optional long-lived connection tuning
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+  hosts:
+    - host: mcp.example.local
+      paths:
+        - path: /
+          pathType: Prefix
+

@@ -1,0 +1,248 @@
+# -- Number of replicas for the Deployment
+replicaCount: 1
+
+# -- Additional labels applied to chart resources
+additionalLabels: {}
+# -- Additional annotations applied to chart resources
+additionalAnnotations: {}
+
+# -- Runtime mode for the MCP server. One of: `image`, `node`, `python`.
+#    - `image`: run a pre-built container image (recommended for production)
+#    - `node`: run a Node/TypeScript MCP package via `npx`
+#    - `python`: run a Python MCP package via `uvx` (or pip)
+mode: image
+
+# -- Transport configuration
+transport:
+  # -- Primary transport type exposed outside the pod. One of: `http-sse`, `websocket`, `stdio`.
+  #    Note: `stdio` is generally unsuitable for remote access in Kubernetes unless you wrap the
+  #    server with a gateway that translates stdio to a network transport.
+  type: http-sse
+
+  http:
+    # -- Base HTTP path for the MCP endpoint (e.g., `/sse` for streamable HTTP using SSE).
+    #    This is used only for documentation/ingress convenience; your server must actually
+    #    listen on this path.
+    path: /sse
+    # -- Optional alternate WebSocket path if using `transport.type=websocket`
+    wsPath: /ws
+    # -- Recommended long-lived connection timeouts (applied as Ingress annotations where supported).
+    timeouts:
+      readSeconds: 3600
+      sendSeconds: 3600
+      proxySeconds: 3600
+
+  # -- Optional stdio gateway to translate stdio↔network inside the pod. Disabled by default.
+  stdioGateway:
+    enabled: false
+    # -- Gateway container image (defaults to a public mcp-proxy that can expose SSE and spawn a local stdio server)
+    image: ghcr.io/sparfenyuk/mcp-proxy:latest
+    pullPolicy: IfNotPresent
+    # -- Port for the gateway's SSE server to listen on (use service.port externally)
+    port: 8096
+    host: 0.0.0.0
+    # -- Add one or more CORS origins (use ["*"] for any)
+    allowOrigins: ["*"]
+    # -- Pass all environment variables through to the spawned stdio server
+    passEnvironment: true
+    # -- Working directory for the spawned stdio server process
+    cwd: ""
+    # -- Optional commands to run before starting the proxy (e.g., pip installs)
+    preStart: []
+    # -- Additional env just for the gateway container
+    env: []
+    # -- envFrom for the gateway container (e.g., secrets/configmaps)
+    envFrom: []
+    # -- Resources for the gateway container
+    resources: {}
+    # -- Optional explicit stdio server to spawn (overrides mode-based auto command)
+    server:
+      command: ""
+      args: []
+      env: []
+      cwd: ""
+    # -- Define multiple named stdio servers served under `/servers/{name}/` paths.
+    #    Each entry supports: command, args[], env[] (list of {name,value}), disabled (bool)
+    servers: {}
+    # servers:
+    #   fetch:
+    #     command: awslabs.aws-documentation-mcp-server
+    #     args: []
+    #   pricing:
+    #     command: awslabs.aws-pricing-mcp-server
+    #     args: []
+    #     env:
+    #       - name: AWS_REGION
+    #         value: eu-west-1
+    # -- Advanced: provide a raw JSON string for named servers config (overrides servers map)
+    namedServersJson: ""
+
+# Common container options (apply to all modes)
+container:
+  # -- Extra environment variables
+  env: []
+  # - name: LOG_LEVEL
+  #   value: info
+  # -- Extra envFrom entries (e.g., Secret or ConfigMap refs)
+  extraEnvFrom: []
+  # - secretRef:
+  #     name: my-secret
+  # -- Override container command (array form)
+  command: []
+  # -- Override container args (array form)
+  args: []
+  # -- Working directory for the server process
+  workingDir: ""
+  # -- Port the MCP server listens on (if using HTTP/WebSocket)
+  port: 3000
+
+# Settings for mode=image (supply your own container that runs the MCP server)
+image:
+  # -- Image repository
+  repository: nginx
+  # -- Image tag (defaults to Chart.AppVersion when empty)
+  tag: ""
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  # -- Optional override of command when mode=image (array form)
+  command: []
+  # -- Optional override of args when mode=image (array form)
+  args: []
+
+# Settings for mode=node (run via npx)
+node:
+  # -- Node base image to run npx
+  image: node:24-alpine
+  # -- Pull policy for the Node image
+  pullPolicy: IfNotPresent
+  # -- npm package name, e.g. "mcp-remote" or "@acme/my-mcp-server"
+  package: ""
+  # -- Optional semver or dist-tag to pin, e.g. "latest" or "1.2.3"
+  version: "latest"
+  # -- Arguments to pass to the package, e.g. ["--port", "3000"]
+  args: []
+  # -- Optional private registry auth: mount a Secret containing an ".npmrc" key
+  npmrcSecret: ""
+  # -- Mount path for the .npmrc file
+  npmrcMountPath: "/home/node/.npmrc"
+  # -- Optional additional setup commands before starting the server
+  preStart: []
+  # Example: ["npm config set registry https://npm.example.com/registry"]
+
+# Settings for mode=python (run via uvx or pip)
+python:
+  # -- Base image with uv/uvx and Python preinstalled. Alternative: python:3.12-slim
+  image: ghcr.io/astral-sh/uv:latest
+  # -- Pull policy for the Python image
+  pullPolicy: IfNotPresent
+  # -- uvx target, e.g. "awslabs.aws-pricing-mcp-server@latest" or a local module name
+  package: ""
+  # -- Optional Git source for uvx (e.g. git+https://...). If set, `package` is executed from this source
+  fromGit: ""
+  # -- Extra args for the package (e.g., ["--port", "3000"])
+  args: []
+  # -- Optional pre-start commands (e.g., install requirements)
+  preStart: []
+  # Example: ["uv pip install -r /config/requirements.txt"]
+  # -- Use pip instead of uvx (set to true to use pip)
+  usePip: false
+
+# Optional MCP server configuration file mounted as a ConfigMap
+config:
+  enabled: false
+  # -- Filename within the mount path (e.g., config.toml, config.yaml, config.json)
+  filename: config.toml
+  # -- Mount path inside the container
+  mountPath: /config
+  # -- Raw contents of the config file
+  contents: |
+    # example config
+    # [server]
+    # port = 3000
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Overrides the chart name for resources
+nameOverride: ""
+# -- Completely overrides the generated name
+fullnameOverride: ""
+
+# ServiceAccount configuration
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+# -- Annotations added to the Pod
+podAnnotations: {}
+# -- Labels added to the Pod
+podLabels: {}
+
+# -- Pod-level security context
+podSecurityContext: {}
+# -- Container-level security context
+securityContext: {}
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 3000
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: mcp.example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+# Gateway API HTTPRoute configuration
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs:
+    - name: gateway
+      sectionName: http
+  hostnames:
+    - mcp.example.local
+  rules: []
+  # - matches:
+  #   - path:
+  #       type: PathPrefix
+  #       value: /
+
+# -- Liveness probe (disabled by default; many MCP servers don’t expose HTTP health)
+livenessProbe: {}
+# -- Readiness probe (disabled by default)
+readinessProbe: {}
+  # httpGet:
+  #   path: /health
+  #   port: http
+
+# -- Resource requests/limits for the container
+resources: {}
+
+# -- Horizontal Pod Autoscaler configuration
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+# -- Additional volumes to add to the Pod
+volumes: []
+# -- Additional volume mounts for the container
+volumeMounts: []
+
+# -- Node selector for Pod assignment
+nodeSelector: {}
+# -- Tolerations to allow Pods to be scheduled onto nodes with taints
+tolerations: []
+# -- Affinity rules for Pod scheduling
+affinity: {}
