@@ -2475,6 +2475,41 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/inngest-server-1.0.0/inngest-server-1.0.0.tgz
     version: 1.0.0
+  mcp-server:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: added
+          description: Initial release with image, node (npx) and python (uvx/pip) modes
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Source
+          url: https://github.com/icoretech/helm/tree/main/charts/mcp-server
+        - name: MCP Spec
+          url: https://modelcontextprotocol.io/
+      artifacthub.io/prerelease: "false"
+    apiVersion: v2
+    appVersion: 0.0.1
+    created: "2025-10-22T08:44:05.210005436Z"
+    description: 'Generic MCP server runner for Node (TypeScript) and Python servers.
+      Supports three modes: direct container image, Node (npx), and Python (uvx/pip).'
+    digest: b25ff4b3e923195e4a579516e15746dc9ca98e0fce1930094c5575600bd1cbc4
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/mcp-server/logo.svg
+    keywords:
+    - mcp
+    - model-context-protocol
+    - server
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: mcp-server
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/mcp-server
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/mcp-server-0.1.0/mcp-server-0.1.0.tgz
+    version: 0.1.0
   nextjs:
   - annotations:
       artifacthub.io/license: MIT
@@ -3761,4 +3796,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2025-10-15T12:35:22.883619522Z"
+generated: "2025-10-22T08:44:05.210284856Z"
