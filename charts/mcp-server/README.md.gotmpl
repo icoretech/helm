@@ -1,53 +1,17 @@
 # mcp-server Helm Chart
 
-Generic runner for Model Context Protocol (MCP) servers on
-Kubernetes.
+Generic runner for Model Context Protocol (MCP) servers on Kubernetes.
+This chart deploys one Deployment/Service per servers[] entry (Node via npx,
+Python via uv tool run, or a pre-built image), and can also register external
+OpenAPI specs without creating Pods. Everything is wired into an Unla MCP
+Gateway (subchart) that exposes a single aggregated endpoint.
 
-This chart supports three modes:
+## Stdio transport (not supported)
 
-- `image`: run a pre-built container image that already includes your MCP
-  server (recommended for production).
-- `node`: run a Node/TypeScript MCP server package via `npx` inside a
-  `node:alpine` container.
-- `python`: run a Python MCP server via `uvx` (or `pip`) inside a `uv`/`python`
-  container.
-
-## Named Servers (Spotlight)
-
-Run many stdio‑based MCP servers behind a single HTTP(SSE) endpoint using the
-built‑in gateway option powered by `mcp-proxy`.
-
-What it is
-
-- One process exposes an SSE endpoint and spawns multiple stdio MCP servers as
-  child processes.
-- Each server is reachable at `/servers/{name}/sse` (a default server can also
-  be exposed at `/sse`).
-
-Why it’s useful
-
-- One Service/Ingress/Gateway for multiple stdio MCP servers.
-- Central place for long‑lived connection tuning (SSE/WS timeouts).
-- Great for internal hubs, demos, or small fleets.
-
-When not to use
-
-- If you need per‑server autoscaling/isolation, prefer multiple Deployments or
-  an external reverse proxy.
-
-How to enable
-
-- Set `transport.type: stdio` and `transport.stdioGateway.enabled: true`.
-- Add entries under `transport.stdioGateway.servers` with `command`/`args`/`env`.
-- Or provide raw JSON via `transport.stdioGateway.namedServersJson`.
-- Use `transport.stdioGateway.preStart` for installing servers (e.g., pip
-  install) or ship a custom image.
-
-Endpoints
-
-- Default: `/sse` (if you spawn a default server after `--`).
-- Named: `/servers/{name}/sse`.
-- Status: `/status`.
+This chart intentionally does not support stdio-only MCP servers. Kubernetes pods are designed for
+long‑lived network services; supervising interactive stdio processes reliably (signals, restarts,
+child lifecycles) is brittle. Pick servers that expose HTTP (SSE) or WebSocket natively. If you must
+translate stdio, run a dedicated gateway outside this chart and route to it with a normal Service.
 
 ## Prerequisites
 
@@ -79,21 +43,18 @@ default values.
 {{ template "chart.valuesSection" . }}
 <!-- markdownlint-enable MD013 -->
 
-## Transports and Exposure
+## Transports and Exposure (via Unla Gateway)
 
 Transports
 
-- `http-sse` (default): stream over a long‑lived HTTP connection.
-- `websocket`: stream over WebSocket.
-- `stdio`: intended for local clients; in Kubernetes it needs a gateway/bridge.
-  This chart offers a stdio gateway mode using `mcp-proxy`.
+- HTTP (SSE/streamable HTTP): long‑lived HTTP connection.
+- WebSocket: use when your server exposes a WS endpoint.
 
-Exposure options
+Exposure is handled by the Unla subchart. Port-forward the gateway Service:
 
-- ClusterIP + port‑forward: simplest local testing.
-- Ingress (e.g., NGINX): add WS upgrade annotations and increase timeouts.
-- Gateway API (HTTPRoute): set `rules.timeouts.request/backendRequest` for
-  long‑lived connections.
+```bash
+kubectl -n <ns> port-forward svc/<release> 8000:5235
+```
 
 Timeout tips
 
@@ -101,105 +62,23 @@ Timeout tips
   `proxy-send-timeout` to `3600`).
 - WebSocket: ensure upgrade support (NGINX: `enable-websocket: "true"`).
 
-## Examples
+## Dependency Caching (per server)
 
-Node mode (npx):
+Enable servers[].cache to persist npm/uv caches between restarts. Set
+servers[].cache.pvc.existingClaim to bind an existing PVC or omit to let the
+chart create one per server.
 
-```yaml
-mode: node
-node:
-  image: node:24-alpine
-  package: mcp-remote
-  version: latest
-  args:
-    - https://docs.mcp.cloudflare.com/sse
-    - --port
-    - "3000"
-container:
-  port: 3000
-service:
-  port: 3000
-```
+## Examples provided under `charts/mcp-server/examples/`
 
-Python mode (uvx):
-
-```yaml
-mode: python
-python:
-  image: ghcr.io/astral-sh/uv:latest
-  package: awslabs.aws-documentation-mcp-server@latest
-  args:
-    - --port
-    - "3000"
-container:
-  port: 3000
-service:
-  port: 3000
-```
-
-Stdio gateway with named servers (mcp-proxy):
-
-```yaml
-# Exposes /sse for default server and /servers/{name}/sse for named servers
-mode: python
-python:
-  image: ghcr.io/astral-sh/uv:latest
-  package: awslabs.aws-documentation-mcp-server@latest
-  args:
-    - --port
-    - "3000"
-service:
-  port: 3000
-transport:
-  type: stdio
-  stdioGateway:
-    enabled: true
-    image: ghcr.io/sparfenyuk/mcp-proxy:latest
-    passEnvironment: true
-    allowOrigins: ["*"]
-    preStart:
-      - pip install --no-cache-dir awslabs.aws-documentation-mcp-server awslabs.aws-pricing-mcp-server
-    servers:
-      docs:
-        command: awslabs.aws-documentation-mcp-server
-      pricing:
-        command: awslabs.aws-pricing-mcp-server
-```
-
-WebSocket via NGINX Ingress:
-
-```yaml
-service:
-  port: 3000
-container:
-  port: 3000
-transport:
-  type: websocket
-  http:
-    wsPath: /ws
-ingress:
-  enabled: true
-  className: nginx
-  annotations:
-    nginx.ingress.kubernetes.io/enable-websocket: "true"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-  hosts:
-    - host: mcp.example.local
-      paths:
-        - path: /
-          pathType: Prefix
-```
-
-Example values files are provided under `charts/mcp-server/examples/`:
-
-- `node-mcp-remote.yaml`: Node mode using `mcp-remote`.
-- `python-aws-docs.yaml`: Python mode using `awslabs.aws-documentation-mcp-server`.
-- `stdio-gateway-named-servers.yaml`: Stdio gateway with two named servers.
-- `ingress-websocket-nginx.yaml`: WebSocket transport behind NGINX Ingress.
-- `gateway-http.yaml`: Minimal Gateway (Gateway API) to attach HTTPRoutes.
-- `httproute-sse-gatewayapi.yaml`: HTTPRoute with timeouts for SSE/Streamable HTTP.
-- `httproute-websocket-gatewayapi.yaml`: HTTPRoute with timeouts for WebSocket.
+- `node-server-everything.yaml` - Node mode using
+  `@modelcontextprotocol/server-everything` (streamable HTTP pinned to Node 22).
+- `python-aws-pricing.yaml` - Minimal Python mode example running the
+  AWS Pricing MCP server (HTTP/SSE).
+- `python-fastmcp-http.yaml` - Advanced Python mode running the
+  `mcp-server` sample with streamable HTTP arguments.
+ - `openapi.yaml` - Register an external OpenAPI URL with Unla (no Pod created).
+  
+  
 
 Gateway API quickstart:
 

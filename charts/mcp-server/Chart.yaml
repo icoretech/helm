@@ -1,6 +1,6 @@
 apiVersion: v2
 name: mcp-server
-description: "Generic MCP server runner for Node (TypeScript) and Python servers. Supports three modes: direct container image, Node (npx), and Python (uvx/pip)."
+description: "Generic MCP server runner for Node (TypeScript) and Python servers. Supports four modes: direct container image, Node (npx), Python (uvx/pip), and OpenAPI (external URL registered in Unla)."
 
 # A chart can be either an 'application' or a 'library' chart.
 #
@@ -15,7 +15,7 @@ type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.1.0
+version: 0.1.2
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
@@ -45,3 +45,10 @@ annotations:
     - kind: added
       description: Initial release with image, node (npx) and python (uvx/pip) modes
   artifacthub.io/prerelease: "false"
+
+dependencies:
+  - name: unla
+    version: "0.9.0"
+    repository: "https://amoylab.github.io/unla-helm-charts"
+    # Allow turning the subchart on/off from root values via `unla.enabled`
+    condition: unla.enabled

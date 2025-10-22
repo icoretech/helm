@@ -1,0 +1,236 @@
+{{- range $i, $srv := .Values.servers }}
+{{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+{{- $isOpenAPI := hasKey $srv "openapi" -}}
+{{- if not $isOpenAPI }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mcp-server.fullname" $ }}-{{ $name }}
+  labels:
+    {{- include "mcp-server.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: server
+    app.kubernetes.io/part-of: {{ include "mcp-server.fullname" $ }}
+    app.kubernetes.io/name: {{ $name }}
+spec:
+  replicas: {{ default 1 $srv.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mcp-server.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: server
+      app.kubernetes.io/name: {{ $name }}
+  template:
+    metadata:
+      labels:
+        {{- include "mcp-server.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: server
+        app.kubernetes.io/name: {{ $name }}
+      {{- with $srv.podLabels }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with $srv.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $srv.serviceAccountName }}
+      serviceAccountName: {{ $srv.serviceAccountName }}
+      {{- end }}
+      {{- with $srv.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- $isNode := hasKey $srv "node" }}
+      {{- $isPython := hasKey $srv "python" }}
+      {{- $isImage := hasKey $srv "image" }}
+      {{- $isBridge := and (hasKey $srv "stdioBridge") ($srv.stdioBridge.enabled | default false) }}
+      containers:
+        - name: {{ $name }}
+          {{- if $isBridge }}
+          {{- $repo := default "ghcr.io/icoretech/mcp-stdio-bridge" (get $srv.stdioBridge "image") }}
+          {{- $tag := default "v0.9.0" (get $srv.stdioBridge "tag") }}
+          image: {{ printf "%s:%s" $repo $tag | quote }}
+          imagePullPolicy: IfNotPresent
+          {{- with $srv.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args:
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "{{ $srv.stdioBridge.port | default (int 3000) }}"
+            {{- if ($srv.stdioBridge.passEnvironment | default true) }}
+            - --pass-environment
+            {{- end }}
+            {{- range $arg := (default (list) $srv.stdioBridge.proxyArgs) }}
+            - {{ $arg | quote }}
+            {{- end }}
+            - --
+            {{- /* serverCommand and serverArgs follow the -- separator */ -}}
+            {{- range $c := (default (list) $srv.stdioBridge.serverCommand) }}
+            - {{ $c | quote }}
+            {{- end }}
+            {{- range $a := (default (list) $srv.stdioBridge.serverArgs) }}
+            - {{ $a | quote }}
+            {{- end }}
+          {{ else if $isNode }}
+          {{- $repo := default "node" (get $srv.node "image") }}
+          {{- $tag := default "24-alpine" (get $srv.node "tag") }}
+          image: {{ printf "%s:%s" $repo $tag | quote }}
+          imagePullPolicy: IfNotPresent
+          {{- with $srv.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command: ["npx"]
+          args:
+            - "-y"
+            {{- if $srv.node.package }}
+            - {{ (printf "%s@%s" $srv.node.package (default "latest" $srv.node.version)) | quote }}
+            {{- end }}
+            {{- range $arg := (default (list) $srv.node.args) }}
+            - {{ $arg | quote }}
+            {{- end }}
+          {{ else if $isPython }}
+          {{- $repo := default "ghcr.io/astral-sh/uv" (get $srv.python "image") }}
+          {{- $tag := default "python3.12-bookworm-slim" (get $srv.python "tag") }}
+          image: {{ printf "%s:%s" $repo $tag | quote }}
+          imagePullPolicy: IfNotPresent
+          {{- with $srv.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - "uv"
+            - "tool"
+            - "run"
+            {{- if $srv.python.fromGit }}
+            - "--from"
+            - {{ $srv.python.fromGit | quote }}
+            {{- end }}
+            - {{ $srv.python.package | quote }}
+            - "--"
+          args:
+            {{- range $arg := (default (list) $srv.python.args) }}
+            - {{ $arg | quote }}
+            {{- end }}
+          {{ else if $isImage }}
+          image: {{ printf "%s:%s" (get $srv.image "repository" | default "nginx") (get $srv.image "tag" | default "latest") | quote }}
+          imagePullPolicy: IfNotPresent
+          {{- with $srv.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (get $srv.image "command") }}
+          command: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (get $srv.image "args") }}
+          args: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{ else }}
+          image: "busybox:1.36"
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh","-lc"]
+          args: ["echo missing server spec (provide one of: node/python/image) && sleep 3600"]
+          {{ end }}
+
+          {{- $defaultPort := ternary 3001 (ternary 3000 3000 $isPython) $isNode -}}
+          {{- if $isBridge }}
+          {{- $defaultPort = (int 3000) -}}
+          {{- end -}}
+          ports:
+            - name: http
+              containerPort: {{ $srv.port | default $defaultPort }}
+              protocol: TCP
+          {{- if $isBridge }}
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          {{- end }}
+          {{- with $srv.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- if and (hasKey $srv "config") ($srv.config.enabled | default false) }}
+          volumeMounts:
+            - name: cfg
+              mountPath: {{ $srv.config.mountPath | default "/config" }}
+              readOnly: true
+          {{- end }}
+          {{- if and (hasKey $srv "cache") ($srv.cache.enabled | default false) }}
+          {{- if not (and (hasKey $srv "config") ($srv.config.enabled | default false)) }}
+          volumeMounts:
+          {{- end }}
+            - name: cache
+              mountPath: {{ $srv.cache.mountPath | default "/cache" }}
+          {{- end }}
+          {{- with $srv.extraVolumeMounts }}
+          {{- if not (or ((hasKey $srv "config") and ($srv.config.enabled | default false)) ((hasKey $srv "cache") and ($srv.cache.enabled | default false))) }}
+          volumeMounts:
+          {{- end }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with $srv.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with $srv.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- /* Volumes */}}
+      {{- $hasCfg := and (hasKey $srv "config") ($srv.config.enabled | default false) -}}
+      {{- $hasCache := and (hasKey $srv "cache") ($srv.cache.enabled | default false) -}}
+      {{- $hasExtra := (hasKey $srv "extraVolumes") -}}
+      {{- if or $hasCfg $hasCache $hasExtra }}
+      volumes:
+        {{- if $hasCfg }}
+        - name: cfg
+          configMap:
+            name: {{ printf "%s-cfg-%s" (include "mcp-server.fullname" $) $name }}
+        {{- end }}
+        {{- if $hasCache }}
+        - name: cache
+          {{- $pvc := $srv.cache.pvc -}}
+          {{- if $pvc.existingClaim }}
+          persistentVolumeClaim:
+            claimName: {{ $pvc.existingClaim }}
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: {{ printf "%s-cache-%s" (include "mcp-server.fullname" $) $name }}
+          {{- end }}
+        {{- end }}
+        {{- with $srv.extraVolumes }}
+        {{- range $v := . }}
+        - name: {{ printf "xv-%s-%s" $name ($v.name | default "v") | trunc 63 | trimSuffix "-" }}
+          {{- toYaml (omit $v "name") | nindent 10 }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
+{{- end }}
+---
+{{- end }}

@@ -1,0 +1,33 @@
+{{- range $i, $srv := .Values.servers }}
+{{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+{{- $isOpenAPI := hasKey $srv "openapi" -}}
+{{- $isNode := hasKey $srv "node" -}}
+{{- $isPython := hasKey $srv "python" -}}
+{{- $isBridge := and (hasKey $srv "stdioBridge") ($srv.stdioBridge.enabled | default false) -}}
+{{- $defaultPort := ternary 3001 (ternary 3000 3000 $isPython) $isNode -}}
+{{- if $isBridge }}
+{{- $defaultPort = (int 3000) -}}
+{{- end -}}
+{{- if not $isOpenAPI }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mcp-server.fullname" $ }}-{{ $name }}
+  labels:
+    {{- include "mcp-server.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: {{ $name }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "mcp-server.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: {{ $name }}
+  ports:
+    - name: http
+      port: {{ $srv.port | default $defaultPort }}
+      targetPort: http
+      protocol: TCP
+---
+{{- end }}
+{{- end }}

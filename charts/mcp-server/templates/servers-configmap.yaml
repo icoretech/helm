@@ -1,0 +1,15 @@
+{{- range $i, $srv := .Values.servers }}
+{{- if and (hasKey $srv "config") ($srv.config.enabled | default false) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-cfg-%s" (include "mcp-server.fullname" $) (($srv.name | default (printf "%d" $i)) | trunc 40 | trimSuffix "-") }}
+  labels:
+    {{- include "mcp-server.labels" $ | nindent 4 }}
+data:
+  {{ $srv.config.filename | default "config.toml" }}: |
+{{ $srv.config.contents | default "# empty" | indent 4 }}
+{{- end }}
+{{- end }}
+

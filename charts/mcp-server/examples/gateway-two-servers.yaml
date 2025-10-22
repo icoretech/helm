@@ -1,0 +1,36 @@
+# Example: Microsoft MCP Gateway–centric deployment with two servers in one Pod.
+#
+# Why this example exists
+# - Demonstrates the new gateway-centric architecture: one gateway Pod aggregates
+#   multiple MCP servers that run as sidecar containers in a single Deployment.
+# - Shows two Node HTTP-compatible MCP servers (as most MCP servers are stdio-only).
+# - Uses a public gateway image by default for out-of-the-box local testing. To
+#   switch to Microsoft MCP Gateway, build/push your image and override
+#   gateway.image.repository/tag accordingly.
+# - IMPORTANT: Only use confirmed HTTP-compatible servers. Most MCP servers are stdio-only.
+# - This example uses the same working server twice as reliable HTTP-compatible examples.
+
+# Gateway is provided by the Unla subchart; default ports are used (5235)
+
+# Run two servers in a single Pod
+servers:
+  - name: everything
+    type: node
+    port: 3001
+    node:
+      package: "@modelcontextprotocol/server-everything"
+      version: "latest"
+      args: ["streamableHttp"]
+      # Only the tag should be customized in examples
+      tag: 24-alpine
+
+  - name: everything-alt
+    type: node
+    port: 3002
+    node:
+      package: "@modelcontextprotocol/server-everything"
+      version: "latest"
+      args: ["streamableHttp"]
+      tag: 24-alpine
+
+# No parent Service; the subchart exposes Service named after the release, port 5235

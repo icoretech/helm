@@ -1,0 +1,43 @@
+{{- range $i, $srv := .Values.servers }}
+{{- $isOpenAPI := hasKey $srv "openapi" -}}
+{{- if and (not $isOpenAPI) (hasKey $srv "autoscaling") ($srv.autoscaling.enabled | default false) }}
+{{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "mcp-server.fullname" $ }}-{{ $name }}
+  labels:
+    {{- include "mcp-server.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: {{ $name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "mcp-server.fullname" $ }}-{{ $name }}
+  minReplicas: {{ $srv.autoscaling.minReplicas | default 1 }}
+  maxReplicas: {{ $srv.autoscaling.maxReplicas | default 5 }}
+  {{- $cpu := $srv.autoscaling.targetCPUUtilizationPercentage -}}
+  {{- $mem := $srv.autoscaling.targetMemoryUtilizationPercentage -}}
+  {{- if or $cpu $mem }}
+  metrics:
+    {{- if $cpu }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $cpu }}
+    {{- end }}
+    {{- if $mem }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $mem }}
+    {{- end }}
+  {{- end }}
+---
+{{- end }}
+{{- end }}
