@@ -1,0 +1,28 @@
+{{- /*
+Validation: if unla.enabled=false, no server may have register.enabled=true (default true).
+This prevents silently skipping registration while the user expects it.
+*/ -}}
+{{- $unla := .Values.unla -}}
+{{- $unlaDisabled := false -}}
+{{- if kindIs "map" $unla -}}
+  {{- if kindIs "bool" $unla.enabled -}}
+    {{- $unlaDisabled = (not $unla.enabled) -}}
+  {{- end -}}
+{{- end -}}
+{{- if $unlaDisabled -}}
+  {{- $bad := list -}}
+  {{- range $i, $s := (default (list) .Values.servers) -}}
+    {{- $reg := (get $s "register") -}}
+    {{- $regMap := ternary $reg (dict) (kindIs "map" $reg) -}}
+    {{- /* default register.enabled=true when omitted */ -}}
+    {{- $regEnabled := (default true ($regMap.enabled)) -}}
+    {{- if $regEnabled -}}
+      {{- $name := ($s.name | default (printf "srv-%d" $i)) -}}
+      {{- $bad = append $bad $name -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if gt (len $bad) 0 -}}
+    {{- fail (printf "unla.enabled=false but these servers have register.enabled=true: %s. Either set unla.enabled=true or set register.enabled=false for these servers." (join ", " $bad)) -}}
+  {{- end -}}
+{{- end -}}
+

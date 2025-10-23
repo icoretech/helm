@@ -1,5 +1,20 @@
 {{- $hasServers := and (hasKey .Values "servers") (gt (len .Values.servers) 0) -}}
-{{- if and $hasServers (.Values.unla.enabled | default true) }}
+{{- $ctx := dict "hasReg" false -}}
+{{- range $i, $s := .Values.servers -}}
+  {{- $reg := (get $s "register") -}}
+  {{- $regMap := ternary $reg (dict) (kindIs "map" $reg) -}}
+  {{- $enabled := (default true ($regMap.enabled)) -}}
+  {{- if $enabled -}}
+    {{- $_ := set $ctx "hasReg" true -}}
+  {{- end -}}
+{{- end -}}
+{{- $unlaFlag := true -}}
+{{- if kindIs "map" .Values.unla -}}
+  {{- if kindIs "bool" .Values.unla.enabled -}}
+    {{- $unlaFlag = .Values.unla.enabled -}}
+  {{- end -}}
+{{- end -}}
+{{- if and $hasServers $unlaFlag ($ctx.hasReg) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

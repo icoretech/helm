@@ -16,5 +16,9 @@ servers:
     register:
       enabled: false
 
+# Disable Unla subchart for this standalone example
+unla:
+  enabled: false
+
 # The mcp-proxy bridge keeps the stdio server alive and converts to HTTP transport
 # Gateway is managed by the Unla subchart (Service: <release-name>, port 5235)
