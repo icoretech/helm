@@ -5,6 +5,11 @@
 # also disable related registration hooks in this chart.
 metamcp:
   enabled: true
+  register:
+    mode: print   # print | apply (experimental tRPC apply)
+    admin:
+      email: admin@example.com
+      password: change-me
 
 # Unla subchart provides the gateway + dashboard. This chart only runs
 # your MCP servers. One Deployment/Service is created for each entry in

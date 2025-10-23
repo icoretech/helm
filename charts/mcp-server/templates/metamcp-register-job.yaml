@@ -29,8 +29,16 @@ spec:
           env:
             - name: METAMCP_HOST
               value: {{ printf "%s-metamcp" .Release.Name | quote }}
-            - name: METAMCP_PORT
+            - name: METAMCP_FRONTEND_PORT
               value: "12008"
+            - name: METAMCP_BACKEND_PORT
+              value: "12009"
+            - name: MODE
+              value: {{ (default "print" .Values.metamcp.register.mode) | quote }}
+            - name: ADMIN_EMAIL
+              value: {{ (default "admin@example.com" .Values.metamcp.register.admin.email) | quote }}
+            - name: ADMIN_PASSWORD
+              value: {{ (default "change-me" .Values.metamcp.register.admin.password) | quote }}
           volumeMounts:
             - name: cfg
               mountPath: /cfg
@@ -38,13 +46,61 @@ spec:
           args:
             - |
               set -eu
-              echo "Waiting for MetaMCP frontend http ${METAMCP_HOST}:${METAMCP_PORT}"
+              echo "Mode=${MODE}"
+              echo "Waiting for MetaMCP frontend http ${METAMCP_HOST}:${METAMCP_FRONTEND_PORT}"
               for i in $(seq 1 30); do
-                curl -fsS "http://${METAMCP_HOST}:${METAMCP_PORT}/health" >/dev/null 2>&1 && break || sleep 2
+                curl -fsS "http://${METAMCP_HOST}:${METAMCP_FRONTEND_PORT}/health" >/dev/null 2>&1 && break || sleep 2
               done
               echo "Bootstrap payload (servers → namespace → endpoint):"
               cat /cfg/bootstrap.json || true
-              echo "NOTE: Registration is print-only for now. A future release will POST this payload to MetaMCP admin APIs."
+              if [ "${MODE}" = "print" ]; then
+                echo "NOTE: Registration is print-only in this mode."
+                exit 0
+              fi
+              echo "Attempting experimental tRPC apply against backend http ${METAMCP_HOST}:${METAMCP_BACKEND_PORT}"
+              set -x
+              BASE="http://${METAMCP_HOST}:${METAMCP_BACKEND_PORT}"
+              # Try sign-up then sign-in (Better Auth)
+              curl -sS -i -c /tmp/c.txt -b /tmp/c.txt \
+                -H 'Content-Type: application/json' \
+                -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" \
+                "${BASE}/api/auth/sign-up" || true
+              curl -sS -i -c /tmp/c.txt -b /tmp/c.txt \
+                -H 'Content-Type: application/json' \
+                -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" \
+                "${BASE}/api/auth/sign-in" || true
+              # Load payload
+              PAYLOAD=$(cat /cfg/bootstrap.json)
+              # Heuristic tRPC calls (router.procedure). Try common patterns.
+              # 1) Upsert servers
+              echo "$PAYLOAD" | jq -c '.servers[]' | while read -r S; do
+                NAME=$(echo "$S" | jq -r .name)
+                TYPE=$(echo "$S" | jq -r .type)
+                URL=$(echo "$S" | jq -r .url)
+                BODY='[{"json": {"name":"'"'$NAME'"'","type":"'"'$TYPE'"'","url":"'"'$URL'"'"}}]'
+                curl -sS -i -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
+                  -d "$BODY" "${BASE}/api/trpc/mcpServers.create?batch=1" || true
+                curl -sS -i -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
+                  -d "$BODY" "${BASE}/api/trpc/mcpServers.upsert?batch=1" || true
+              done
+              # 2) Upsert namespace
+              NS=$(echo "$PAYLOAD" | jq -r '.namespace.name')
+              NS_SERVERS=$(echo "$PAYLOAD" | jq -c '.namespace.servers')
+              BODY='[{"json": {"name":"'"'$NS'"'","servers":'"$NS_SERVERS"'}}]'
+              curl -sS -i -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
+                -d "$BODY" "${BASE}/api/trpc/namespaces.create?batch=1" || true
+              curl -sS -i -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
+                -d "$BODY" "${BASE}/api/trpc/namespaces.upsert?batch=1" || true
+              # 3) Upsert endpoint
+              EP=$(echo "$PAYLOAD" | jq -r '.endpoint.name')
+              TRAN=$(echo "$PAYLOAD" | jq -r '.endpoint.transport')
+              BODY='[{"json": {"name":"'"'$EP'"'","namespace":"'"'$NS'"'","transport":"'"'$TRAN'"'","auth":{}}}]'
+              curl -sS -i -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
+                -d "$BODY" "${BASE}/api/trpc/endpoints.create?batch=1" || true
+              curl -sS -i -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
+                -d "$BODY" "${BASE}/api/trpc/endpoints.upsert?batch=1" || true
+              set +x
+              echo "tRPC apply attempted (experimental). Check responses above."
       volumes:
         - name: cfg
           configMap:
