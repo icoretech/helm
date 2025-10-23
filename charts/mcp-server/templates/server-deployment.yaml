@@ -24,12 +24,12 @@ spec:
         {{- include "mcp-server.labels" $ | nindent 8 }}
         app.kubernetes.io/component: server
         mcp.icore.tech/server: {{ $name }}
-      {{- with $srv.podLabels }}
-        {{- toYaml . | nindent 8 }}
+      {{- if and $srv.podLabels (gt (len $srv.podLabels) 0) }}
+        {{- toYaml $srv.podLabels | nindent 8 }}
       {{- end }}
-      {{- with $srv.podAnnotations }}
+      {{- if and $srv.podAnnotations (gt (len $srv.podAnnotations) 0) }}
       annotations:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml $srv.podAnnotations | nindent 8 }}
       {{- end }}
     spec:
       {{- with $srv.imagePullSecrets }}
