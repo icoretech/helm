@@ -2,7 +2,8 @@
 
 Run Model Context Protocol (MCP) servers on Kubernetes. Each entry in
 `servers[]` becomes its own Deployment+Service and the Unla gateway subchart
-exposes them behind a single gateway Service (one path per server). You can run
+exposes them through a single Service (one `/gateway/<server>` path per server).
+You can run
 
 - **HTTP/SSE/WebSocket servers** (Node via `npx`, Python via `uv`/`uvx`, or any
   container image exposing a port).
@@ -41,8 +42,11 @@ servers:
 ```
 
 You can omit `register.*`, `port`, and other knobs unless you need to override
-them—the defaults cover the common cases. The register job automatically pushes
-the router + `mcpServers` block to Unla so the dashboard picks it up.
+them—the defaults cover the common cases. For stdio bridges: if you omit
+`stdioBridge.serverCommand`, the chart will derive it from your server runtime
+(`python.package` → `uvx <package>`, `node.package` → `npx -y <package>@<version>`)
+and append any runtime `args` for convenience. The register job automatically
+pushes the router + `mcpServers` block to Unla so the dashboard picks it up.
 
 ## Transport options
 

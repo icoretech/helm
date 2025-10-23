@@ -58,23 +58,37 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- /* Build bridge args and optional derived child command */}}
+          {{- $bridgePort := ($srv.stdioBridge.port | default (int 3000)) -}}
+          {{- $bridgePassEnv := ($srv.stdioBridge.passEnvironment | default true) -}}
+          {{- $bridgeProxyArgs := (default (list) $srv.stdioBridge.proxyArgs) -}}
+          {{- $b := dict "cmd" (default (list) $srv.stdioBridge.serverCommand) "args" (default (list) $srv.stdioBridge.serverArgs) -}}
+          {{- if or (not ($b.cmd)) (eq (len ($b.cmd)) 0) -}}
+            {{- if hasKey $srv "python" -}}
+              {{- $_ := set $b "cmd" (list "uvx" $srv.python.package) -}}
+              {{- if $srv.python.args }}{{- $_ := set $b "args" (concat $srv.python.args ($b.args | default (list))) -}}{{- end -}}
+            {{- else if hasKey $srv "node" -}}
+              {{- $_ := set $b "cmd" (list "npx" "-y" (printf "%s@%s" $srv.node.package (default "latest" $srv.node.version))) -}}
+              {{- if $srv.node.args }}{{- $_ := set $b "args" (concat $srv.node.args ($b.args | default (list))) -}}{{- end -}}
+            {{- end -}}
+          {{- end -}}
           args:
             - --host
             - "0.0.0.0"
             - --port
-            - "{{ $srv.stdioBridge.port | default (int 3000) }}"
-            {{- if ($srv.stdioBridge.passEnvironment | default true) }}
+            - "{{ $bridgePort }}"
+            {{- if $bridgePassEnv }}
             - --pass-environment
             {{- end }}
-            {{- range $arg := (default (list) $srv.stdioBridge.proxyArgs) }}
+            {{- range $arg := $bridgeProxyArgs }}
             - {{ $arg | quote }}
             {{- end }}
             - --
-            {{- /* serverCommand and serverArgs follow the -- separator */ -}}
-            {{- range $c := (default (list) $srv.stdioBridge.serverCommand) }}
+            {{- /* child command (derived if not provided) */ -}}
+            {{- range $c := ($b.cmd | default (list)) }}
             - {{ $c | quote }}
             {{- end }}
-            {{- range $a := (default (list) $srv.stdioBridge.serverArgs) }}
+            {{- range $a := ($b.args | default (list)) }}
             - {{ $a | quote }}
             {{- end }}
           {{ else if $isNode }}

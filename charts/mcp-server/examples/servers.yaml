@@ -37,18 +37,14 @@ servers:
         size: 2Gi
         accessModes: [ReadWriteOnce]
 
-  # Stdio-only server bridged to SSE (port override requires matching args)
+  # Stdio-only server bridged to SSE (serverCommand omitted → derived from python.package)
   - name: stdio-reddit
-    port: 3100                            # optional (default 3000); will also expose Service on 3100
     python:
       package: mcp-server-reddit
     stdioBridge:
       enabled: true
-      port: 3100                          # optional; matches containerPort above
-      passEnvironment: true               # optional (default true)
-      serverCommand: ["uvx", "mcp-server-reddit"]     # required for bridge
-      serverArgs: ["--port","3100","--log-level","info"]  # ensure child listens on same port
-      proxyArgs: ["--sse-path","/events"]          # optional extra bridge flags
+      # passEnvironment: true            # optional (default true)
+      # proxyArgs: ["--sse-path","/events"]        # optional extra bridge flags
 
   # Custom container image with volumes/tolerations/affinity
   - name: custom-image
