@@ -50,6 +50,6 @@ jobs:
           REPO=${GITHUB_REPOSITORY#*/}
           cr index \
             --owner "$OWNER" \
-            --repo "$REPO" \
+            --git-repo "$REPO" \
             --push \
             --token "$GITHUB_TOKEN"
