@@ -2477,6 +2477,42 @@ entries:
     version: 1.0.0
   mcp-server:
   - annotations:
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Source
+          url: https://github.com/icoretech/helm/tree/main/charts/mcp-server
+        - name: MCP Spec
+          url: https://modelcontextprotocol.io/
+    apiVersion: v2
+    appVersion: 0.1.21
+    created: "2025-10-23T10:21:18.711479425Z"
+    dependencies:
+    - condition: unla.enabled
+      name: unla
+      repository: file://../unla
+      version: 0.9.8
+    description: 'Generic MCP server runner for Node (TypeScript) and Python servers.
+      Supports four modes: direct container image, Node (npx), Python (uvx/pip), and
+      OpenAPI (external URL registered in Unla).'
+    digest: 92e123e46c0a10b1f0c107896aff1327457efa697d9e70ea6f565669eb3398c4
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/mcp-server/logo.svg
+    keywords:
+    - mcp
+    - model-context-protocol
+    - server
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: mcp-server
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/mcp-server
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/mcp-server-0.1.21/mcp-server-0.1.21.tgz
+    version: 0.1.21
+  - annotations:
       artifacthub.io/changes: |
         - kind: added
           description: Initial release with image, node (npx) and python (uvx/pip) modes
@@ -3796,4 +3832,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2025-10-22T08:44:05.210284856Z"
+generated: "2025-10-23T10:21:18.711720226Z"
