@@ -1,3 +1,8 @@
+---
+layout: default
+title: mcp-server
+---
+
 # mcp-server Helm Chart
 
 Run Model Context Protocol (MCP) servers on Kubernetes. Each entry in

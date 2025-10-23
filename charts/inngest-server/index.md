@@ -1,3 +1,8 @@
+---
+layout: default
+title: inngest-server
+---
+
 # Inngest Server Helm Chart
 
 > DEPRECATION NOTICE

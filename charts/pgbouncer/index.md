@@ -1,3 +1,8 @@
+---
+layout: default
+title: pgbouncer
+---
+
 # PgBouncer Helm Chart
 
 This chart deploys a [PgBouncer](https://www.pgbouncer.org/) instance to your Kubernetes cluster via Helm.
