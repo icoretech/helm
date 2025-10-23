@@ -1,0 +1,71 @@
+name: Sync README and ArtifactHub to gh-pages
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - README.md
+      - artifacthub-repo.yml
+  workflow_dispatch:
+
+jobs:
+  sync:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Sync files into gh-pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages:gh-pages
+            git worktree add ghp gh-pages
+          else
+            echo "gh-pages does not exist; creating orphan branch with minimal files"
+            git worktree add ghp -b gh-pages
+            pushd ghp >/dev/null
+            git rm -rf . || true
+            popd >/dev/null
+          fi
+
+          cp -v README.md ghp/README.md
+          cp -v artifacthub-repo.yml ghp/artifacthub-repo.yml
+          # Ensure Pages doesn't run Jekyll (safe for Helm repos)
+          touch ghp/.nojekyll
+
+          # Publish chart logos for icon URLs referenced by Chart.yaml
+          shopt -s nullglob
+          for logo in charts/*/logo.*; do
+            chart_dir=${logo#charts/}
+            chart_dir=${chart_dir%%/*}
+            mkdir -p "ghp/charts/${chart_dir}"
+            cp -v "$logo" "ghp/charts/${chart_dir}/" || true
+          done
+
+          pushd ghp >/dev/null
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git add README.md artifacthub-repo.yml .nojekyll charts || true
+            git commit -m "docs: sync README & artifacthub metadata from main"
+            git push origin gh-pages
+          else
+            echo "No changes to sync."
+          fi
+          popd >/dev/null
+
+      - name: Cleanup worktree
+        if: always()
+        run: |
+          git worktree remove -f ghp || true
+          # Remove local gh-pages branch created for the worktree only
+          git branch -D gh-pages || true
