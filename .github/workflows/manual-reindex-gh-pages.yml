@@ -46,8 +46,10 @@ jobs:
           fi
 
           # Build and push index.yaml from existing GitHub Releases
+          OWNER=${GITHUB_REPOSITORY%/*}
+          REPO=${GITHUB_REPOSITORY#*/}
           cr index \
-            --owner "${{ github.repository_owner }}" \
-            --repo "${{ github.event.repository.name }}" \
-            --push
-
+            --owner "$OWNER" \
+            --repo "$REPO" \
+            --push \
+            --token "$GITHUB_TOKEN"
