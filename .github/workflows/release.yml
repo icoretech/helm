@@ -31,12 +31,17 @@ jobs:
       - name: Prepare chart with local dependencies
         run: |
           cd charts/mcp-server
-          # Create backup
+          # Backup original Chart.yaml
           cp Chart.yaml Chart.yaml.bak
-
-          # Replace repository reference with local file reference
-          sed -i.bak 's|repository: "https://amoylab.github.io/unla-helm-charts"|repository: "file://./charts"|g' Chart.yaml
-          rm Chart.yaml.bak
+          # Remove the repository line for the unla dependency to make it use local file
+          awk '
+          BEGIN { in_block = 0 }
+          /^dependencies:/ { in_block = 1; print; next }
+          in_block && /^[[:space:]]*-/ && !/- name:/ { in_block = 0; print; next }
+          in_block && /name: unla/ { print; next_line_check = 1; next }
+          next_line_check && /^[[:space:]]*repository:/ { next_line_check = 0; next }
+          { print; next_line_check = 0 }
+          ' Chart.yaml.bak > Chart.yaml
           cd ../..
 
       - name: Run chart-releaser
