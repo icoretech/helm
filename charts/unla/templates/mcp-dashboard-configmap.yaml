@@ -1,8 +1,22 @@
+{{- $gatewayName := default .Release.Name .Values.fullnameOverride -}}
+{{- $gatewayHost := printf "%s.%s.svc.cluster.local" $gatewayName .Release.Namespace -}}
+{{- $gatewayPort := dict "value" 5235 -}}
+{{- range $idx, $port := .Values.service.ports -}}
+  {{- if eq $port.name "mcp-gateway" -}}
+    {{- $_ := set $gatewayPort "value" $port.port -}}
+  {{- end -}}
+{{- end -}}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: "{{ .Release.Name }}-dashboard-configmap"
 data:
+  VITE_API_BASE_URL: {{ (default "/api" .Values.config.VITE_API_BASE_URL) | quote }}
+  VITE_WS_BASE_URL: {{ (default "/ws" .Values.config.VITE_WS_BASE_URL) | quote }}
+  VITE_MCP_GATEWAY_BASE_URL: {{ (default (printf "http://%s:%v/gateway" $gatewayHost ($gatewayPort.value)) .Values.config.VITE_MCP_GATEWAY_BASE_URL) | quote }}
+  VITE_DIRECT_MCP_GATEWAY_MODIFIER: {{ (default (printf ":%v" ($gatewayPort.value)) .Values.config.VITE_DIRECT_MCP_GATEWAY_MODIFIER) | quote }}
+  VITE_BASE_URL: {{ (default "/" .Values.config.VITE_BASE_URL) | quote }}
   apiserver.yaml: |
     # Logger configuration
     logger:
