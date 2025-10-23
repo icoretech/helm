@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -24,12 +24,18 @@ jobs:
 
       - name: Install Helm
         id: install
-        uses: azure/setup-helm@v4.3.1
+        uses: azure/setup-helm@v4
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
+      - name: Setup dependencies for mcp-server (workaround)
+        run: |
+           cd charts/mcp-server
+           helm dependency build
+           cd ../..
+
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.7.0
+        uses: helm/chart-releaser-action@v1
         with:
           skip_existing: true
         env:
