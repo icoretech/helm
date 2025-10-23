@@ -11,6 +11,9 @@ spec:
     metadata:
       labels:
         app: web
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/mcp-dashboard-configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/mcp-dashboard-secret.yaml") . | sha256sum }}
     spec:
       initContainers:
         - name: wait-db
