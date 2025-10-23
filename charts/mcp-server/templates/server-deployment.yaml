@@ -58,7 +58,7 @@ spec:
           {{- $tag := default "0.3.2" (get $srv.stdioBridge "tag") }}
           image: {{ printf "%s:%s" $repo $tag | quote }}
           imagePullPolicy: IfNotPresent
-          {{- with $srv.securityContext }}
+          {{ with $srv.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
