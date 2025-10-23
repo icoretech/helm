@@ -1,3 +1,13 @@
+{{- $gatewayName := default .Release.Name .Values.fullnameOverride -}}
+{{- $host := printf "%s.%s.svc.cluster.local" $gatewayName .Release.Namespace -}}
+{{- $notifierPort := dict "value" 5245 -}}
+{{- range $idx, $port := .Values.service.ports -}}
+  {{- if eq $port.name "mcp-gateway-notifier" -}}
+    {{- $_ := set $notifierPort "value" $port.port -}}
+  {{- end -}}
+{{- end -}}
+{{- $reloadURL := printf "http://%s:%v/_reload" $host ($notifierPort.value) -}}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -35,7 +45,7 @@ data:
   APISERVER_NOTIFIER_SIGNAL_PID: {{ .Values.config.APISERVER_NOTIFIER_SIGNAL_PID | quote }}
   ## API Notifier Settings
   APISERVER_NOTIFIER_API_PORT: {{ .Values.config.APISERVER_NOTIFIER_API_PORT | quote }}
-  APISERVER_NOTIFIER_API_TARGET_URL: {{ .Values.config.APISERVER_NOTIFIER_API_TARGET_URL | quote }}
+  APISERVER_NOTIFIER_API_TARGET_URL: {{ (default $reloadURL .Values.config.APISERVER_NOTIFIER_API_TARGET_URL) | quote }}
   ## Redis Notifier Settings
   APISERVER_NOTIFIER_REDIS_ADDR: {{ .Values.config.APISERVER_NOTIFIER_REDIS_ADDR | quote }}
   APISERVER_NOTIFIER_REDIS_PASSWORD: {{ .Values.config.APISERVER_NOTIFIER_REDIS_PASSWORD | quote }}
@@ -50,7 +60,7 @@ data:
   NOTIFIER_SIGNAL_PID: {{ .Values.config.NOTIFIER_SIGNAL_PID | quote }}
   ## API Notifier Settings
   NOTIFIER_API_PORT: {{ .Values.config.NOTIFIER_API_PORT | quote }}
-  NOTIFIER_API_TARGET_URL: {{ .Values.config.NOTIFIER_API_TARGET_URL | quote }}
+  NOTIFIER_API_TARGET_URL: {{ (default $reloadURL .Values.config.NOTIFIER_API_TARGET_URL) | quote }}
   ## Redis Notifier Settings
   NOTIFIER_REDIS_ADDR: {{ .Values.config.NOTIFIER_REDIS_ADDR | quote }}
   NOTIFIER_REDIS_PASSWORD: {{ .Values.config.NOTIFIER_REDIS_PASSWORD | quote }}

@@ -181,7 +181,7 @@ config:
   APISERVER_NOTIFIER_SIGNAL_PID: "/data/mcp-gateway.pid"
   ## API Notifier Settings
   APISERVER_NOTIFIER_API_PORT: "5245"
-  APISERVER_NOTIFIER_API_TARGET_URL: "http://mcp-gateway.mcp-gateway.svc.cluster.local:5245/_reload"
+  APISERVER_NOTIFIER_API_TARGET_URL: ""
   ## Redis Notifier Settings
   APISERVER_NOTIFIER_REDIS_ADDR: "localhost:6379"
   APISERVER_NOTIFIER_REDIS_PASSWORD: "UseStrongPasswordIsAGoodPractice"
@@ -196,7 +196,7 @@ config:
   NOTIFIER_SIGNAL_PID: "/data/mcp-gateway.pid"
   ## API Notifier Settings
   NOTIFIER_API_PORT: "5245"
-  NOTIFIER_API_TARGET_URL: "http://mcp-gateway.mcp-gateway.svc.cluster.local:5245/_reload"
+  NOTIFIER_API_TARGET_URL: ""
   ## Redis Notifier Settings
   NOTIFIER_REDIS_USERNAME: "default"
   NOTIFIER_REDIS_ADDR: "localhost:6379"

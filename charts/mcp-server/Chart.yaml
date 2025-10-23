@@ -2,7 +2,7 @@ apiVersion: v2
 name: mcp-server
 description: "Generic MCP server runner for Node (TypeScript) and Python servers. Supports four modes: direct container image, Node (npx), Python (uvx/pip), and OpenAPI (external URL registered in Unla)."
 type: application
-version: 0.1.15
+version: 0.1.16
 appVersion: "0.0.1"
 icon: https://icoretech.github.io/helm/charts/mcp-server/logo.svg
 keywords:
@@ -25,6 +25,6 @@ annotations:
       url: https://modelcontextprotocol.io/
 dependencies:
   - name: unla
-    version: "0.9.5"
+    version: "0.9.6"
     repository: "file://../unla"
     condition: unla.enabled
