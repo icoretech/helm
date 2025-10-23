@@ -2484,6 +2484,41 @@ entries:
         - name: MCP Spec
           url: https://modelcontextprotocol.io/
     apiVersion: v2
+    created: "2025-10-23T13:48:06.538197375Z"
+    dependencies:
+    - condition: unla.enabled
+      name: unla
+      repository: file://../unla
+      version: 0.9.9
+    description: Run Model Context Protocol servers on Kubernetes with optional Unla
+      gateway exposure. Supports native HTTP servers, stdio bridging via mcp-stdio-bridge,
+      and external OpenAPI registrations.
+    digest: 3e9661c6eac373dd682407071ec6b434ec82600fc8493a3386424699346a2a48
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/mcp-server/logo.svg
+    keywords:
+    - mcp
+    - model-context-protocol
+    - server
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: mcp-server
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/mcp-server
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/mcp-server-0.1.25/mcp-server-0.1.25.tgz
+    version: 0.1.25
+  - annotations:
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Source
+          url: https://github.com/icoretech/helm/tree/main/charts/mcp-server
+        - name: MCP Spec
+          url: https://modelcontextprotocol.io/
+    apiVersion: v2
     created: "2025-10-23T13:31:54.792055556Z"
     dependencies:
     - condition: unla.enabled
@@ -3948,4 +3983,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/unla-0.9.9/unla-0.9.9.tgz
     version: 0.9.9
-generated: "2025-10-23T13:31:54.792278583Z"
+generated: "2025-10-23T13:48:06.538502728Z"
