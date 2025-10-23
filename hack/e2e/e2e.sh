@@ -80,6 +80,10 @@ EOF
   [[ "$code" == "$expect" || "$code" == 200 || "$code" == 400 ]] || fail "$name unexpected HTTP code $code"
 }
 
+# Ensure chart dependencies are packaged (vendor subchart via file://)
+hr; echo "Build chart dependencies"; hr
+helm dependency build charts/mcp-server >/dev/null
+
 hr; echo "Install: node-server-everything example"; hr
 helm upgrade --install e2e-node charts/mcp-server -n "$NS" -f charts/mcp-server/examples/node-server-everything.yaml --wait --timeout 180s
 wait_ready 'app.kubernetes.io/instance=e2e-node' 60s
