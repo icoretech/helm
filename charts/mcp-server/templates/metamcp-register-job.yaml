@@ -60,47 +60,52 @@ spec:
               echo "Attempting experimental tRPC apply against backend http ${METAMCP_HOST}:${METAMCP_BACKEND_PORT}"
               set -x
               BASE="http://${METAMCP_HOST}:${METAMCP_BACKEND_PORT}"
-              # Try sign-up then sign-in (Better Auth)
-              curl -sS -i -c /tmp/c.txt -b /tmp/c.txt \
+              HOST_HDR="${METAMCP_HOST}"
+              # 1) Sign-up (with name) then sign-in (Better Auth)
+              curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt \
                 -H 'Content-Type: application/json' \
-                -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" \
-                "${BASE}/api/auth/sign-up" || true
-              curl -sS -i -c /tmp/c.txt -b /tmp/c.txt \
+                -d '{"email":"'"${ADMIN_EMAIL}"'","password":"'"${ADMIN_PASSWORD}"'","name":"HelmAdmin"}' \
+                "${BASE}/api/auth/sign-up/email" || true
+              curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt \
                 -H 'Content-Type: application/json' \
-                -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" \
-                "${BASE}/api/auth/sign-in" || true
-              # Load payload
+                -d '{"email":"'"${ADMIN_EMAIL}"'","password":"'"${ADMIN_PASSWORD}"'"}' \
+                "${BASE}/api/auth/sign-in/email" || true
+              # 2) Create servers (STREAMABLE_HTTP or SSE)
               PAYLOAD=$(cat /cfg/bootstrap.json)
-              # Heuristic tRPC calls (router.procedure). Try common patterns.
-              # 1) Upsert servers
               echo "$PAYLOAD" | jq -c '.servers[]' | while read -r S; do
                 NAME=$(echo "$S" | jq -r .name)
                 TYPE=$(echo "$S" | jq -r .type)
                 URL=$(echo "$S" | jq -r .url)
-                BODY='[{"json": {"name":"'"'$NAME'"'","type":"'"'$TYPE'"'","url":"'"'$URL'"'"}}]'
-                curl -sS -i -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
-                  -d "$BODY" "${BASE}/api/trpc/mcpServers.create?batch=1" || true
-                curl -sS -i -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
-                  -d "$BODY" "${BASE}/api/trpc/mcpServers.upsert?batch=1" || true
+                MT=$TYPE
+                if [ "$TYPE" = "sse" ] || [ "$TYPE" = "SSE" ]; then MT="SSE"; fi
+                if [ "$TYPE" = "streamable" ] || [ "$TYPE" = "STREAMABLE" ] || [ "$TYPE" = "STREAMABLE_HTTP" ]; then MT="STREAMABLE_HTTP"; fi
+                curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
+                  -d '{"name":"'"'"$NAME"'"'","type":"'"'"$MT"'"'","url":"'"'"$URL"'"'","bearerToken":""}' \
+                  "${BASE}/trpc/frontend/frontend.mcpServers.create" || true
               done
-              # 2) Upsert namespace
-              NS=$(echo "$PAYLOAD" | jq -r '.namespace.name')
-              NS_SERVERS=$(echo "$PAYLOAD" | jq -c '.namespace.servers')
-              BODY='[{"json": {"name":"'"'$NS'"'","servers":'"$NS_SERVERS"'}}]'
-              curl -sS -i -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
-                -d "$BODY" "${BASE}/api/trpc/namespaces.create?batch=1" || true
-              curl -sS -i -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
-                -d "$BODY" "${BASE}/api/trpc/namespaces.upsert?batch=1" || true
-              # 3) Upsert endpoint
-              EP=$(echo "$PAYLOAD" | jq -r '.endpoint.name')
-              TRAN=$(echo "$PAYLOAD" | jq -r '.endpoint.transport')
-              BODY='[{"json": {"name":"'"'$EP'"'","namespace":"'"'$NS'"'","transport":"'"'$TRAN'"'","auth":{}}}]'
-              curl -sS -i -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
-                -d "$BODY" "${BASE}/api/trpc/endpoints.create?batch=1" || true
-              curl -sS -i -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
-                -d "$BODY" "${BASE}/api/trpc/endpoints.upsert?batch=1" || true
+              # 3) Create namespace
+              NS_NAME=$(echo "$PAYLOAD" | jq -r '.namespace.name')
+              curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
+                -d '{"name":"'"'"$NS_NAME"'"'","description":"Helm namespace"}' \
+                "${BASE}/trpc/frontend/frontend.namespaces.create" || true
+              NS_LIST=$(curl -sS -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt "${BASE}/trpc/frontend/frontend.namespaces.list")
+              NS_UUID=$(echo "$NS_LIST" | jq -r '.result.data.data[] | select(.name=="'"$NS_NAME"'") | .uuid' | head -n1)
+              # 4) Map servers into namespace
+              SRV_LIST=$(curl -sS -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt "${BASE}/trpc/frontend/frontend.mcpServers.list")
+              SRV_NAMES=$(echo "$PAYLOAD" | jq -r '.namespace.servers[]')
+              UUID_JSON=$(jq -n --argjson srv "$SRV_LIST" --argjson names "[$(for n in $SRV_NAMES; do printf '"%s" ' "$n"; done)]" '
+                ($srv.result.data.data | map({(._.name): .uuid}) | add) as $map | $names | map($map[.])
+              ' 2>/dev/null | jq -c '.')
+              curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
+                -d '{"uuid":"'"'"$NS_UUID"'"'","name":"'"'"$NS_NAME"'"'","mcpServerUuids":'"$UUID_JSON"'}' \
+                "${BASE}/trpc/frontend/frontend.namespaces.update" || true
+              # 5) Create endpoint for namespace
+              EP_NAME=$(echo "$PAYLOAD" | jq -r '.endpoint.name')
+              curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
+                -d '{"name":"'"'"$EP_NAME"'"'","description":"Helm endpoint","namespaceUuid":"'"'"$NS_UUID"'"'","enableApiKeyAuth":false,"enableOauth":false,"useQueryParamAuth":false}' \
+                "${BASE}/trpc/frontend/frontend.endpoints.create" || true
               set +x
-              echo "tRPC apply attempted (experimental). Check responses above."
+              echo "tRPC apply completed (experimental)."
       volumes:
         - name: cfg
           configMap:
