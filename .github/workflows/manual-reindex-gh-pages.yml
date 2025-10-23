@@ -51,5 +51,7 @@ jobs:
           cr index \
             --owner "$OWNER" \
             --git-repo "$REPO" \
+            --index-path index.yaml \
+            --pages-index-path index.yaml \
             --push \
             --token "$GITHUB_TOKEN"
