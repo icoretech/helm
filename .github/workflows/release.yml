@@ -28,11 +28,16 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Setup dependencies for mcp-server (workaround)
+      - name: Prepare chart with local dependencies
         run: |
-           cd charts/mcp-server
-           helm dependency build
-           cd ../..
+          cd charts/mcp-server
+          # Create backup
+          cp Chart.yaml Chart.yaml.bak
+
+          # Replace repository reference with local file reference
+          sed -i.bak 's|repository: "https://amoylab.github.io/unla-helm-charts"|repository: "file://./charts"|g' Chart.yaml
+          rm Chart.yaml.bak
+          cd ../..
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1
@@ -40,6 +45,15 @@ jobs:
           skip_existing: true
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Restore original Chart.yaml
+        if: always()
+        run: |
+          cd charts/mcp-server
+          if [ -f Chart.yaml.bak ]; then
+            mv Chart.yaml.bak Chart.yaml
+          fi
+          cd ../..
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
