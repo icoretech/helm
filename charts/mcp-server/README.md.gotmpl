@@ -1,17 +1,35 @@
 # mcp-server Helm Chart
 
 Generic runner for Model Context Protocol (MCP) servers on Kubernetes.
-This chart deploys one Deployment/Service per servers[] entry (Node via npx,
-Python via uv tool run, or a pre-built image), and can also register external
-OpenAPI specs without creating Pods. Everything is wired into an Unla MCP
-Gateway (subchart) that exposes a single aggregated endpoint.
+Each entry in `servers[]` becomes its own Deployment and Service. You can run
 
-## Stdio transport (not supported)
+- **HTTP/SSE/WebSocket servers** (Node via `npx`, Python via `uv`/`uvx`, or any
+  container image exposing a port).
+- **Stdio servers** by turning on `servers[].stdioBridge`. The bridge uses our
+  `ghcr.io/icoretech/mcp-stdio-bridge` image to spawn the stdio program inside
+  the Pod and expose it as an SSE endpoint.
+- **OpenAPI servers** by pointing to an external specification (no Pod is
+  created; we just register it with the gateway).
 
-This chart intentionally does not support stdio-only MCP servers. Kubernetes pods are designed for
-long‑lived network services; supervising interactive stdio processes reliably (signals, restarts,
-child lifecycles) is brittle. Pick servers that expose HTTP (SSE) or WebSocket natively. If you must
-translate stdio, run a dedicated gateway outside this chart and route to it with a normal Service.
+Everything is wired into the Unla gateway subchart so you get a single MCP
+endpoint for all of your servers. The gateway/dashboard can be disabled via
+`unla.enabled=false` if you only want raw Deployments.
+
+## Transport options
+
+`servers[].*` supports three patterns:
+
+1. `node` / `python` / `image`: native network servers. They expose HTTP or
+   WebSocket directly.
+2. `stdioBridge`: wrap a stdio-only tool and convert it to SSE. The bridge image
+   ships with Node, Python, uv/uvx, and mcp-proxy so commands like
+   `uvx mcp-server-reddit` work out of the box.
+3. `openapi`: register an external OpenAPI spec with Unla (no Deployment).
+
+Stdio bridges are opt-in per server. When `stdioBridge.enabled=true`, the chart
+runs the bridge container and honors `serverCommand`/`serverArgs`. If you’re
+using a server that already supports HTTP/WebSocket, skip the bridge and use
+`node`, `python`, or `image` directly.
 
 ## Prerequisites
 
@@ -43,51 +61,34 @@ default values.
 {{ template "chart.valuesSection" . }}
 <!-- markdownlint-enable MD013 -->
 
-## Transports and Exposure (via Unla Gateway)
+## Gateway exposure (Unla subchart)
 
-Transports
+When `unla.enabled=true` (default) the chart also deploys:
 
-- HTTP (SSE/streamable HTTP): long‑lived HTTP connection.
-- WebSocket: use when your server exposes a WS endpoint.
+- Postgres (for Unla state)
+- MCP Gateway deployment/service (`mcp-server`)
+- Dashboard deployment/service (`mcp-server-dashboard`)
 
-Exposure is handled by the Unla subchart. Port-forward the gateway Service:
+Port-forward the gateway to talk to every server:
 
 ```bash
 kubectl -n <ns> port-forward svc/<release> 8000:5235
 ```
 
-Timeout tips
+### If you don’t want Unla
 
-- SSE: raise read/send/proxy timeouts (NGINX `proxy-read-timeout` and
-  `proxy-send-timeout` to `3600`).
-- WebSocket: ensure upgrade support (NGINX: `enable-websocket: "true"`).
+Set `unla.enabled=false`. This skips the gateway/dash and stops rendering the
+register hooks.
 
-## Dependency Caching (per server)
+## Examples (`charts/mcp-server/examples/`)
 
-Enable servers[].cache to persist npm/uv caches between restarts. Set
-servers[].cache.pvc.existingClaim to bind an existing PVC or omit to let the
-chart create one per server.
+| Example                          | Mode                                 | Notes                                                |
+|----------------------------------|--------------------------------------|------------------------------------------------------|
+| `node-server-everything.yaml`    | Native HTTP (Node)                   | Uses `@modelcontextprotocol/server-everything`.      |
+| `node-chrome-devtools-bridge.yaml` | Stdio bridge (Node)                 | Runs Chrome DevTools via the bridge.                 |
+| `python-fastmcp-http.yaml`       | Native HTTP (Python)                 | FastMCP server launched with `uv tool run`.          |
+| `openapi.yaml`                   | OpenAPI registration                 | Registers an external spec; no Pod is created.       |
+| `gateway-http.yaml`              | Gateway API ingress example          | Install a Gateway and attach HTTPRoute manually.     |
+| `gateway-two-servers.yaml`       | Multi-server setup with Unla enabled | Demonstrates two servers sharing the gateway.        |
 
-## Examples provided under `charts/mcp-server/examples/`
-
-- `node-server-everything.yaml` - Node mode using
-  `@modelcontextprotocol/server-everything` (streamable HTTP pinned to Node 22).
-- `python-aws-pricing.yaml` - Minimal Python mode example running the
-  AWS Pricing MCP server (HTTP/SSE).
-- `python-fastmcp-http.yaml` - Advanced Python mode running the
-  `mcp-server` sample with streamable HTTP arguments.
- - `openapi.yaml` - Register an external OpenAPI URL with Unla (no Pod created).
-  
-  
-
-Gateway API quickstart:
-
-```bash
-# Install a Gateway in the same namespace as your release (default: mcp)
-kubectl apply -f charts/mcp-server/examples/gateway-http.yaml
-
-# Deploy the chart with an HTTPRoute example (SSE)
-helm upgrade --install mcp-sse charts/mcp-server -n mcp -f charts/mcp-server/examples/httproute-sse-gatewayapi.yaml
-
-# The route attaches to Gateway "gateway" listener "http"
-```
+Refer to the examples for values files you can copy or adapt.
