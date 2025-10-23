@@ -44,13 +44,21 @@ jobs:
           cp -v artifacthub-repo.yml ghp/artifacthub-repo.yml
           # We intentionally do NOT create .nojekyll because the site uses Jekyll to render index.md
 
-          # Publish chart logos for icon URLs referenced by Chart.yaml
+          # Publish per-chart docs and logos for Pages
           shopt -s nullglob
-          for logo in charts/*/logo.*; do
-            chart_dir=${logo#charts/}
-            chart_dir=${chart_dir%%/*}
+          for d in charts/*; do
+            chart_dir="${d#charts/}"
+            [ -d "$d" ] || continue
             mkdir -p "ghp/charts/${chart_dir}"
-            cp -v "$logo" "ghp/charts/${chart_dir}/" || true
+            # Copy README as index.md so /charts/<name>/ resolves
+            if [ -f "$d/README.md" ]; then
+              cp -v "$d/README.md" "ghp/charts/${chart_dir}/index.md" || true
+            fi
+            # Copy logos if present
+            for logo in "$d"/logo.*; do
+              [ -f "$logo" ] || continue
+              cp -v "$logo" "ghp/charts/${chart_dir}/" || true
+            done
           done
 
           pushd ghp >/dev/null
