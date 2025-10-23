@@ -2721,6 +2721,27 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/mcp-server-0.1.0/mcp-server-0.1.0.tgz
     version: 0.1.0
+  metamcp:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2025-10-23T16:28:59.097641466Z"
+    description: MetaMCP aggregator — expose multiple MCP servers under one endpoint
+    digest: 581f8939a39e4d7d36acc34f74a51e11ac741c7c46592ee72978e60b00639b12
+    home: https://github.com/metatool-ai/metamcp
+    keywords:
+    - mcp
+    - gateway
+    - aggregator
+    maintainers:
+    - name: icoretech
+      url: https://github.com/icoretech
+    name: metamcp
+    sources:
+    - https://github.com/metatool-ai/metamcp
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/metamcp-0.1.0/metamcp-0.1.0.tgz
+    version: 0.1.0
   nextjs:
   - annotations:
       artifacthub.io/license: MIT
@@ -4018,4 +4039,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/unla-0.9.9/unla-0.9.9.tgz
     version: 0.9.9
-generated: "2025-10-23T14:08:49.152277544Z"
+generated: "2025-10-23T16:28:59.09794314Z"
