@@ -67,6 +67,31 @@ bootstrap:
 
 See a complete example in `examples/values-bootstrap.yaml`.
 
+## User seeding (optional)
+
+Seed users at install/upgrade by setting `users` (and optionally disable public signup):
+
+```yaml
+disablePublicSignup: true
+users:
+  - email: admin@example.com
+    password: change-me
+    name: Admin
+    createApiKey: true
+    apiKeyName: cli
+  - email: analyst@example.com
+    password: change-me
+    name: Analyst
+```
+
+For entries with `createApiKey: true`, the chart creates a Secret named
+`<release>-metamcp-apikey-<email-slug>` with fields:
+
+- `data.apiKey`: the generated API key (base64-encoded)
+- `data.email`: the user email (base64-encoded)
+
+The first listed user is used to apply `disablePublicSignup` if set.
+
 ## Configuration
 
 <!-- markdownlint-disable MD013 -->
@@ -90,6 +115,7 @@ See a complete example in `examples/values-bootstrap.yaml`.
 | bootstrap.namespace.name | string | `""` |  |
 | bootstrap.namespace.servers | list | `[]` |  |
 | bootstrap.servers | list | `[]` |  |
+| disablePublicSignup | bool | `false` |  |
 | env | object | `{}` |  |
 | externalPostgres.database | string | `""` |  |
 | externalPostgres.enabled | bool | `false` |  |
@@ -136,6 +162,7 @@ See a complete example in `examples/values-bootstrap.yaml`.
 | serviceAccount.create | bool | `true` |  |
 | serviceAccount.name | string | `""` |  |
 | tolerations | list | `[]` |  |
+| users | list | `[]` |  |
 <!-- markdownlint-enable MD013 -->
 
 ## Notes

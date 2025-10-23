@@ -124,3 +124,22 @@ bootstrap:
     name: ""
     transport: sse   # sse | streamable
     auth: {}
+
+# Global: disable public sign-up in MetaMCP (performed by user-bootstrap job if any users are defined)
+disablePublicSignup: false
+
+# Optional list of users to seed into MetaMCP (post-install/upgrade Job)
+# Each item supports:
+# - email (string) – required
+# - password (string) – required
+# - name (string) – required by MetaMCP sign-up
+# - role (string: user|admin) – reserved for future if MetaMCP exposes it
+# - createApiKey (bool) – when true, create an API key for the user
+# - apiKeyName (string) – optional name for the API key
+users: []
+# - email: admin@example.com
+#   password: change-me
+#   name: Admin
+#   role: user
+#   createApiKey: true
+#   apiKeyName: cli

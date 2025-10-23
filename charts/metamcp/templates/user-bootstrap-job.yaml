@@ -1,0 +1,141 @@
+{{- $users := .Values.users | default (list) -}}
+{{- if gt (len $users) 0 }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "metamcp.fullname" . }}-user-bootstrap
+  labels:
+    {{- include "metamcp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: user-bootstrap
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        {{- include "metamcp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: user-bootstrap
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "metamcp.fullname" . }}
+      {{- end }}
+      restartPolicy: Never
+      containers:
+        - name: seeder
+          image: alpine:3.20
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SVC
+              value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.fullname" .) .Release.Namespace | quote }}
+            - name: FRONTEND_PORT
+              value: {{ .Values.service.port | toString | quote }}
+          command: ["/bin/sh","-lc"]
+          args:
+            - |
+              set -euo pipefail
+              apk add --no-cache curl jq >/dev/null
+              FRONTEND="http://${SVC}:${FRONTEND_PORT}"
+              BACKEND="http://${SVC}:12009"
+
+              echo "[user-bootstrap] Waiting for MetaMCP frontend ${FRONTEND}/health"
+              for i in $(seq 1 90); do
+                if curl -fsS "${FRONTEND}/health" >/dev/null 2>&1; then
+                  break
+                fi
+                sleep 2
+              done
+
+              # Helper to create/patch a Secret with the api key
+              k8s_apply_secret() {
+                _name="$1"; _email="$2"; _key="$3"
+                token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+                cacert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                api="https://kubernetes.default.svc/api/v1/namespaces/${NAMESPACE}/secrets/${_name}"
+                # Build payload (single-line JSON)
+                payload=$(printf '{"apiVersion":"v1","kind":"Secret","metadata":{"name":"%s","labels":{"app.kubernetes.io/managed-by":"Helm"}},"type":"Opaque","data":{"apiKey":"%s","email":"%s"}}' "${_name}" "$(printf "%s" "${_key}" | base64 -w 0)" "$(printf "%s" "${_email}" | base64 -w 0)")
+                # Try create, on conflict fallback to patch
+                if ! curl -fsS -o /dev/null -X POST \
+                  -H "Authorization: Bearer ${token}" -H 'Content-Type: application/json' \
+                  --cacert "${cacert}" \
+                  "https://kubernetes.default.svc/api/v1/namespaces/${NAMESPACE}/secrets" \
+                  -d "${payload}"; then
+                  curl -fsS -o /dev/null -X PUT \
+                    -H "Authorization: Bearer ${token}" -H 'Content-Type: application/json' \
+                    --cacert "${cacert}" \
+                    "${api}" \
+                    -d "${payload}" || echo "[user-bootstrap] WARN: failed to upsert secret ${_name}"
+                fi
+              }
+
+              # JSON helpers for tRPC
+              trpc_post() {
+                _cookiejar="$1"; _path="$2"; _json="$3"
+                printf "%s" "${_json}" > /tmp/payload.json
+                curl -sS -b "${_cookiejar}" -H 'Content-Type: application/json' -H 'Accept: application/json' \
+                  -X POST "${BACKEND}${_path}" --data-binary @/tmp/payload.json
+              }
+
+              signup() {
+                _email="$1"; _password="$2"; _name="$3"; _cookiejar="$4"
+                # sign-up (ignore failure if already exists)
+                printf '{"email":"%s","password":"%s","name":"%s"}' "${_email}" "${_password}" "${_name}" > /tmp/signup.json
+                curl -sS -o /dev/null -w "%{http_code}" -H 'Content-Type: application/json' -H 'Accept: application/json' \
+                  -X POST "${BACKEND}/api/auth/sign-up/email" --data-binary @/tmp/signup.json \
+                  | grep -qE '^(200|201)$' || true
+                # sign-in
+                printf '{"email":"%s","password":"%s"}' "${_email}" "${_password}" > /tmp/signin.json
+                curl -sS -o /dev/null -c "${_cookiejar}" -H 'Content-Type: application/json' -H 'Accept: application/json' \
+                  -X POST "${BACKEND}/api/auth/sign-in/email" --data-binary @/tmp/signin.json
+              }
+
+              create_apikey() {
+                _cookiejar="$1"; _name="$2"
+                trpc_post "${_cookiejar}" "/trpc/frontend/frontend.apiKeys.create" '{"name":"'"'${_name}'"'"}'
+              }
+
+              # Prepare a working cookie jar
+              CJ_BASE="/tmp/cj"
+
+              # Perform per-user sign-up/sign-in and optional API key creation
+{{- range $idx, $u := $users }}
+              echo "[user-bootstrap] Seeding user {{ $u.email }}"
+              CJ="${CJ_BASE}-{{ $idx }}.txt"
+              signup {{ $u.email | quote }} {{ $u.password | quote }} {{ $u.name | quote }} "${CJ}"
+{{- if $u.createApiKey }}
+              echo "[user-bootstrap] Creating API key for {{ $u.email }} (name: {{ default "default" $u.apiKeyName | quote }})"
+              RESP=$(create_apikey "${CJ}" {{ default "default" $u.apiKeyName | quote }})
+              KEY=$(printf "%s" "${RESP}" | jq -r '.result.data.key // empty')
+              if [ -n "${KEY}" ]; then
+                SECRET_NAME="{{ include "metamcp.fullname" $ }}-apikey-{{ $u.email | replace "@" "-at-" | replace "." "-" | lower }}"
+                k8s_apply_secret "${SECRET_NAME}" {{ $u.email | quote }} "${KEY}"
+                echo "[user-bootstrap] Stored API key in Secret/${SECRET_NAME}"
+              else
+                echo "[user-bootstrap] WARN: could not parse API key for {{ $u.email }}; retrying with alt payload"
+                RESP=$(trpc_post "${CJ}" "/trpc/frontend/frontend.apiKeys.create" '{"input":{"name":"'"'{{ default "default" $u.apiKeyName }}'"'"}}' || true)
+                KEY=$(printf "%s" "${RESP}" | jq -r '.result.data.key // empty')
+                if [ -n "${KEY}" ]; then
+                  SECRET_NAME="{{ include "metamcp.fullname" $ }}-apikey-{{ $u.email | replace "@" "-at-" | replace "." "-" | lower }}"
+                  k8s_apply_secret "${SECRET_NAME}" {{ $u.email | quote }} "${KEY}"
+                  echo "[user-bootstrap] Stored API key in Secret/${SECRET_NAME} (alt)"
+                else
+                  echo "[user-bootstrap] WARN: still could not create API key for {{ $u.email }}"
+                fi
+              fi
+{{- end }}
+{{- end }}
+
+{{- if .Values.disablePublicSignup }}
+              echo "[user-bootstrap] Disabling public sign-up"
+              # Use first user's session to apply config
+              CJ_FIRST="${CJ_BASE}-0.txt"
+              trpc_post "${CJ_FIRST}" "/trpc/frontend/frontend.config.setSignupDisabled" '{"disabled":true}' >/dev/null
+{{- end }}
+
+              echo "[user-bootstrap] Completed"
+{{- end }}

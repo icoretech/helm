@@ -42,6 +42,8 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
+            - name: backend
+              containerPort: 12009
           envFrom:
             - configMapRef:
                 name: {{ include "metamcp.fullname" . }}-env

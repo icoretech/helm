@@ -12,3 +12,6 @@ spec:
     - name: http
       port: {{ .Values.service.port }}
       targetPort: http
+    - name: backend
+      port: 12009
+      targetPort: backend
