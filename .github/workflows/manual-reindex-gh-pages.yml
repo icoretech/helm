@@ -55,3 +55,16 @@ jobs:
             --pages-index-path index.yaml \
             --push \
             --token "$GITHUB_TOKEN"
+
+          echo "== Debug: show generated index and remote head =="
+          ls -la .cr-index || true
+          if [ -f .cr-index/index.yaml ]; then
+            echo "---- .cr-index/index.yaml (head) ----"
+            sed -n '1,60p' .cr-index/index.yaml
+          else
+            echo ".cr-index/index.yaml missing"
+          fi
+          git fetch origin gh-pages || true
+          echo "origin/gh-pages ref: $(git rev-parse --verify origin/gh-pages 2>/dev/null || echo missing)"
+          echo "---- origin/gh-pages:index.yaml (head) ----"
+          git show origin/gh-pages:index.yaml | sed -n '1,40p' || echo "index.yaml missing on origin/gh-pages"
