@@ -2,8 +2,8 @@ apiVersion: v2
 name: mcp-server
 description: "Generic MCP server runner for Node (TypeScript) and Python servers. Supports four modes: direct container image, Node (npx), Python (uvx/pip), and OpenAPI (external URL registered in Unla)."
 type: application
-version: 0.1.18
-appVersion: "0.0.1"
+version: 0.1.21
+appVersion: 0.1.21
 icon: https://icoretech.github.io/helm/charts/mcp-server/logo.svg
 keywords:
   - mcp
