@@ -12,6 +12,17 @@ spec:
       labels:
         app: web
     spec:
+      initContainers:
+        - name: wait-db
+          image: busybox:1.36
+          command: ["/bin/sh","-lc"]
+          args:
+            - >-
+              echo "Waiting for Postgres at mcp-postgres.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.postgres.service.port }}";
+              for i in $(seq 1 60); do
+                nc -z -w 1 mcp-postgres.{{ .Release.Namespace }}.svc.cluster.local {{ .Values.postgres.service.port }} && exit 0 || sleep 2;
+              done;
+              echo "Postgres not reachable"; exit 1;
       containers:
         - name: web
           image: "{{ .Values.dashboard.image.repository }}:{{ .Values.dashboard.image.tag | default "latest" }}"
@@ -21,6 +32,16 @@ spec:
               value: UTC
             - name: ENV
               value: production
+            - name: SUPER_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-dashboard-secret
+                  key: super_admin_username
+            - name: SUPER_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-dashboard-secret
+                  key: super_admin_password
           envFrom:
             - configMapRef:
                 name: "{{ .Release.Name }}-configmap"

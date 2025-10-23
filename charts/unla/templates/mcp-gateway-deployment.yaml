@@ -12,6 +12,17 @@ spec:
       labels:
         app: mcp-gateway
     spec:
+      initContainers:
+        - name: wait-db
+          image: busybox:1.36
+          command: ["/bin/sh","-lc"]
+          args:
+            - >-
+              echo "Waiting for Postgres at mcp-postgres.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.postgres.service.port }}";
+              for i in $(seq 1 60); do
+                nc -z -w 1 mcp-postgres.{{ .Release.Namespace }}.svc.cluster.local {{ .Values.postgres.service.port }} && exit 0 || sleep 2;
+              done;
+              echo "Postgres not reachable"; exit 1;
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -56,7 +67,7 @@ spec:
           - name: GATEWAY_DB_TYPE
             value: "postgres"
           - name: GATEWAY_DB_HOST
-            value: "mcp-postgres.mcp-gateway"
+            value: "mcp-postgres.{{ .Release.Namespace }}.svc.cluster.local"
           - name: GATEWAY_DB_PORT
             value: {{ .Values.postgres.service.port | quote }}
           - name: GATEWAY_DB_USER
