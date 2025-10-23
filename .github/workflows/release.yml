@@ -28,37 +28,12 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Prepare chart with local dependencies
-        run: |
-          cd charts/mcp-server
-          # Backup original Chart.yaml
-          cp Chart.yaml Chart.yaml.bak
-          # Remove the repository line for the unla dependency to make it use local file
-          awk '
-          BEGIN { in_block = 0 }
-          /^dependencies:/ { in_block = 1; print; next }
-          in_block && /^[[:space:]]*-/ && !/- name:/ { in_block = 0; print; next }
-          in_block && /name: unla/ { print; next_line_check = 1; next }
-          next_line_check && /^[[:space:]]*repository:/ { next_line_check = 0; next }
-          { print; next_line_check = 0 }
-          ' Chart.yaml.bak > Chart.yaml
-          cd ../..
-
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1
         with:
           skip_existing: true
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Restore original Chart.yaml
-        if: always()
-        run: |
-          cd charts/mcp-server
-          if [ -f Chart.yaml.bak ]; then
-            mv Chart.yaml.bak Chart.yaml
-          fi
-          cd ../..
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
