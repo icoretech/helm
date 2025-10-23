@@ -113,7 +113,6 @@ helm install my-mcp icoretech/mcp-server
 The following table lists the configurable parameters of the chart and their
 default values.
 
-<!-- markdownlint-disable MD013 -->
 ## Values
 
 | Key | Type | Default | Description |
@@ -122,7 +121,6 @@ default values.
 | nameOverride | string | `""` |  |
 | servers | list | `[]` |  |
 | unla.enabled | bool | `true` |  |
-<!-- markdownlint-enable MD013 -->
 
 ## Gateway exposure (Unla subchart)
 
