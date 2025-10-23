@@ -1,0 +1,53 @@
+name: Manual Reindex gh-pages
+
+on:
+  workflow_dispatch:
+
+jobs:
+  reindex:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install chart-releaser (cr)
+        run: |
+          set -euo pipefail
+          CR_VERSION=v1.6.1
+          curl -sSL -o /tmp/cr.tar.gz \
+            https://github.com/helm/chart-releaser/releases/download/${CR_VERSION}/chart-releaser_1.6.1_linux_amd64.tar.gz
+          tar -C /usr/local/bin -xzf /tmp/cr.tar.gz cr
+          cr version
+
+      - name: Rebuild index.yaml from GitHub Releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Create gh-pages branch if missing
+          if ! git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git switch --orphan gh-pages
+            rm -rf .
+            touch .nojekyll
+            echo "iCoreTech Helm Charts" > README.md
+            git add -A
+            git commit -m "chore: initialize gh-pages"
+            git push origin gh-pages
+            git switch -
+          fi
+
+          # Build and push index.yaml from existing GitHub Releases
+          cr index \
+            --owner "${{ github.repository_owner }}" \
+            --repo "${{ github.event.repository.name }}" \
+            --push
+
