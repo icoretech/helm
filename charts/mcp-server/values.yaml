@@ -84,10 +84,10 @@ servers: []
 #   stdioBridge:
 #     enabled: false
 #     image: ghcr.io/icoretech/mcp-stdio-bridge
-#     tag: v0.2.1
+#     tag: 0.2.1
 #     port: 3000                 # container port to expose HTTP (SSE)
 #     passEnvironment: true      # pass container env to child process
-#     proxyArgs: []              # extra flags for the proxy (e.g., ["--sse-path","/sse"]) 
+#     proxyArgs: []              # extra flags for the proxy (e.g., ["--sse-path","/sse"])
 #     serverCommand: []          # REQUIRED: command to launch stdio server, e.g., ["uvx","awslabs.aws-documentation-mcp-server@latest"]
 #     serverArgs: []             # optional args for the stdio server command
 
