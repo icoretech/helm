@@ -1,19 +1,48 @@
 # mcp-server Helm Chart
 
-Generic runner for Model Context Protocol (MCP) servers on Kubernetes.
-Each entry in `servers[]` becomes its own Deployment and Service. You can run
+Run Model Context Protocol (MCP) servers on Kubernetes. Each entry in
+`servers[]` becomes its own Deployment+Service and the Unla gateway subchart
+exposes the aggregated MCP endpoint. You can run
 
 - **HTTP/SSE/WebSocket servers** (Node via `npx`, Python via `uv`/`uvx`, or any
   container image exposing a port).
 - **Stdio servers** by turning on `servers[].stdioBridge`. The bridge uses our
-  `ghcr.io/icoretech/mcp-stdio-bridge` image to spawn the stdio program inside
-  the Pod and expose it as an SSE endpoint.
+  `ghcr.io/icoretech/mcp-stdio-bridge` image (Node + Python + uv + mcp-proxy)
+  to spawn the stdio program inside the Pod and expose it as an SSE endpoint.
 - **OpenAPI servers** by pointing to an external specification (no Pod is
   created; we just register it with the gateway).
 
 Everything is wired into the Unla gateway subchart so you get a single MCP
-endpoint for all of your servers. The gateway/dashboard can be disabled via
-`unla.enabled=false` if you only want raw Deployments.
+endpoint for all of your servers. Unla provides two components:
+
+- **MCP Gateway** (`mcp-server` Service, port 5235) – proxied endpoint that
+  aggregates every server you define.
+- **Dashboard** (`mcp-server-dashboard` Service, port 5234) – UI + API to view
+  auto-discovered tools, sync configs, and manage tenants.
+
+The register job runs after each install/upgrade and pushes the generated
+`mcpServers` routers into Unla so the dashboard immediately sees your changes.
+If you prefer only Deployments/Services without a gateway, set
+`unla.enabled=false`.
+
+## Minimal server definitions
+
+Most fields in `servers[]` have defaults. A stdio bridge typically needs only
+the package name and the command to launch it:
+
+```yaml
+servers:
+  - name: stdio-reddit
+    python:
+      package: mcp-server-reddit
+    stdioBridge:
+      enabled: true
+      serverCommand: ["uvx", "mcp-server-reddit"]
+```
+
+You can omit `register.*`, `port`, and other knobs unless you need to override
+them—the defaults cover the common cases. The register job automatically pushes
+the router + `mcpServers` block to Unla so the dashboard picks it up.
 
 ## Transport options
 
@@ -30,6 +59,28 @@ Stdio bridges are opt-in per server. When `stdioBridge.enabled=true`, the chart
 runs the bridge container and honors `serverCommand`/`serverArgs`. If you’re
 using a server that already supports HTTP/WebSocket, skip the bridge and use
 `node`, `python`, or `image` directly.
+
+## Remote clients (Codex, Claude Desktop, Cursor)
+
+Until clients ship native remote MCP support you can front the gateway with
+[`mcp-remote`](https://www.npmjs.com/package/mcp-remote`). Example Codex config
+against a trusted LAN endpoint:
+
+```toml
+[mcp_servers.reddit_gateway]
+command = "npx"
+args = [
+  "-y",
+  "mcp-remote",
+  "http://your-gateway:5235/gateway/stdio-reddit/sse",
+  "--allow-http",
+  "--transport", "sse-only",
+  "--header", "Accept: application/json, text/event-stream"
+]
+```
+
+Restart your client after redeploying or renaming servers so `mcp-remote`
+re-establishes the SSE handshake.
 
 ## Prerequisites
 
@@ -81,20 +132,8 @@ Port-forward the gateway to talk to every server:
 kubectl -n <ns> port-forward svc/<release> 8000:5235
 ```
 
-### If you don’t want Unla
+## Example values
 
-Set `unla.enabled=false`. This skips the gateway/dash and stops rendering the
-register hooks.
-
-## Examples (`charts/mcp-server/examples/`)
-
-| Example                          | Mode                                 | Notes                                                |
-|----------------------------------|--------------------------------------|------------------------------------------------------|
-| `node-server-everything.yaml`    | Native HTTP (Node)                   | Uses `@modelcontextprotocol/server-everything`.      |
-| `node-chrome-devtools-bridge.yaml` | Stdio bridge (Node)                 | Runs Chrome DevTools via the bridge.                 |
-| `python-fastmcp-http.yaml`       | Native HTTP (Python)                 | FastMCP server launched with `uv tool run`.          |
-| `openapi.yaml`                   | OpenAPI registration                 | Registers an external spec; no Pod is created.       |
-| `gateway-http.yaml`              | Gateway API ingress example          | Install a Gateway and attach HTTPRoute manually.     |
-| `gateway-two-servers.yaml`       | Multi-server setup with Unla enabled | Demonstrates two servers sharing the gateway.        |
-
-Refer to the examples for values files you can copy or adapt.
+`examples/servers.yaml` demonstrates Node, Python, stdio bridge, custom image,
+and OpenAPI servers in one values file. Fields that can be omitted in real
+deployments are annotated inline.

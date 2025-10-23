@@ -1,0 +1,89 @@
+# Example values file showcasing multiple server styles.
+# Most fields below are optional and shown for demonstration.
+servers:
+  # Native Node server with extra replicas/env/resources and register override
+  - name: node-everything
+    replicas: 2                 # optional (default 1)
+    node:
+      package: "@modelcontextprotocol/server-everything"   # required for Node servers
+      version: "latest"                                    # optional (default latest)
+      tag: 24-alpine                                        # optional (default 24-alpine)
+      args: ["streamableHttp"]                             # optional (matches defaults here)
+    env:                                  # optional env vars
+      - name: NODE_ENV
+        value: production
+    resources:                            # optional resource requests/limits
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    register:                             # optional: override default /gateway/<name>
+      prefix: "/gateway/everything"
+      headers:
+        X-Env: prod
+
+  # Python server using uv with a cache PVC and custom service account
+  - name: python-fastmcp
+    serviceAccountName: mcp-python        # optional
+    python:
+      package: mcp-server                 # required
+      args: ["--transport","streamable-http","--host","0.0.0.0","--port","3000"]
+    cache:                                # optional dependency cache
+      enabled: true
+      mountPath: /cache
+      pvc:
+        size: 2Gi
+        accessModes: [ReadWriteOnce]
+
+  # Stdio-only server bridged to SSE (port override requires matching args)
+  - name: stdio-reddit
+    port: 3100                            # optional (default 3000); will also expose Service on 3100
+    python:
+      package: mcp-server-reddit
+    stdioBridge:
+      enabled: true
+      port: 3100                          # optional; matches containerPort above
+      passEnvironment: true               # optional (default true)
+      serverCommand: ["uvx", "mcp-server-reddit"]     # required for bridge
+      serverArgs: ["--port","3100","--log-level","info"]  # ensure child listens on same port
+      proxyArgs: ["--sse-path","/events"]          # optional extra bridge flags
+
+  # Custom container image with volumes/tolerations/affinity
+  - name: custom-image
+    image:
+      repository: ghcr.io/example/mcp-custom-server   # required when using image mode
+      tag: v1.2.3
+      command: ["/app/server"]
+      args: ["--port","3000"]
+    extraVolumeMounts:
+      - name: config
+        mountPath: /config
+    extraVolumes:
+      - name: config
+        configMap:
+          name: mcp-custom-config
+    tolerations:
+      - key: "node-role.kubernetes.io/spot"
+        operator: "Exists"
+        effect: "NoSchedule"
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: server
+              topologyKey: kubernetes.io/hostname
+
+  # OpenAPI registration (no Deployment created)
+  - name: petstore
+    openapi:
+      url: "https://petstore3.swagger.io/api/v3/openapi.json"
+
+unla:
+  dashboard:
+    SUPER_ADMIN_USERNAME: "admin"
+    SUPER_ADMIN_PASSWORD: "changeME123"
