@@ -30,6 +30,23 @@ servers:
     python:
       package: mcp-server                 # required
       args: ["--transport","streamable-http","--host","0.0.0.0","--port","3000"]
+    # Optional: fetch data before start
+    extraVolumes:
+      - name: models
+        emptyDir: {}
+    extraVolumeMounts:
+      - name: models
+        mountPath: /models
+    initContainers:
+      - name: fetch-model
+        image: alpine:3.20
+        command: ["sh","-lc"]
+        args:
+          - apk add --no-cache curl >/dev/null; \
+            curl -fsSL https://example.com/model.bin -o /models/model.bin
+        volumeMounts:
+          - name: models
+            mountPath: /models
     # Optional: mount a per-server config file and point the app to it
     config:
       enabled: true

@@ -2,7 +2,8 @@
 
 Run Model Context Protocol (MCP) servers on Kubernetes. Each entry in
 `servers[]` becomes its own Deployment+Service and the Unla gateway subchart
-exposes the aggregated MCP endpoint. You can run
+exposes them through a single Service (one `/gateway/<server>` path per server).
+You can run
 
 - **HTTP/SSE/WebSocket servers** (Node via `npx`, Python via `uv`/`uvx`, or any
   container image exposing a port).
@@ -41,8 +42,69 @@ servers:
 ```
 
 You can omit `register.*`, `port`, and other knobs unless you need to override
-them—the defaults cover the common cases. The register job automatically pushes
-the router + `mcpServers` block to Unla so the dashboard picks it up.
+them—the defaults cover the common cases. For stdio bridges: if you omit
+`stdioBridge.serverCommand`, the chart will derive it from your server runtime
+(`python.package` → `uvx <package>`, `node.package` → `npx -y <package>@<version>`)
+and append any runtime `args` for convenience. The register job automatically
+pushes the router + `mcpServers` block to Unla so the dashboard picks it up.
+
+## Per‑server config files (ConfigMap mount)
+
+You can mount a single file into a server container without building a custom
+image. Enable `servers[].config` to create a ConfigMap and mount it at
+`mountPath/filename`. Your app must be told to read it (via env or args); the
+chart does not execute anything from this file.
+
+```yaml
+servers:
+  - name: python-fastmcp
+    python:
+      package: mcp-server
+      args: ["--transport","streamable-http","--host","0.0.0.0","--port","3000"]
+    config:
+      enabled: true
+      filename: config.toml
+      mountPath: /config
+      contents: |
+        [server]
+        message = "Hello from config"
+    env:
+      - name: FASTMCP_CONFIG
+        value: /config/config.toml
+```
+
+For custom images you can do the same and pass `--config /etc/mcp/server.yaml`
+or an env var—whatever your image expects.
+
+## Init containers (optional)
+
+If a server needs to fetch models/data or warm a cache before start, you can
+define `servers[].initContainers`. Combine with `extraVolumes`/`extraVolumeMounts`
+to share data with the main container.
+
+```yaml
+servers:
+  - name: python-fastmcp
+    python:
+      package: mcp-server
+      args: ["--transport","streamable-http","--host","0.0.0.0","--port","3000"]
+    extraVolumes:
+      - name: models
+        emptyDir: {}
+    extraVolumeMounts:
+      - name: models
+        mountPath: /models
+    initContainers:
+      - name: fetch-model
+        image: alpine:3.20
+        command: ["sh","-lc"]
+        args:
+          - apk add --no-cache curl >/dev/null; \
+            curl -fsSL https://example.com/model.bin -o /models/model.bin
+        volumeMounts:
+          - name: models
+            mountPath: /models
+```
 
 ## Transport options
 

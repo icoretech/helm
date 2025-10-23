@@ -43,6 +43,10 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with $srv.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- $isNode := hasKey $srv "node" }}
       {{- $isPython := hasKey $srv "python" }}
       {{- $isImage := hasKey $srv "image" }}
