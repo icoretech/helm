@@ -48,6 +48,34 @@ them—the defaults cover the common cases. For stdio bridges: if you omit
 and append any runtime `args` for convenience. The register job automatically
 pushes the router + `mcpServers` block to Unla so the dashboard picks it up.
 
+## Per‑server config files (ConfigMap mount)
+
+You can mount a single file into a server container without building a custom
+image. Enable `servers[].config` to create a ConfigMap and mount it at
+`mountPath/filename`. Your app must be told to read it (via env or args); the
+chart does not execute anything from this file.
+
+```yaml
+servers:
+  - name: python-fastmcp
+    python:
+      package: mcp-server
+      args: ["--transport","streamable-http","--host","0.0.0.0","--port","3000"]
+    config:
+      enabled: true
+      filename: config.toml
+      mountPath: /config
+      contents: |
+        [server]
+        message = "Hello from config"
+    env:
+      - name: FASTMCP_CONFIG
+        value: /config/config.toml
+```
+
+For custom images you can do the same and pass `--config /etc/mcp/server.yaml`
+or an env var—whatever your image expects.
+
 ## Transport options
 
 `servers[].*` supports three patterns:

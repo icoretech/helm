@@ -30,6 +30,18 @@ servers:
     python:
       package: mcp-server                 # required
       args: ["--transport","streamable-http","--host","0.0.0.0","--port","3000"]
+    # Optional: mount a per-server config file and point the app to it
+    config:
+      enabled: true
+      filename: config.toml
+      mountPath: /config
+      contents: |
+        # demo config consumed by your app (example format)
+        [server]
+        message = "Hello from mounted config"
+    env:
+      - name: FASTMCP_CONFIG              # your app can read this path
+        value: /config/config.toml
     cache:                                # optional dependency cache
       enabled: true
       mountPath: /cache
@@ -53,6 +65,17 @@ servers:
       tag: v1.2.3
       command: ["/app/server"]
       args: ["--port","3000"]
+    # Mount a config file and pass its path via args/env if your image supports it
+    config:
+      enabled: true
+      filename: server.yaml
+      mountPath: /etc/mcp
+      contents: |
+        logging:
+          level: info
+    env:
+      - name: MCP_CONFIG
+        value: /etc/mcp/server.yaml
     extraVolumeMounts:
       - name: config
         mountPath: /config
