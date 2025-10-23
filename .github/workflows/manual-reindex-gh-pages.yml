@@ -51,6 +51,7 @@ jobs:
           cr index \
             --owner "$OWNER" \
             --git-repo "$REPO" \
+            --charts-repo "https://github.com/$OWNER/$REPO" \
             --index-path index.yaml \
             --pages-index-path index.yaml \
             --push \
