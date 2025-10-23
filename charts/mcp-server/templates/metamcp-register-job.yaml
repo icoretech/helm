@@ -1,0 +1,52 @@
+{{- $hasServers := and (hasKey .Values "servers") (gt (len .Values.servers) 0) -}}
+{{- $mm := .Values.metamcp -}}
+{{- $mmEnabled := false -}}
+{{- if kindIs "map" $mm -}}{{- if kindIs "bool" $mm.enabled -}}{{- $mmEnabled = $mm.enabled -}}{{- end -}}{{- end -}}
+{{- if and $hasServers $mmEnabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "mcp-server.fullname" . }}-metamcp-register
+  labels:
+    {{- include "mcp-server.labels" . | nindent 4 }}
+    app.kubernetes.io/component: metamcp-register
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        {{- include "mcp-server.labels" . | nindent 8 }}
+        app.kubernetes.io/component: metamcp-register
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: register
+          image: curlimages/curl:8.10.1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: METAMCP_HOST
+              value: {{ printf "%s-metamcp" .Release.Name | quote }}
+            - name: METAMCP_PORT
+              value: "12008"
+          volumeMounts:
+            - name: cfg
+              mountPath: /cfg
+          command: ["/bin/sh","-lc"]
+          args:
+            - |
+              set -eu
+              echo "Waiting for MetaMCP frontend http ${METAMCP_HOST}:${METAMCP_PORT}"
+              for i in $(seq 1 30); do
+                curl -fsS "http://${METAMCP_HOST}:${METAMCP_PORT}/health" >/dev/null 2>&1 && break || sleep 2
+              done
+              echo "Bootstrap payload (servers → namespace → endpoint):"
+              cat /cfg/bootstrap.json || true
+              echo "NOTE: Registration is print-only for now. A future release will POST this payload to MetaMCP admin APIs."
+      volumes:
+        - name: cfg
+          configMap:
+            name: {{ include "mcp-server.fullname" . }}-metamcp-register
+{{- end }}
