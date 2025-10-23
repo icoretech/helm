@@ -69,6 +69,11 @@ When `unla.enabled=true` (default) the chart also deploys:
 - MCP Gateway deployment/service (`mcp-server`)
 - Dashboard deployment/service (`mcp-server-dashboard`)
 
+> **Security note**: by default the dashboard secret seeds the credentials
+> `admin` / `admin` so that the registration job can log in automatically. For
+> production setups override `unla.dashboard.SUPER_ADMIN_USERNAME` and
+> `SUPER_ADMIN_PASSWORD` with your own values.
+
 Port-forward the gateway to talk to every server:
 
 ```bash
