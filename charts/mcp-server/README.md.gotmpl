@@ -69,10 +69,11 @@ When `unla.enabled=true` (default) the chart also deploys:
 - MCP Gateway deployment/service (`mcp-server`)
 - Dashboard deployment/service (`mcp-server-dashboard`)
 
-> **Security note**: by default the dashboard secret seeds the credentials
-> `admin` / `admin` so that the registration job can log in automatically. For
-> production setups override `unla.dashboard.SUPER_ADMIN_USERNAME` and
-> `SUPER_ADMIN_PASSWORD` with your own values.
+> **Security note**: on first install the dashboard secret seeds random
+> credentials (stored in `mcp-dashboard-secret`). They are reused on subsequent
+> reconciliations via `lookup`, so Flux users do not get churn. The register job
+> reads the same secret. For production override
+> `unla.dashboard.SUPER_ADMIN_USERNAME` and `_PASSWORD` with your own values.
 
 Port-forward the gateway to talk to every server:
 
