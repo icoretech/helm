@@ -2,7 +2,7 @@ apiVersion: v2
 name: mcp-server
 description: "Run Model Context Protocol servers on Kubernetes with optional Unla gateway exposure. Supports native HTTP servers, stdio bridging via mcp-stdio-bridge, and external OpenAPI registrations."
 type: application
-version: 0.1.23
+version: 0.1.24
 icon: https://icoretech.github.io/helm/charts/mcp-server/logo.svg
 keywords:
   - mcp
