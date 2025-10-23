@@ -24,7 +24,6 @@ annotations:
   artifacthub.io/license: "MIT"
   artifacthub.io/recommendations: |
     - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
-    - url: https://artifacthub.io/packages/helm/bitnami/postgresql
   artifacthub.io/screenshots: |
     - title: Projects
       url: https://i.imgur.com/hcwnz84.png
