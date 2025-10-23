@@ -52,14 +52,19 @@ jobs:
             mkdir -p "ghp/charts/${chart_dir}"
             # Copy README as index.md so /charts/<name>/ resolves
             if [ -f "$d/README.md" ]; then
+              tmpfile=$(mktemp)
+              # Strip markdownlint comments that can confuse some renderers
+              sed '/^<!--\s*markdownlint/Id' "$d/README.md" > "$tmpfile"
               {
                 echo "---";
                 echo "layout: default";
                 echo "title: ${chart_dir}";
                 echo "---";
                 echo;
-                cat "$d/README.md";
+                # Ensure a blank line before pipe tables after a Values heading
+                awk 'prev~/^##[ ]*Values[ ]*$/ && $0 ~ /^\|/ {print ""} {print; prev=$0}' "$tmpfile"
               } > "ghp/charts/${chart_dir}/index.md"
+              rm -f "$tmpfile"
               echo "Wrote ghp/charts/${chart_dir}/index.md with front matter"
             fi
             # Copy logos if present
