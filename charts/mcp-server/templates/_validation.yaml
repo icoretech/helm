@@ -1,15 +1,15 @@
 {{- /*
-Validation: if unla.enabled=false, no server may have register.enabled=true (default true).
+Validation: if metamcp.enabled=false, no server may have register.enabled=true (default true).
 This prevents silently skipping registration while the user expects it.
 */ -}}
-{{- $unla := .Values.unla -}}
-{{- $unlaDisabled := false -}}
-{{- if kindIs "map" $unla -}}
-  {{- if kindIs "bool" $unla.enabled -}}
-    {{- $unlaDisabled = (not $unla.enabled) -}}
+{{- $mm := .Values.metamcp -}}
+{{- $mmDisabled := false -}}
+{{- if kindIs "map" $mm -}}
+  {{- if kindIs "bool" $mm.enabled -}}
+    {{- $mmDisabled = (not $mm.enabled) -}}
   {{- end -}}
 {{- end -}}
-{{- if $unlaDisabled -}}
+{{- if $mmDisabled -}}
   {{- $bad := list -}}
   {{- range $i, $s := (default (list) .Values.servers) -}}
     {{- $reg := (get $s "register") -}}
@@ -22,7 +22,6 @@ This prevents silently skipping registration while the user expects it.
     {{- end -}}
   {{- end -}}
   {{- if gt (len $bad) 0 -}}
-    {{- fail (printf "unla.enabled=false but these servers have register.enabled=true: %s. Either set unla.enabled=true or set register.enabled=false for these servers." (join ", " $bad)) -}}
+    {{- fail (printf "metamcp.enabled=false but these servers have register.enabled=true: %s. Either set metamcp.enabled=true or set register.enabled=false for these servers." (join ", " $bad)) -}}
   {{- end -}}
 {{- end -}}
-

@@ -3,7 +3,7 @@
 # Control deployment of the Unla subchart (gateway + dashboard)
 # By default it's enabled; set to false to skip installing it and
 # also disable related registration hooks in this chart.
-unla:
+metamcp:
   enabled: true
 
 # Unla subchart provides the gateway + dashboard. This chart only runs
