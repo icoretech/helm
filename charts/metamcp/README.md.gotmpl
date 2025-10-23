@@ -1,0 +1,79 @@
+# metamcp Helm Chart
+
+MetaMCP aggregator for Model Context Protocol. It aggregates multiple MCP servers (remote SSE/Streamable HTTP) under a single endpoint (namespace), so clients can connect once and access all tools.
+
+- Keep your MCP servers as independent Deployments and register them as remote servers (URL + optional token) in MetaMCP.
+- Define a MetaMCP namespace that selects multiple servers, then expose one endpoint for clients (SSE or Streamable HTTP).
+
+> Note: MetaMCP can also launch STDIO servers as child processes. In Kubernetes, we recommend running each server as its own Pod for observability, security, and scaling, and using MetaMCP only as the aggregator.
+
+## Endpoints
+
+- Frontend (dashboard): `http://<service>:12008`
+- Backend (internal): `http://<service>:12009`
+- Public MCP endpoints (after defining a namespace):
+  - `/metamcp/<namespace>/sse`
+  - `/metamcp/<namespace>/mcp`
+
+## Prerequisites
+
+- Kubernetes 1.26+
+- Helm 3.10+
+
+## Installing the Chart
+
+```bash
+helm upgrade --install metamcp icoretech/metamcp \
+  --namespace metamcp --create-namespace
+```
+
+## Minimal configuration
+
+```yaml
+secretEnv:
+  BETTER_AUTH_SECRET: change-me
+# Optional explicit external URL if exposed via Ingress/Gateway
+# env:
+#   APP_URL: http://metamcp.example.com
+```
+
+If `postgres.enabled=true` (default), a disposable Postgres Deployment/Service is created for convenience and `DATABASE_URL` is injected automatically. For production, set `postgres.enabled=false` and provide `env.DATABASE_URL` or `secretEnv.DATABASE_URL` to point at your managed database.
+
+## Optional bootstrap (print-only for now)
+
+The chart can render a bootstrap payload (servers → namespace → endpoint) and, for now, print it as a post-install hook:
+
+```yaml
+bootstrap:
+  enabled: true
+  mode: print   # apply to be implemented once stable admin API routes are confirmed
+  admin:
+    username: admin
+    password: admin
+  servers:
+    - type: sse
+      name: server-a
+      url: http://my-server-a.mcp.svc.cluster.local:3000/sse
+    - type: streamable
+      name: server-b
+      url: http://my-server-b.mcp.svc.cluster.local:3001/mcp
+  namespace:
+    name: my
+    servers: ["server-a","server-b"]
+  endpoint:
+    name: my
+    transport: sse
+```
+
+See a complete example in `examples/values-bootstrap.yaml`.
+
+## Configuration
+
+<!-- markdownlint-disable MD013 -->
+{{ template "chart.valuesSection" . }}
+<!-- markdownlint-enable MD013 -->
+
+## Notes
+
+- Required env: `APP_URL`, `BETTER_AUTH_SECRET`. If `postgres.enabled=false`, also set `DATABASE_URL`.
+- For production, prefer an external Postgres (managed or operator) and disable the in-chart Postgres.

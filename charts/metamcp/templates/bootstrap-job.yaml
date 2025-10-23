@@ -1,0 +1,59 @@
+{{- if .Values.bootstrap.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "metamcp.fullname" . }}-bootstrap
+  labels:
+    {{- include "metamcp.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        {{- include "metamcp.labels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: curlimages/curl:8.10.1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MODE
+              value: {{ default "print" .Values.bootstrap.mode | quote }}
+            - name: ADMIN_USER
+              value: {{ default "admin" .Values.bootstrap.admin.username | quote }}
+            - name: ADMIN_PASS
+              value: {{ default "admin" .Values.bootstrap.admin.password | quote }}
+            - name: APP_URL
+              value: {{ include "metamcp.appurl" . | quote }}
+          volumeMounts:
+            - name: cfg
+              mountPath: /cfg
+          command: ["/bin/sh","-lc"]
+          args:
+            - |
+              set -eu
+              echo "Bootstrap MODE=${MODE}"
+              BACKEND="${APP_URL}"
+              BACKEND="${BACKEND%:12008}:12009"  # replace :12008 with :12009 if present
+              echo "APP_URL=${APP_URL}"
+              echo "BACKEND=${BACKEND}"
+              echo "Servers/Namespace/Endpoint payload follows:"
+              cat /cfg/bootstrap.json || true
+              if [ "${MODE}" = "print" ]; then
+                echo "[bootstrap] Print-only mode. No API calls performed."
+                exit 0
+              fi
+              echo "[bootstrap] TODO: implement API calls to MetaMCP once admin routes are finalized."
+              # Placeholder for future implementation (login -> upsert servers -> namespace -> endpoint)
+              # curl -sS -X POST "${BACKEND}/api/auth/login" -d '{"username":"'"${ADMIN_USER}"'","password":"'"${ADMIN_PASS}"'"}'
+              exit 0
+      volumes:
+        - name: cfg
+          configMap:
+            name: {{ include "metamcp.fullname" . }}-bootstrap
+{{- end }}

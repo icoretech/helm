@@ -1,0 +1,126 @@
+# Default values for metamcp.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/metatool-ai/metamcp
+  pullPolicy: IfNotPresent
+  tag: latest
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 12008
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: metamcp.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+gatewayAPI:
+  enabled: false
+  # HTTPRoute parents, e.g.:
+  # parents:
+  #   - name: my-shared-gateway
+  #     namespace: gateway-system
+  #     sectionName: http
+  hosts: []
+
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Extra env as ConfigMap
+env: {}
+
+# Additional env vars (list style)
+extraEnv: []
+# - name: LOG_LEVEL
+#   value: debug
+extraEnvFrom: []
+# - secretRef:
+#     name: my-extra-secret
+
+# Minimal Postgres for local/dev. Disable in prod to point at external DB
+postgres:
+  enabled: true
+  image: postgres:16
+  auth:
+    database: metamcp
+    username: metamcp
+    password: metamcp
+  persistence:
+    enabled: false
+    size: 1Gi
+    storageClassName: ""
+
+# Use an external Postgres instead of the in-chart one
+externalPostgres:
+  enabled: false
+  host: ""
+  port: 5432
+  database: ""
+  username: ""
+  passwordSecretRef: {}
+    # name: my-pg-secret
+    # key: password
+
+# Authentication settings for MetaMCP
+auth:
+  # If set, chart will create a secret and inject BETTER_AUTH_SECRET unless
+  # overridden in values.env.BETTER_AUTH_SECRET.
+  betterAuthSecret: ""
+
+# Optional bootstrap via a post-install Job (disabled by default)
+# NOTE: MetaMCP currently emphasizes UI/API provisioning. These values
+# are rendered to /cfg/bootstrap.json and printed by the Job in 'print' mode.
+# When upstream admin API routes are finalized, mode 'apply' will
+# POST these resources automatically.
+bootstrap:
+  enabled: false
+  mode: print   # print | apply (apply to be implemented once routes are confirmed)
+  admin:
+    username: admin
+    password: admin
+  # Servers follow the MetaMCP Import JSON shape (examples in examples/values-bootstrap.yaml)
+  servers: []
+  # Namespace definition and the server names to include
+  namespace:
+    name: ""
+    servers: []
+  # Endpoint bound to the namespace
+  endpoint:
+    name: ""
+    transport: sse   # sse | streamable
+    auth: {}

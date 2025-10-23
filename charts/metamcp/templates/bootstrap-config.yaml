@@ -1,0 +1,13 @@
+{{- if .Values.bootstrap.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "metamcp.fullname" . }}-bootstrap
+  labels:
+    {{- include "metamcp.labels" . | nindent 4 }}
+data:
+  bootstrap.json: |
+    {{- /* Render a single JSON payload the job can print/apply later */ -}}
+    {{- $payload := dict "servers" (.Values.bootstrap.servers | default (list)) "namespace" (.Values.bootstrap.namespace | default (dict)) "endpoint" (.Values.bootstrap.endpoint | default (dict)) -}}
+{{ toJson $payload | nindent 4 }}
+{{- end }}
