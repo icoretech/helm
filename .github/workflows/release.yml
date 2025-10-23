@@ -35,29 +35,7 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Install chart-releaser (cr)
-        run: |
-          set -euo pipefail
-          CR_VERSION=v1.6.1
-          curl -sSL -o /tmp/cr.tar.gz \
-            https://github.com/helm/chart-releaser/releases/download/${CR_VERSION}/chart-releaser_1.6.1_linux_amd64.tar.gz
-          tar -C /usr/local/bin -xzf /tmp/cr.tar.gz cr
-          cr version
-
-      - name: Ensure gh-pages index.yaml is up to date
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          OWNER=${GITHUB_REPOSITORY%/*}
-          REPO=${GITHUB_REPOSITORY#*/}
-          cr index \
-            --owner "$OWNER" \
-            --git-repo "$REPO" \
-            --index-path index.yaml \
-            --pages-index-path index.yaml \
-            --push \
-            --token "$GITHUB_TOKEN"
+      # Note: Removed extra cr index step to avoid merge conflicts with chart-releaser's own gh-pages updates.
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
