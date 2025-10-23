@@ -87,8 +87,8 @@ helm dependency build charts/mcp-server >/dev/null
 hr; echo "Install: node-server-everything example"; hr
 helm upgrade --install e2e-node charts/mcp-server -n "$NS" -f charts/mcp-server/examples/node-server-everything.yaml --wait --timeout 180s
 wait_ready 'app.kubernetes.io/instance=e2e-node' 60s
-# Resolve ClusterIP for stability
-NODE_IP=$(kubectl -n "$NS" get svc e2e-node-mcp-server -o jsonpath='{.spec.clusterIP}')
+# Resolve ClusterIP for stability (service is suffixed by server name "everything")
+NODE_IP=$(kubectl -n "$NS" get svc e2e-node-mcp-server-everything -o jsonpath='{.spec.clusterIP}')
 # Simple TCP reachability (Node HTTP) on 3001 using nc
 kubectl -n "$NS" delete job curl-node --ignore-not-found >/dev/null 2>&1 || true
 cat <<EOF | kubectl -n "$NS" apply -f - >/dev/null
