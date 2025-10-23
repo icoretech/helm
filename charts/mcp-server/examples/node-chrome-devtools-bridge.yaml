@@ -8,7 +8,7 @@ servers:
     stdioBridge:
       enabled: true
       image: ghcr.io/icoretech/mcp-stdio-bridge
-      tag: 0.3.0
+      tag: 0.3.2
       port: 3000
       passEnvironment: true
       serverCommand: ["npx", "chrome-devtools-mcp"]
