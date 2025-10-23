@@ -2484,6 +2484,41 @@ entries:
         - name: MCP Spec
           url: https://modelcontextprotocol.io/
     apiVersion: v2
+    created: "2025-10-23T10:41:51.690888925Z"
+    dependencies:
+    - condition: unla.enabled
+      name: unla
+      repository: file://../unla
+      version: 0.9.9
+    description: 'Generic MCP server runner for Node (TypeScript) and Python servers.
+      Supports four modes: direct container image, Node (npx), Python (uvx/pip), and
+      OpenAPI (external URL registered in Unla).'
+    digest: 8e13228ea79a0de49ede8803826ad5663b399f0437d1a31601efca166e3dd7a5
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/mcp-server/logo.svg
+    keywords:
+    - mcp
+    - model-context-protocol
+    - server
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: mcp-server
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/mcp-server
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/mcp-server-0.1.22/mcp-server-0.1.22.tgz
+    version: 0.1.22
+  - annotations:
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Source
+          url: https://github.com/icoretech/helm/tree/main/charts/mcp-server
+        - name: MCP Spec
+          url: https://modelcontextprotocol.io/
+    apiVersion: v2
     appVersion: 0.1.21
     created: "2025-10-23T10:21:18.711479425Z"
     dependencies:
@@ -3832,4 +3867,15 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2025-10-23T10:21:18.711720226Z"
+  unla:
+  - apiVersion: v2
+    appVersion: 0.9.0
+    created: "2025-10-23T10:41:51.917048144Z"
+    description: A Helm chart for Unla
+    digest: f5c06a30fd3ac8d016dc07ff033bb41fe6afe0d8b398958fb72042e0395bf75f
+    name: unla
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/unla-0.9.9/unla-0.9.9.tgz
+    version: 0.9.9
+generated: "2025-10-23T10:41:51.917335396Z"
