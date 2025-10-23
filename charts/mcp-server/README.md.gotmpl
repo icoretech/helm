@@ -2,7 +2,7 @@
 
 Run Model Context Protocol (MCP) servers on Kubernetes. Each entry in
 `servers[]` becomes its own Deployment+Service and the Unla gateway subchart
-exposes the aggregated MCP endpoint. You can run
+exposes them behind a single gateway Service (one path per server). You can run
 
 - **HTTP/SSE/WebSocket servers** (Node via `npx`, Python via `uv`/`uvx`, or any
   container image exposing a port).

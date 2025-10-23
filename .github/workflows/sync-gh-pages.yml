@@ -6,6 +6,7 @@ on:
     paths:
       - README.md
       - artifacthub-repo.yml
+      - charts/**/logo.*
   workflow_dispatch:
 
 jobs:
@@ -41,8 +42,7 @@ jobs:
 
           cp -v README.md ghp/README.md
           cp -v artifacthub-repo.yml ghp/artifacthub-repo.yml
-          # Ensure Pages doesn't run Jekyll (safe for Helm repos)
-          touch ghp/.nojekyll
+          # We intentionally do NOT create .nojekyll because the site uses Jekyll to render index.md
 
           # Publish chart logos for icon URLs referenced by Chart.yaml
           shopt -s nullglob
@@ -55,7 +55,7 @@ jobs:
 
           pushd ghp >/dev/null
           if [[ -n "$(git status --porcelain)" ]]; then
-            git add README.md artifacthub-repo.yml .nojekyll charts || true
+            git add README.md artifacthub-repo.yml charts || true
             git commit -m "docs: sync README & artifacthub metadata from main"
             git push origin gh-pages
           else
