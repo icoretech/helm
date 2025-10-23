@@ -5,6 +5,15 @@ set -euo pipefail
 # - Installs examples and runs minimal smoke checks with in-cluster curl jobs.
 
 NS="mcp-e2e"
+
+cleanup() {
+  set +e
+  helm uninstall e2e-node -n "$NS" >/dev/null 2>&1
+  kubectl -n "$NS" delete job -l e2e.mcp.icore.tech/temp=true --ignore-not-found >/dev/null 2>&1
+  kubectl delete ns "$NS" --ignore-not-found --wait=false >/dev/null 2>&1
+}
+trap cleanup EXIT
+
 kubectl get ns "$NS" >/dev/null 2>&1 || kubectl create ns "$NS" >/dev/null
 
 fail() { echo "E2E FAIL: $*" >&2; exit 1; }
@@ -23,6 +32,10 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: $name
+  labels:
+    e2e.mcp.icore.tech/temp: "true"
+  labels:
+    e2e.mcp.icore.tech/temp: "true"
 spec:
   backoffLimit: 0
   template:
@@ -96,6 +109,8 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: curl-node
+  labels:
+    e2e.mcp.icore.tech/temp: "true"
 spec:
   backoffLimit: 0
   template:
