@@ -16,13 +16,13 @@ metadata:
   labels:
     {{- include "mcp-server.labels" $ | nindent 4 }}
     app.kubernetes.io/component: server
-    app.kubernetes.io/name: {{ $name }}
+    mcp.icore.tech/server: {{ $name }}
 spec:
   type: ClusterIP
   selector:
     {{- include "mcp-server.selectorLabels" $ | nindent 4 }}
     app.kubernetes.io/component: server
-    app.kubernetes.io/name: {{ $name }}
+    mcp.icore.tech/server: {{ $name }}
   ports:
     - name: http
       port: {{ $srv.port | default $defaultPort }}

@@ -10,20 +10,20 @@ metadata:
     {{- include "mcp-server.labels" $ | nindent 4 }}
     app.kubernetes.io/component: server
     app.kubernetes.io/part-of: {{ include "mcp-server.fullname" $ }}
-    app.kubernetes.io/name: {{ $name }}
+    mcp.icore.tech/server: {{ $name }}
 spec:
   replicas: {{ default 1 $srv.replicas }}
   selector:
     matchLabels:
       {{- include "mcp-server.selectorLabels" $ | nindent 6 }}
       app.kubernetes.io/component: server
-      app.kubernetes.io/name: {{ $name }}
+      mcp.icore.tech/server: {{ $name }}
   template:
     metadata:
       labels:
         {{- include "mcp-server.labels" $ | nindent 8 }}
         app.kubernetes.io/component: server
-        app.kubernetes.io/name: {{ $name }}
+        mcp.icore.tech/server: {{ $name }}
       {{- with $srv.podLabels }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
