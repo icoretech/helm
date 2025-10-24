@@ -15,6 +15,9 @@ spec:
         {{- include "metamcp.selectorLabels" . | nindent 8 }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap-env.yaml") . | sha256sum }}
+        {{- if .Values.auth.betterAuthSecret }}
+        checksum/auth: {{ include (print $.Template.BasePath "/secret-auth.yaml") . | sha256sum }}
+        {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
