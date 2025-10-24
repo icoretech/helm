@@ -12,9 +12,9 @@ metadata:
     app.kubernetes.io/component: metamcp-register
   annotations:
     helm.sh/hook: post-install,post-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-delete-policy: before-hook-creation
 spec:
-  backoffLimit: 2
+  backoffLimit: 1
   template:
     metadata:
       labels:
@@ -24,91 +24,42 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: register
-          image: curlimages/curl:8.10.1
+          image: python:3.12-alpine
           imagePullPolicy: IfNotPresent
           env:
-            - name: METAMCP_HOST
-              value: {{ printf "%s-metamcp" .Release.Name | quote }}
-            - name: METAMCP_FRONTEND_PORT
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SVC
+              value: {{ printf "%s.%s.svc.cluster.local" (printf "%s-metamcp" .Release.Name) .Release.Namespace | quote }}
+            - name: FRONTEND_PORT
               value: "12008"
-            - name: METAMCP_BACKEND_PORT
-              value: "12009"
-            - name: MODE
-              value: {{ (default "print" .Values.metamcp.register.mode) | quote }}
             - name: ADMIN_EMAIL
               value: {{ (default "admin@example.com" .Values.metamcp.register.admin.email) | quote }}
             - name: ADMIN_PASSWORD
               value: {{ (default "change-me" .Values.metamcp.register.admin.password) | quote }}
+            - name: MODE
+              value: {{ (default "apply" .Values.metamcp.register.mode) | quote }}
           volumeMounts:
             - name: cfg
               mountPath: /cfg
+              readOnly: true
+            - name: script
+              mountPath: /opt/register
+              readOnly: true
           command: ["/bin/sh","-lc"]
           args:
             - |
-              set -eu
-              echo "Mode=${MODE}"
-              echo "Waiting for MetaMCP frontend http ${METAMCP_HOST}:${METAMCP_FRONTEND_PORT}"
-              for i in $(seq 1 30); do
-                curl -fsS "http://${METAMCP_HOST}:${METAMCP_FRONTEND_PORT}/health" >/dev/null 2>&1 && break || sleep 2
-              done
-              echo "Bootstrap payload (servers → namespace → endpoint):"
-              cat /cfg/bootstrap.json || true
-              if [ "${MODE}" = "print" ]; then
-                echo "NOTE: Registration is print-only in this mode."
-                exit 0
-              fi
-              echo "Attempting experimental tRPC apply against backend http ${METAMCP_HOST}:${METAMCP_BACKEND_PORT}"
-              set -x
-              BASE="http://${METAMCP_HOST}:${METAMCP_BACKEND_PORT}"
-              HOST_HDR="${METAMCP_HOST}"
-              # 1) Sign-up (with name) then sign-in (Better Auth)
-              curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt \
-                -H 'Content-Type: application/json' \
-                -d '{"email":"'"${ADMIN_EMAIL}"'","password":"'"${ADMIN_PASSWORD}"'","name":"HelmAdmin"}' \
-                "${BASE}/api/auth/sign-up/email" || true
-              curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt \
-                -H 'Content-Type: application/json' \
-                -d '{"email":"'"${ADMIN_EMAIL}"'","password":"'"${ADMIN_PASSWORD}"'"}' \
-                "${BASE}/api/auth/sign-in/email" || true
-              # 2) Create servers (STREAMABLE_HTTP or SSE)
-              PAYLOAD=$(cat /cfg/bootstrap.json)
-              echo "$PAYLOAD" | jq -c '.servers[]' | while read -r S; do
-                NAME=$(echo "$S" | jq -r .name)
-                TYPE=$(echo "$S" | jq -r .type)
-                URL=$(echo "$S" | jq -r .url)
-                MT=$TYPE
-                if [ "$TYPE" = "sse" ] || [ "$TYPE" = "SSE" ]; then MT="SSE"; fi
-                if [ "$TYPE" = "streamable" ] || [ "$TYPE" = "STREAMABLE" ] || [ "$TYPE" = "STREAMABLE_HTTP" ]; then MT="STREAMABLE_HTTP"; fi
-                curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
-                  -d '{"name":"'"'"$NAME"'"'","type":"'"'"$MT"'"'","url":"'"'"$URL"'"'","bearerToken":""}' \
-                  "${BASE}/trpc/frontend/frontend.mcpServers.create" || true
-              done
-              # 3) Create namespace
-              NS_NAME=$(echo "$PAYLOAD" | jq -r '.namespace.name')
-              curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
-                -d '{"name":"'"'"$NS_NAME"'"'","description":"Helm namespace"}' \
-                "${BASE}/trpc/frontend/frontend.namespaces.create" || true
-              NS_LIST=$(curl -sS -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt "${BASE}/trpc/frontend/frontend.namespaces.list")
-              NS_UUID=$(echo "$NS_LIST" | jq -r '.result.data.data[] | select(.name=="'"$NS_NAME"'") | .uuid' | head -n1)
-              # 4) Map servers into namespace
-              SRV_LIST=$(curl -sS -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt "${BASE}/trpc/frontend/frontend.mcpServers.list")
-              SRV_NAMES=$(echo "$PAYLOAD" | jq -r '.namespace.servers[]')
-              # Build name->uuid map and pick UUIDs for listed server names
-              UUID_JSON=$(jq -n --argjson srv "$SRV_LIST" --argjson names "[$(for n in $SRV_NAMES; do printf '"%s" ' "$n"; done)]" '
-                ($srv.result.data.data | map({(.name): .uuid}) | add) as $map | $names | map($map[.])
-              ' 2>/dev/null | jq -c '.')
-              curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
-                -d '{"uuid":"'"'"$NS_UUID"'"'","name":"'"'"$NS_NAME"'"'","mcpServerUuids":'"$UUID_JSON"'}' \
-                "${BASE}/trpc/frontend/frontend.namespaces.update" || true
-              # 5) Create endpoint for namespace
-              EP_NAME=$(echo "$PAYLOAD" | jq -r '.endpoint.name')
-              curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
-                -d '{"name":"'"'"$EP_NAME"'"'","description":"Helm endpoint","namespaceUuid":"'"'"$NS_UUID"'"'","enableApiKeyAuth":false,"enableOauth":false,"useQueryParamAuth":false}' \
-                "${BASE}/trpc/frontend/frontend.endpoints.create" || true
-              set +x
-              echo "tRPC apply completed (experimental)."
+              set -euo pipefail
+              python3 -m pip install --no-cache-dir requests >/dev/null
+              echo "Mode=${MODE}"; [ "$MODE" = "print" ] && { cat /cfg/bootstrap.json; exit 0; }
+              python3 /opt/register/register.py
       volumes:
         - name: cfg
           configMap:
             name: {{ include "mcp-server.fullname" . }}-metamcp-register
+        - name: script
+          configMap:
+            name: {{ include "mcp-server.fullname" . }}-metamcp-register-script
 {{- end }}

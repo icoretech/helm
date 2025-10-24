@@ -1,5 +1,28 @@
 # Minimal MCP Server chart values for e2e
 dependencyUpdate: true
 metamcp:
-  enabled: false
-servers: []
+  enabled: true
+  auth:
+    betterAuthSecret: dev-secret
+  env:
+    APP_URL: http://localhost:12008
+  users:
+    - email: admin@example.com
+      password: change-me
+      name: Admin
+  bootstrap:
+    enabled: false
+  register:
+    mode: apply
+    admin:
+      email: admin@example.com
+      password: change-me
+servers:
+  - name: everything
+    port: 3001
+    register:
+      enabled: true
+    node:
+      package: "@modelcontextprotocol/server-everything"
+      version: "latest"
+      args: ["streamableHttp"]

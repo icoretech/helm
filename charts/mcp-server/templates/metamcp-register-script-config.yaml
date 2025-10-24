@@ -1,0 +1,113 @@
+{{- $hasServers := and (hasKey .Values "servers") (gt (len .Values.servers) 0) -}}
+{{- $mm := .Values.metamcp -}}
+{{- $mmEnabled := false -}}
+{{- if kindIs "map" $mm -}}{{- if kindIs "bool" $mm.enabled -}}{{- $mmEnabled = $mm.enabled -}}{{- end -}}{{- end -}}
+{{- if and $hasServers $mmEnabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mcp-server.fullname" . }}-metamcp-register-script
+  labels:
+    {{- include "mcp-server.labels" . | nindent 4 }}
+data:
+  register.py: |
+    import os, json, time
+    import requests
+
+    def log(msg):
+        print(f"[metamcp-register] {msg}", flush=True)
+
+    NS = os.environ.get('NAMESPACE','default')
+    SVC = os.environ['SVC']
+    FRONTEND_PORT = os.environ.get('FRONTEND_PORT','12008')
+    FRONTEND = f"http://{SVC}:{FRONTEND_PORT}"
+    BACKEND = f"http://{SVC}:12009"
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL','admin@example.com')
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD','change-me')
+
+    cfg = json.load(open('/cfg/bootstrap.json','r'))
+    servers = cfg.get('servers',[])
+    ns_cfg = cfg.get('namespace',{})
+    ep_cfg = cfg.get('endpoint',{})
+
+    # health
+    for _ in range(30):
+        try:
+            if requests.get(f"{FRONTEND}/health", timeout=2).status_code == 200:
+                break
+        except Exception:
+            pass
+        time.sleep(2)
+
+    sess = requests.Session()
+    sess.headers.update({'Content-Type':'application/json','Accept':'application/json'})
+    # ensure admin + sign in
+    try:
+        sess.post(f"{BACKEND}/api/auth/sign-up/email", json={'email': ADMIN_EMAIL, 'password': ADMIN_PASSWORD, 'name': 'HelmAdmin'}, timeout=6)
+    except Exception:
+        pass
+    r = sess.post(f"{BACKEND}/api/auth/sign-in/email", json={'email': ADMIN_EMAIL, 'password': ADMIN_PASSWORD}, timeout=6)
+    if r.status_code != 200:
+        log(f"ERROR signin: {r.status_code} {r.text[:140]}")
+    # Ensure session cookie matches service domain so cookies are sent to BACKEND host
+    try:
+        svc_host = SVC.split(':')[0]
+        for c in list(sess.cookies):
+            if c.name == 'better-auth.session_token':
+                c.domain = svc_host
+    except Exception:
+        pass
+
+    def trpc_post(path, body):
+        return sess.post(f"{BACKEND}{path}", json=body, timeout=10)
+    def trpc_get(path):
+        return sess.get(f"{BACKEND}{path}", timeout=10)
+
+    # create servers
+    try:
+        existing = {}
+        lr = trpc_get('/trpc/frontend/frontend.mcpServers.list?input=%7B%7D')
+        if lr.ok:
+            for s in lr.json().get('result',{}).get('data',{}).get('data',[]):
+                existing[s['name']] = s['uuid']
+        for s in servers:
+            name = s.get('name'); st = s.get('type','SSE').upper(); url = s.get('url','')
+            if st in ('SSE','STREAMABLE'): st = 'SSE' if st=='SSE' else 'STREAMABLE_HTTP'
+            if name in existing: continue
+            r = trpc_post('/trpc/frontend/frontend.mcpServers.create', {'name': name, 'type': st, 'url': url})
+            if r.ok:
+                try:
+                    existing[name] = r.json()['result']['data']['data']['uuid']
+                except Exception:
+                    pass
+    except Exception as e:
+        log(f"WARN servers: {e}")
+
+    # namespace
+    ns_name = ns_cfg.get('name') or ep_cfg.get('name')
+    ns_uuid = None
+    if ns_name:
+        lr = trpc_get('/trpc/frontend/frontend.namespaces.list?input=%7B%7D')
+        if lr.ok:
+            for ns in lr.json().get('result',{}).get('data',{}).get('data',[]):
+                if ns.get('name') == ns_name:
+                    ns_uuid = ns.get('uuid'); break
+        if not ns_uuid:
+            r = trpc_post('/trpc/frontend/frontend.namespaces.create', {'name': ns_name})
+            if r.ok:
+                try:
+                    ns_uuid = r.json()['result']['data']['data']['uuid']
+                except Exception:
+                    pass
+        # update mapping by names
+        ns_servers = ns_cfg.get('servers') or []
+        if ns_uuid and ns_servers:
+            trpc_post('/trpc/frontend/frontend.namespaces.update', {'uuid': ns_uuid, 'name': ns_name, 'servers': ns_servers})
+
+    # endpoint
+    ep_name = ep_cfg.get('name') or ns_name
+    transport = (ep_cfg.get('transport','SSE') or 'SSE').upper()
+    if transport in ('SSE','STREAMABLE'): transport = 'SSE' if transport=='SSE' else 'STREAMABLE_HTTP'
+    if ep_name and ns_uuid:
+        trpc_post('/trpc/frontend/frontend.endpoints.create', {'name': ep_name, 'namespaceUuid': ns_uuid, 'transport': transport})
+{{- end }}

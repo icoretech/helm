@@ -1,0 +1,28 @@
+# Provision multiple servers/namespaces/endpoints via MetaMCP
+auth:
+  betterAuthSecret: dev-secret
+env:
+  APP_URL: http://localhost:12008
+users:
+  - email: admin@example.com
+    password: change-me
+    name: Admin
+
+provision:
+  enabled: true
+  servers:
+    # Remote streamable-http server (replace URL with your MCP server)
+    - name: docs
+      type: STREAMABLE_HTTP
+      url: http://my-docs.svc.cluster.local:3000/mcp
+    # Example STDIO (requires runtime available in the MetaMCP image)
+    - name: everything
+      type: STDIO
+      command: ["npx","-y","@modelcontextprotocol/server-everything","streamableHttp"]
+  namespaces:
+    - name: lab
+      servers: ["docs","everything"]
+  endpoints:
+    - name: lab
+      namespace: lab
+      transport: SSE

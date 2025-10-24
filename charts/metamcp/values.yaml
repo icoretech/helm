@@ -127,6 +127,36 @@ bootstrap:
     transport: sse   # sse | streamable
     auth: {}
 
+# Generalized provisioning (multiple servers, namespaces, endpoints)
+provision:
+  enabled: false
+  # servers: list of server specs (SSE/STREAMABLE_HTTP/STDIO)
+  servers: []
+  # - name: aws-docs
+  #   type: STREAMABLE_HTTP   # or SSE or STDIO
+  #   url: http://my-aws-docs.svc.cluster.local:3000/mcp
+  #   bearerToken: ""
+  #   headers: { Accept: application/json }
+  # - name: stdio-everything
+  #   type: STDIO
+  #   command: ["npx","-y","@modelcontextprotocol/server-everything","streamableHttp"]
+  #   args: []
+  #   env: { LOG_LEVEL: debug }
+
+  # namespaces: list of { name, servers: [<server-names>] }
+  namespaces: []
+  # - name: lab
+  #   servers: ["aws-docs","stdio-everything"]
+
+  # endpoints: list of { name, namespace, transport, enableApiKeyAuth, enableOauth, useQueryParamAuth }
+  endpoints: []
+  # - name: lab
+  #   namespace: lab
+  #   transport: SSE   # or STREAMABLE_HTTP
+  #   enableApiKeyAuth: true
+  #   enableOauth: false
+  #   useQueryParamAuth: false
+
 # Global: disable public sign-up in MetaMCP (performed by user-bootstrap job if any users are defined)
 disablePublicSignup: false
 

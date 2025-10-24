@@ -1,6 +1,8 @@
 # Minimal MetaMCP values for e2e
 auth:
   betterAuthSecret: dev-secret
+env:
+  APP_URL: http://localhost:12008
 users:
   - email: admin@example.com
     password: change-me
