@@ -44,7 +44,10 @@
               "headers": { "type": "object", "additionalProperties": { "type": "string" } },
               "command": { "type": ["string","null"] },
               "args": { "type": "array", "items": { "type": "string" } },
-              "env": { "type": "object", "additionalProperties": { "type": "string" } }
+              "env": { "type": "object", "additionalProperties": { "type": "string" } },
+              "extraEnv": { "type": "array", "items": { "type": "object" } },
+              "envFrom": { "type": "array", "items": { "type": "object" } },
+              "secretEnv": { "type": "object", "additionalProperties": { "type": "string" } }
               ,"port": { "type": ["integer","null"], "minimum": 1 }
               ,"node": {
                 "type": "object",

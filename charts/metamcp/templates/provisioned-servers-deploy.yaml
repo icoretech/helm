@@ -64,6 +64,33 @@ spec:
           {{- end }}
           {{- end }}
           imagePullPolicy: IfNotPresent
+          {{- /* Per-server env (object map) and optional secret/envFrom */}}
+          {{- $hasEnv := hasKey $srv "env" -}}
+          {{- $hasExtraEnv := hasKey $srv "extraEnv" -}}
+          {{- if or $hasEnv $hasExtraEnv }}
+          env:
+            {{- if $hasEnv }}
+            {{- range $k, $v := $srv.env }}
+            - name: {{ $k | quote }}
+              value: {{ $v | quote }}
+            {{- end }}
+            {{- end }}
+            {{- with $srv.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- $hasEnvFrom := hasKey $srv "envFrom" -}}
+          {{- $hasSecretEnv := hasKey $srv "secretEnv" -}}
+          {{- if or $hasEnvFrom $hasSecretEnv }}
+          envFrom:
+            {{- if $hasSecretEnv }}
+            - secretRef:
+                name: {{ include "metamcp.fullname" $root }}-{{ $name }}-env
+            {{- end }}
+            {{- with $srv.envFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ $srv.port | default 3001 }}
@@ -90,4 +117,3 @@ spec:
 ---
 {{- end }}
 {{- end }}
-
