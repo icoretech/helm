@@ -1,5 +1,6 @@
 import os, json, time
 import requests
+import http.cookiejar as cookiejar
 
 def log(msg):
     print(f"[provision] {msg}", flush=True)
@@ -26,8 +27,11 @@ for _ in range(60):
     time.sleep(2)
 
 sess = requests.Session()
-sess.headers.update({'Content-Type':'application/json','Accept':'application/json'})
+sess.headers.update({'Accept':'application/json'})
 sess.headers.update({'Host': SVC})
+# Persist cookies like curl does (some frameworks are picky about cookie jar semantics)
+jar_path = '/tmp/metamcp_cookies.txt'
+sess.cookies = cookiejar.MozillaCookieJar(jar_path)
 
 def signin(retries=8, delay=1.5):
     for i in range(retries):
@@ -35,19 +39,30 @@ def signin(retries=8, delay=1.5):
             sess.post(f"{BACKEND}/api/auth/sign-up/email", json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD,'name':'Admin'}, timeout=6)
         except Exception:
             pass
-        r = sess.post(f"{BACKEND}/api/auth/sign-in/email", json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD}, timeout=6)
+        r = sess.post(f"{BACKEND}/api/auth/sign-in/email", headers={'Content-Type':'application/json','Host': SVC}, json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD}, timeout=6)
         if r.status_code == 200:
             try:
                 # Accept cookie from response plus token header fallback
                 host = SVC.split(':')[0]
                 for c in r.cookies:
-                    sess.cookies.set(c.name, c.value, domain=host, path=c.path or '/')
+                    try:
+                        sess.cookies.set(c.name, c.value, domain=host, path=(c.path or '/'))
+                    except Exception:
+                        sess.cookies.set(c.name, c.value)
                 token = r.json().get('token')
                 if token:
-                    sess.cookies.set('better-auth.session_token', token, domain=host, path='/')
-                    sess.headers['Cookie'] = f"better-auth.session_token={token}"
+                    try:
+                        sess.cookies.set('better-auth.session_token', token, domain=host, path='/')
+                    except Exception:
+                        sess.cookies.set('better-auth.session_token', token)
                     sess.headers['Authorization'] = f"Bearer {token}"
-                lr = sess.get(f"{BACKEND}/trpc/frontend/frontend.mcpServers.list?input=%7B%7D", timeout=6)
+                # Persist cookies and re-load to mimic curl
+                try:
+                    sess.cookies.save(ignore_discard=True, ignore_expires=True)
+                    sess.cookies.load(ignore_discard=True, ignore_expires=True)
+                except Exception:
+                    pass
+                lr = sess.get(f"{BACKEND}/trpc/frontend/frontend.mcpServers.list", params={'input':'{}'}, timeout=6)
                 if lr.status_code == 200:
                     return True
             except Exception:
@@ -59,9 +74,9 @@ if not signin():
     log('WARN: signin failed; proceeding and expecting 401s')
 
 def trpc_post(path, body):
-    return sess.post(f"{BACKEND}{path}", json=body, timeout=12)
+    return sess.post(f"{BACKEND}{path}", headers={'Content-Type':'application/json','Host': SVC}, json=body, timeout=12)
 def trpc_get(path):
-    return sess.get(f"{BACKEND}{path}", timeout=12)
+    return sess.get(f"{BACKEND}{path}", headers={'Host': SVC}, timeout=12)
 
 # Map existing servers
 srv_map = {}
