@@ -109,7 +109,7 @@ auth:
 # POST these resources automatically.
 bootstrap:
   enabled: false
-  mode: print   # print | apply (apply to be implemented once routes are confirmed)
+  mode: apply   # apply | print (print for debugging only)
   admin:
     username: admin
     password: admin

@@ -10,4 +10,136 @@ data:
     {{- /* Render a single JSON payload the job can print/apply later */ -}}
     {{- $payload := dict "servers" (.Values.bootstrap.servers | default (list)) "namespace" (.Values.bootstrap.namespace | default (dict)) "endpoint" (.Values.bootstrap.endpoint | default (dict)) -}}
 {{ toJson $payload | nindent 4 }}
+  bootstrap.py: |
+    import os, json, time
+    import requests
+
+    def log(msg):
+        print(f"[bootstrap] {msg}", flush=True)
+
+    MODE = os.environ.get('MODE', 'apply')
+    NS = os.environ.get('NAMESPACE', 'default')
+    SVC = os.environ['SVC']
+    FRONTEND_PORT = os.environ.get('FRONTEND_PORT', '12008')
+    FRONTEND = f"http://{SVC}:{FRONTEND_PORT}"
+    BACKEND = f"http://{SVC}:12009"
+    ADMIN_USER = os.environ.get('ADMIN_USER', 'admin')
+    ADMIN_PASS = os.environ.get('ADMIN_PASS', 'admin')
+
+    cfg = json.load(open('/cfg/bootstrap.json','r'))
+    servers = cfg.get('servers', [])
+    ns_cfg = cfg.get('namespace', {})
+    ep_cfg = cfg.get('endpoint', {})
+
+    # Health
+    for _ in range(90):
+        try:
+            if requests.get(f"{FRONTEND}/health", timeout=3).status_code == 200:
+                break
+        except Exception:
+            pass
+        time.sleep(2)
+
+    log(f"MODE={MODE}")
+    log(f"FRONTEND={FRONTEND} BACKEND={BACKEND}")
+    log("Payload:")
+    print(json.dumps(cfg))
+    if MODE == 'print':
+        log('Print-only mode. No API calls performed.')
+        raise SystemExit(0)
+
+    sess = requests.Session()
+    sess.headers.update({'Content-Type':'application/json','Accept':'application/json'})
+
+    # Ensure admin exists then sign in
+    try:
+        r = sess.post(f"{BACKEND}/api/auth/sign-up/email", json={'email': ADMIN_USER, 'password': ADMIN_PASS, 'name': 'Admin'}, timeout=8)
+        if r.status_code not in (200,201,409,422):
+            log(f"WARN signup: {r.status_code} {r.text[:160]}")
+    except Exception as e:
+        log(f"WARN signup exception: {e}")
+    r = sess.post(f"{BACKEND}/api/auth/sign-in/email", json={'email': ADMIN_USER, 'password': ADMIN_PASS}, timeout=8)
+    if r.status_code != 200:
+        log(f"ERROR signin: {r.status_code} {r.text[:160]}")
+
+    # Helper calls
+    def trpc_post(path, body):
+        return sess.post(f"{BACKEND}{path}", json=body, timeout=12)
+    def trpc_get(path):
+        return sess.get(f"{BACKEND}{path}", timeout=12)
+
+    # Upsert servers
+    srv_map = {}
+    try:
+        lr = trpc_get("/trpc/frontend/frontend.mcpServers.list?input=%7B%7D")
+        if lr.ok:
+            for s in lr.json().get('result',{}).get('data',{}).get('data',[]):
+                srv_map[s['name']] = s['uuid']
+    except Exception:
+        pass
+    for s in servers:
+        name = s.get('name')
+        if not name:
+            continue
+        if name in srv_map:
+            log(f"server exists: {name}")
+            continue
+        stype = s.get('type','SSE').upper()
+        if stype in ('SSE','STREAMABLE'):
+            stype = 'SSE' if stype=='SSE' else 'STREAMABLE_HTTP'
+        body = {'name': name, 'type': stype, 'url': s.get('url','')}
+        if s.get('bearerToken'):
+            body['bearerToken'] = s['bearerToken']
+        r = trpc_post("/trpc/frontend/frontend.mcpServers.create", body)
+        if r.ok:
+            try:
+                uuid = r.json()['result']['data']['data']['uuid']
+                srv_map[name] = uuid
+                log(f"created server: {name}")
+            except Exception:
+                log(f"WARN: could not parse create response for {name}")
+        else:
+            log(f"WARN: server create {name} -> {r.status_code}: {r.text[:160]}")
+
+    # Namespace
+    ns_name = ns_cfg.get('name') or ep_cfg.get('name')  # fallback
+    ns_uuid = None
+    if ns_name:
+        try:
+            lr = trpc_get("/trpc/frontend/frontend.namespaces.list?input=%7B%7D")
+            if lr.ok:
+                for ns in lr.json().get('result',{}).get('data',{}).get('data',[]):
+                    if ns.get('name') == ns_name:
+                        ns_uuid = ns.get('uuid')
+                        break
+        except Exception:
+            pass
+        if not ns_uuid:
+            r = trpc_post("/trpc/frontend/frontend.namespaces.create", {'name': ns_name})
+            if r.ok:
+                try:
+                    ns_uuid = r.json()['result']['data']['data']['uuid']
+                    log(f"created namespace: {ns_name}")
+                except Exception:
+                    log("WARN: could not parse namespace uuid")
+            else:
+                log(f"WARN: namespace create -> {r.status_code}: {r.text[:160]}")
+        # update servers mapping if provided
+        ns_servers = ns_cfg.get('servers') or []
+        if ns_uuid and ns_servers:
+            r = trpc_post("/trpc/frontend/frontend.namespaces.update", {'uuid': ns_uuid, 'name': ns_name, 'servers': ns_servers})
+            if not r.ok:
+                log(f"WARN: namespace update -> {r.status_code}: {r.text[:160]}")
+
+    # Endpoint
+    ep_name = ep_cfg.get('name') or ns_name
+    transport = (ep_cfg.get('transport','SSE') or 'SSE').upper()
+    if transport in ('SSE','STREAMABLE'):
+        transport = 'SSE' if transport=='SSE' else 'STREAMABLE_HTTP'
+    if ep_name and ns_uuid:
+        r = trpc_post("/trpc/frontend/frontend.endpoints.create", {'name': ep_name, 'namespaceUuid': ns_uuid, 'transport': transport})
+        if r.ok:
+            log(f"created endpoint: {ep_name} ({transport})")
+        else:
+            log(f"WARN: endpoint create -> {r.status_code}: {r.text[:160]}")
 {{- end }}

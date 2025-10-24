@@ -39,14 +39,14 @@ secretEnv:
 
 If `postgres.enabled=true` (default), a disposable Postgres Deployment/Service is created for convenience and `DATABASE_URL` is injected automatically. For production, set `postgres.enabled=false` and provide `env.DATABASE_URL` or `secretEnv.DATABASE_URL` to point at your managed database.
 
-## Optional bootstrap (print-only for now)
+## Optional bootstrap (apply)
 
-The chart can render a bootstrap payload (servers → namespace → endpoint) and, for now, print it as a post-install hook:
+The chart can render and APPLY a bootstrap payload (servers → namespace → endpoint) as a post-install/upgrade hook. Use `mode: print` to only render without changes.
 
 ```yaml
 bootstrap:
   enabled: true
-  mode: print   # apply to be implemented once stable admin API routes are confirmed
+  mode: apply   # or print
   admin:
     username: admin
     password: admin
