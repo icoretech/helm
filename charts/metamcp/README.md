@@ -167,5 +167,7 @@ The first listed user is used to apply `disablePublicSignup` if set.
 
 ## Notes
 
-- Required env: `APP_URL`, `BETTER_AUTH_SECRET`. If `postgres.enabled=false`, also set `DATABASE_URL`.
-- For production, prefer an external Postgres (managed or operator) and disable the in-chart Postgres.
+- Required env: `APP_URL`, `BETTER_AUTH_SECRET`, `DATABASE_URL`.
+  - The chart no longer auto-builds `DATABASE_URL`. Set it explicitly.
+  - Example for in-chart Postgres (same namespace):
+    `postgresql://metamcp:metamcp@
