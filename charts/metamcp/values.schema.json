@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "env": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "betterAuthSecret": { "type": "string" }
+      }
+    },
+    "users": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["email", "password", "name"],
+        "properties": {
+          "email": { "type": "string" },
+          "password": { "type": "string" },
+          "name": { "type": "string" },
+          "createApiKey": { "type": "boolean" },
+          "apiKeyName": { "type": "string" }
+        }
+      }
+    },
+    "provision": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "servers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "type"],
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string", "enum": ["SSE", "STREAMABLE_HTTP", "STDIO"] },
+              "url": { "type": "string" },
+              "bearerToken": { "type": "string" },
+              "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+              "command": { "type": "array", "items": { "type": "string" } },
+              "args": { "type": "array", "items": { "type": "string" } },
+              "env": { "type": "object", "additionalProperties": { "type": "string" } }
+            },
+            "allOf": [
+              { "if": { "properties": { "type": { "const": "STDIO" } } }, "then": { "required": ["command"] } },
+              { "if": { "properties": { "type": { "enum": ["SSE", "STREAMABLE_HTTP"] } } }, "then": { "required": ["url"] } }
+            ]
+          }
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "servers": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "namespace", "transport"],
+            "properties": {
+              "name": { "type": "string" },
+              "namespace": { "type": "string" },
+              "transport": { "type": "string", "enum": ["SSE", "STREAMABLE_HTTP"] },
+              "enableApiKeyAuth": { "type": "boolean" },
+              "enableOauth": { "type": "boolean" },
+              "useQueryParamAuth": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

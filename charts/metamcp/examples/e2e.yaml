@@ -12,12 +12,18 @@ disablePublicSignup: true
 provision:
   enabled: true
   servers:
-    - name: everything
+    - name: stdio-everything
       type: STDIO
       command: ["npx","-y","@modelcontextprotocol/server-everything","stdio"]
+    - name: http-everything
+      type: STREAMABLE_HTTP
+      url: http://ext-http.e2e.svc.cluster.local:3001/mcp
+    - name: sse-everything
+      type: SSE
+      url: http://ext-sse.e2e.svc.cluster.local:3002/sse
   namespaces:
     - name: lab
-      servers: ["everything"]
+      servers: ["stdio-everything","http-everything","sse-everything"]
   endpoints:
     - name: lab
       namespace: lab

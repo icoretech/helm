@@ -56,14 +56,7 @@ data:
                 sess.headers['Cookie'] = f"better-auth.session_token={token}"
         except Exception:
             pass
-    # Ensure session cookie matches service domain so cookies are sent to BACKEND host
-    try:
-        svc_host = SVC.split(':')[0]
-        for c in list(sess.cookies):
-            if c.name == 'better-auth.session_token':
-                c.domain = svc_host
-    except Exception:
-        pass
+    # Use default headers; rely on cookie jar from sign-in
 
     def trpc_post(path, body):
         return sess.post(f"{BACKEND}{path}", json=body, timeout=10)

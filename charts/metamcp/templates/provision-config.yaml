@@ -52,14 +52,10 @@ data:
             token = r.json().get('token')
             if token:
                 sess.headers['Cookie'] = f"better-auth.session_token={token}"
+                sess.headers['Authorization'] = f"Bearer {token}"
         except Exception:
             pass
-    try:
-        svc_host = SVC.split(':')[0]
-        for c in list(sess.cookies):
-            if c.name == 'better-auth.session_token': c.domain = svc_host
-    except Exception:
-        pass
+    # Use default headers; rely on cookie jar from sign-in (APP_URL should be service FQDN)
 
     def trpc_post(path, body):
         return sess.post(f"{BACKEND}{path}", json=body, timeout=12)
@@ -87,8 +83,15 @@ data:
             if s.get('bearerToken'): body['bearerToken'] = s['bearerToken']
             if s.get('headers'): body['headers'] = s['headers']
         if st == 'STDIO':
-            if s.get('command'): body['command'] = s['command']
-            if s.get('args'): body['args'] = s['args']
+            cmd = s.get('command')
+            args = s.get('args') or []
+            if isinstance(cmd, list) and len(cmd) > 0:
+                body['command'] = cmd[0]
+                body['args'] = (args + cmd[1:]) if isinstance(args, list) else cmd[1:]
+            elif isinstance(cmd, str):
+                body['command'] = cmd
+                if isinstance(args, list) and args:
+                    body['args'] = args
             if s.get('env'): body['env'] = s['env']
         r = trpc_post('/trpc/frontend/frontend.mcpServers.create', body)
         if r.ok:
@@ -158,6 +161,7 @@ metadata:
     app.kubernetes.io/component: provision
   annotations:
     helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "5"
     helm.sh/hook-delete-policy: before-hook-creation
 spec:
   backoffLimit: 1
