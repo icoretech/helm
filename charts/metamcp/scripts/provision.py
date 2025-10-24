@@ -2,6 +2,7 @@ import os, json, time
 import requests
 import http.cookiejar as cookiejar
 import socket
+from urllib.parse import urlparse
 
 def log(msg):
     print(f"[provision] {msg}", flush=True)
@@ -32,7 +33,18 @@ sess.headers.update({'Accept':'application/json'})
 sess.headers.update({'Host': SVC})
 # Persist cookies like curl does (some frameworks are picky about cookie jar semantics)
 jar_path = '/tmp/metamcp_cookies.txt'
-sess.cookies = cookiejar.MozillaCookieJar(jar_path)
+mozjar = cookiejar.MozillaCookieJar(jar_path)
+try:
+    if os.path.exists(jar_path):
+        mozjar.load(ignore_discard=True, ignore_expires=True)
+        # load into requests jar
+        for c in mozjar:
+            try:
+                sess.cookies.set_cookie(c)  # type: ignore[attr-defined]
+            except Exception:
+                pass
+except Exception:
+    pass
 
 def signin(retries=8, delay=1.5):
     tried_signup = False
@@ -48,22 +60,22 @@ def signin(retries=8, delay=1.5):
             try:
                 # Accept cookie from response plus token header fallback
                 host = SVC.split(':')[0]
-                for c in r.cookies:
-                    try:
-                        sess.cookies.set(c.name, c.value, domain=host, path=(c.path or '/'))
-                    except Exception:
-                        sess.cookies.set(c.name, c.value)
                 token = r.json().get('token')
                 if token:
                     try:
                         sess.cookies.set('better-auth.session_token', token, domain=host, path='/')
                     except Exception:
                         sess.cookies.set('better-auth.session_token', token)
-                    sess.headers['Authorization'] = f"Bearer {token}"
-                # Persist cookies and re-load to mimic curl
+                sess.headers['Authorization'] = f"Bearer {token}"
+                # Persist cookies to mozilla jar and reload next time
                 try:
-                    sess.cookies.save(ignore_discard=True, ignore_expires=True)
-                    sess.cookies.load(ignore_discard=True, ignore_expires=True)
+                    mozjar.clear()
+                    for c in sess.cookies:
+                        try:
+                            mozjar.set_cookie(c)  # type: ignore[arg-type]
+                        except Exception:
+                            pass
+                    mozjar.save(ignore_discard=True, ignore_expires=True)
                 except Exception:
                     pass
                 lr = sess.get(f"{BACKEND}/trpc/frontend/frontend.mcpServers.list", headers={'Host': SVC}, params={'input':'{}'}, timeout=6)
@@ -120,12 +132,18 @@ for s in servers:
                 except Exception:
                     host, port = None, None
                 if host and port:
-                    for _ in range(8):
+                    log(f"[ready] waiting tcp {host}:{port} …")
+                    max_tries = 8
+                    tried = 0
+                    ok = False
+                    for _ in range(max_tries):
                         try:
                             with socket.create_connection((host, port), timeout=1.5):
+                                ok = True
                                 break
                         except Exception:
                             time.sleep(1)
+                    log(f"[ready] tcp {host}:{port} -> {'ok' if ok else 'timeout'}")
         if url: body['url'] = url
         if s.get('bearerToken'): body['bearerToken'] = s['bearerToken']
         if s.get('headers'): body['headers'] = s['headers']

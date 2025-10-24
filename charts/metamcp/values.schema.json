@@ -49,6 +49,48 @@
               "envFrom": { "type": "array", "items": { "type": "object" } },
               "secretEnv": { "type": "object", "additionalProperties": { "type": "string" } }
               ,"port": { "type": ["integer","null"], "minimum": 1 }
+              ,"resources": { "type": "object" }
+              ,"securityContext": { "type": "object" }
+              ,"podSecurityContext": { "type": "object" }
+              ,"podLabels": { "type": "object", "additionalProperties": { "type": "string" } }
+              ,"podAnnotations": { "type": "object", "additionalProperties": { "type": "string" } }
+              ,"imagePullSecrets": { "type": "array", "items": { "type": "object" } }
+              ,"serviceAccountName": { "type": "string" }
+              ,"nodeSelector": { "type": "object", "additionalProperties": { "type": "string" } }
+              ,"tolerations": { "type": "array", "items": { "type": "object" } }
+              ,"affinity": { "type": "object" }
+              ,"extraVolumes": { "type": "array", "items": { "type": "object" } }
+              ,"extraVolumeMounts": { "type": "array", "items": { "type": "object" } }
+              ,"initContainers": { "type": "array", "items": { "type": "object" } }
+              ,"readinessProbe": { "type": "object" }
+              ,"livenessProbe": { "type": "object" }
+              ,"cache": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "mountPath": { "type": "string" },
+                  "emptyDir": { "type": ["object","null"] },
+                  "pvc": {
+                    "type": "object",
+                    "properties": {
+                      "existingClaim": { "type": "string" },
+                      "size": { "type": "string" },
+                      "storageClassName": { "type": ["string","null"] },
+                      "accessModes": { "type": "array", "items": { "type": "string" } }
+                    }
+                  }
+                }
+              }
+              ,"autoscaling": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "minReplicas": { "type": "integer", "minimum": 1 },
+                  "maxReplicas": { "type": "integer", "minimum": 1 },
+                  "targetCPUUtilizationPercentage": { "type": ["integer","null"], "minimum": 1 },
+                  "targetMemoryUtilizationPercentage": { "type": ["integer","null"], "minimum": 1 }
+                }
+              }
               ,"node": {
                 "type": "object",
                 "properties": {

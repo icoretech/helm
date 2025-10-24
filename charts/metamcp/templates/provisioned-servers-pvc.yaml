@@ -1,0 +1,28 @@
+{{- $list := .Values.provision.servers | default (list) -}}
+{{- range $i, $srv := $list }}
+{{- $root := $ -}}
+{{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+{{- $hasDeploy := or (hasKey $srv "node") (or (hasKey $srv "python") (hasKey $srv "image")) -}}
+{{- if and $hasDeploy (hasKey $srv "cache") ($srv.cache.enabled | default false) (hasKey $srv.cache "pvc") (hasKey $srv.cache.pvc "size") (not $srv.cache.pvc.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "metamcp.fullname" $root }}-{{ $name }}-cache
+  labels:
+    {{- include "metamcp.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: server
+    mcp.icore.tech/server: {{ $name }}
+spec:
+  accessModes: {{- if $srv.cache.pvc.accessModes }} {{ toYaml $srv.cache.pvc.accessModes | nindent 2 }} {{- else }}
+  - ReadWriteOnce
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $srv.cache.pvc.size | default "1Gi" }}
+  {{- with $srv.cache.pvc.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+---
+{{- end }}
+{{- end }}
+

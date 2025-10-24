@@ -25,7 +25,61 @@ spec:
         {{- include "metamcp.selectorLabels" $root | nindent 8 }}
         app.kubernetes.io/component: server
         mcp.icore.tech/server: {{ $name }}
+        {{- with $srv.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with $srv.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
+      {{- with $srv.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.serviceAccountName }}
+      serviceAccountName: {{ . }}
+      {{- end }}
+      {{- with $srv.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- $hasCache := and (hasKey $srv "cache") ($srv.cache.enabled | default false) -}}
+      {{- $hasExtraVols := hasKey $srv "extraVolumes" -}}
+      {{- if or $hasCache $hasExtraVols }}
+      volumes:
+        {{- if $hasCache }}
+        - name: cache
+          {{- if and (hasKey $srv.cache "pvc") (hasKey $srv.cache.pvc "existingClaim") ($srv.cache.pvc.existingClaim) }}
+          persistentVolumeClaim:
+            claimName: {{ $srv.cache.pvc.existingClaim }}
+          {{- else if and (hasKey $srv.cache "pvc") (hasKey $srv.cache.pvc "size") }}
+          persistentVolumeClaim:
+            claimName: {{ include "metamcp.fullname" $root }}-{{ $name }}-cache
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}
+        {{- with $srv.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
       containers:
         - name: server
           {{- if hasKey $srv "node" }}
@@ -68,6 +122,10 @@ spec:
           {{- end }}
           {{- end }}
           imagePullPolicy: IfNotPresent
+          {{- with $srv.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- /* Per-server env (object map) and optional secret/envFrom */}}
           {{- $hasEnv := hasKey $srv "env" -}}
           {{- $hasExtraEnv := hasKey $srv "extraEnv" -}}
@@ -95,10 +153,34 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- end }}
+          {{- with $srv.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $srv.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ $srv.port | default 3001 }}
               protocol: TCP
+          {{- $hasCacheMount := and $hasCache $srv.cache.mountPath }}
+          {{- $hasExtraMounts := hasKey $srv "extraVolumeMounts" -}}
+          {{- if or $hasCacheMount $hasExtraMounts }}
+          volumeMounts:
+            {{- if $hasCacheMount }}
+            - name: cache
+              mountPath: {{ $srv.cache.mountPath | default "/cache" | quote }}
+            {{- end }}
+            {{- with $srv.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with $srv.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
 ---
 apiVersion: v1
 kind: Service

@@ -1,0 +1,50 @@
+{{- $list := .Values.provision.servers | default (list) -}}
+{{- range $i, $srv := $list }}
+{{- $root := $ -}}
+{{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+{{- if and (or (hasKey $srv "node") (hasKey $srv "python") (hasKey $srv "image")) (hasKey $srv "autoscaling") ($srv.autoscaling.enabled | default false) }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "metamcp.fullname" $root }}-{{ $name }}
+  labels:
+    {{- include "metamcp.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: server
+    mcp.icore.tech/server: {{ $name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "metamcp.fullname" $root }}-{{ $name }}
+  minReplicas: {{ $srv.autoscaling.minReplicas | default 1 }}
+  maxReplicas: {{ $srv.autoscaling.maxReplicas | default 3 }}
+  metrics:
+    {{- $metrics := list -}}
+    {{- if $srv.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $srv.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if $srv.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $srv.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+    {{- if not (or $srv.autoscaling.targetCPUUtilizationPercentage $srv.autoscaling.targetMemoryUtilizationPercentage) }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+    {{- end }}
+---
+{{- end }}
+{{- end }}
+

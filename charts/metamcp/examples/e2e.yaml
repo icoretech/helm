@@ -24,11 +24,11 @@ provision:
         args: ["streamableHttp","--port","3001"]
     - name: sse-everything
       type: SSE
-      port: 3002
+      port: 3001
       node:
         package: "@modelcontextprotocol/server-everything"
         version: "latest"
-        args: ["sse","--port","3002"]
+        args: ["sse"]
   namespaces:
     - name: lab
       servers: ["stdio-everything","http-everything","sse-everything"]
