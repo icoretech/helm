@@ -1,0 +1,49 @@
+# Provision servers with a cache PVC per server (requires a default StorageClass).
+# This example demonstrates per-server cache using a generated PVC and a simple SSE/HTTP setup.
+
+auth:
+  betterAuthSecret: dev-secret
+
+users:
+  - email: admin@example.com
+    password: change-me
+    name: Admin
+
+provision:
+  enabled: true
+  servers:
+    - name: http-everything
+      type: STREAMABLE_HTTP
+      port: 3001
+      node:
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["streamableHttp"]
+      cache:
+        enabled: true
+        mountPath: /cache
+        pvc:
+          size: 1Gi  # requires default StorageClass
+
+    - name: sse-everything
+      type: SSE
+      port: 3001
+      node:
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["sse"]
+      cache:
+        enabled: true
+        mountPath: /cache
+        pvc:
+          size: 1Gi  # requires default StorageClass
+
+  namespaces:
+    - name: lab
+      servers: ["http-everything","sse-everything"]
+
+  endpoints:
+    - name: lab
+      namespace: lab
+      transport: SSE
+
