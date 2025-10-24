@@ -1,6 +1,7 @@
 import os, json, time
 import requests
 import http.cookiejar as cookiejar
+import socket
 
 def log(msg):
     print(f"[provision] {msg}", flush=True)
@@ -111,6 +112,20 @@ for s in servers:
                     url = base + suffix
                 else:
                     url = 'http://' + base + suffix
+            # proactive readiness: if we know serviceBase, wait for port to accept before creating record
+            if base:
+                try:
+                    hostport = base.split('://')[-1]
+                    host, port = hostport.split(':')[0], int(hostport.split(':')[1])
+                except Exception:
+                    host, port = None, None
+                if host and port:
+                    for _ in range(8):
+                        try:
+                            with socket.create_connection((host, port), timeout=1.5):
+                                break
+                        except Exception:
+                            time.sleep(1)
         if url: body['url'] = url
         if s.get('bearerToken'): body['bearerToken'] = s['bearerToken']
         if s.get('headers'): body['headers'] = s['headers']

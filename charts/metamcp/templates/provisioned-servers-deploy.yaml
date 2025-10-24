@@ -37,6 +37,10 @@ spec:
             {{- range $arg := (default (list) $srv.node.args) }}
             - {{ $arg | quote }}
             {{- end }}
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - {{ ($srv.port | default 3001) | toString | quote }}
           {{- else if hasKey $srv "python" }}
           image: {{ printf "%s:%s" (get $srv.python "image" | default "ghcr.io/astral-sh/uv") (get $srv.python "tag" | default "python3.12-bookworm-slim") | quote }}
           command:
