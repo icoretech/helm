@@ -1,13 +1,7 @@
 # Minimal MetaMCP values for e2e (provision)
 auth:
   betterAuthSecret: dev-secret
-env:
-  APP_URL: http://metamcp-metamcp.{{ .Release.Namespace }}.svc.cluster.local:12008
-extraEnv:
-  - name: LOG_LEVEL
-    value: debug
-  - name: DEBUG
-    value: "*"
+env: {}
 users:
   - email: admin@example.com
     password: change-me
@@ -42,3 +36,4 @@ provision:
     - name: lab
       namespace: lab
       transport: SSE
+      enableApiKeyAuth: false

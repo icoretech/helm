@@ -38,7 +38,10 @@ ingress:
       paths:
         - path: /
           pathType: ImplementationSpecific
+          # port: 12008   # optional per-path override
   tls: []
+  # Also map backend routes (/metamcp, /trpc, /api) to port 12009 by default
+  mapBackendPaths: true
 
 gatewayAPI:
   enabled: false
@@ -48,6 +51,8 @@ gatewayAPI:
   #     namespace: gateway-system
   #     sectionName: http
   hosts: []
+  # Map backend routes (/metamcp, /trpc, /api) to port 12009 by default
+  mapBackendPaths: true
 
 resources: {}
 

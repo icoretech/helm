@@ -34,11 +34,14 @@ jar_path = '/tmp/metamcp_cookies.txt'
 sess.cookies = cookiejar.MozillaCookieJar(jar_path)
 
 def signin(retries=8, delay=1.5):
+    tried_signup = False
     for i in range(retries):
-        try:
-            sess.post(f"{BACKEND}/api/auth/sign-up/email", json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD,'name':'Admin'}, timeout=6)
-        except Exception:
-            pass
+        if not tried_signup:
+            try:
+                resp = sess.post(f"{BACKEND}/api/auth/sign-up/email", headers={'Content-Type':'application/json','Host': SVC}, json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD,'name':'Admin'}, timeout=6)
+                tried_signup = True
+            except Exception:
+                tried_signup = True
         r = sess.post(f"{BACKEND}/api/auth/sign-in/email", headers={'Content-Type':'application/json','Host': SVC}, json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD}, timeout=6)
         if r.status_code == 200:
             try:
@@ -62,7 +65,7 @@ def signin(retries=8, delay=1.5):
                     sess.cookies.load(ignore_discard=True, ignore_expires=True)
                 except Exception:
                     pass
-                lr = sess.get(f"{BACKEND}/trpc/frontend/frontend.mcpServers.list", params={'input':'{}'}, timeout=6)
+                lr = sess.get(f"{BACKEND}/trpc/frontend/frontend.mcpServers.list", headers={'Host': SVC}, params={'input':'{}'}, timeout=6)
                 if lr.status_code == 200:
                     return True
             except Exception:
@@ -102,7 +105,12 @@ for s in servers:
         if not url:
             base = s.get('serviceBase')
             if base:
-                url = base + ('/mcp' if st=='STREAMABLE_HTTP' else '/sse')
+                suffix = '/mcp' if st=='STREAMABLE_HTTP' else '/sse'
+                # ensure scheme
+                if base.startswith('http://') or base.startswith('https://'):
+                    url = base + suffix
+                else:
+                    url = 'http://' + base + suffix
         if url: body['url'] = url
         if s.get('bearerToken'): body['bearerToken'] = s['bearerToken']
         if s.get('headers'): body['headers'] = s['headers']
@@ -159,13 +167,39 @@ def create_endpoint(name, nsref, transport='SSE', extra=None):
             if ns.get('uuid') == nsref or ns.get('name') == nsref:
                 nid = ns.get('uuid'); break
     if not nid: return
+    # normalize transport
     tr = (transport or 'SSE').upper()
     if tr in ('SSE','STREAMABLE'):
         tr = 'SSE' if tr=='SSE' else 'STREAMABLE_HTTP'
-    body = {'name': name,'namespaceUuid': nid,'transport': tr}
-    if isinstance(extra, dict): body.update(extra)
-    r = trpc_post('/trpc/frontend/frontend.endpoints.create', body)
-    if r.ok: log(f"endpoint created: {name} ({tr})")
+    # find existing endpoint by name
+    el = trpc_get('/trpc/frontend/frontend.endpoints.list?input=%7B%7D')
+    e_uuid = None
+    if el.ok:
+        try:
+            for e in el.json().get('result',{}).get('data',{}).get('data',[]):
+                if e.get('name') == name:
+                    e_uuid = e.get('uuid'); break
+        except Exception:
+            e_uuid = None
+    # build extra flags (camelCase as accepted by API)
+    flags = {}
+    if isinstance(extra, dict):
+        for k in ('enableApiKeyAuth','enableOauth','useQueryParamAuth'):
+            if k in extra:
+                flags[k] = extra[k]
+    if e_uuid:
+        # update existing endpoint
+        up = {'uuid': e_uuid, 'name': name, 'namespaceUuid': nid}
+        up.update(flags)
+        r = trpc_post('/trpc/frontend/frontend.endpoints.update', up)
+        if r.ok:
+            log(f"endpoint updated: {name}")
+    else:
+        # create new endpoint
+        body = {'name': name,'namespaceUuid': nid,'transport': tr}
+        body.update(flags)
+        r = trpc_post('/trpc/frontend/frontend.endpoints.create', body)
+        if r.ok: log(f"endpoint created: {name} ({tr})")
 
 for ep in endpoints:
     name = ep.get('name'); nsref = ep.get('namespace') or ep.get('namespaceUuid')

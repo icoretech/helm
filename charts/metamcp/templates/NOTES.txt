@@ -2,10 +2,10 @@
 
    http://{{ include "metamcp.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
 
-   Endpoints (depends on MetaMCP namespaces):
-   - /metamcp/<namespace>/sse
-   - /metamcp/<namespace>/mcp
-   - /metamcp/<namespace>/api
+   Public MCP endpoints are served by the backend (port 12009):
+   - http://{{ include "metamcp.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:12009/metamcp/<namespace>/sse
+   - http://{{ include "metamcp.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:12009/metamcp/<namespace>/mcp
+   - http://{{ include "metamcp.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:12009/metamcp/<namespace>/api
 
 2. Postgres
 

@@ -18,4 +18,27 @@ spec:
       backendRefs:
         - name: {{ include "metamcp.fullname" . }}
           port: {{ .Values.service.port }}
+    {{- if (default true .Values.gatewayAPI.mapBackendPaths) }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /metamcp
+      backendRefs:
+        - name: {{ include "metamcp.fullname" . }}
+          port: 12009
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /trpc
+      backendRefs:
+        - name: {{ include "metamcp.fullname" . }}
+          port: 12009
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: {{ include "metamcp.fullname" . }}
+          port: 12009
+    {{- end }}
 {{- end }}

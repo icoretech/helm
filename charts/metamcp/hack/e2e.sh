@@ -4,10 +4,11 @@ NS=${NS:-metamcp}
 REL=${REL:-metamcp}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 
+echo "# Cleaning namespace $NS"
+kubectl delete ns "$NS" --ignore-not-found --wait=true >/dev/null 2>&1 || true
 echo "# Installing $REL in $NS"
 helm upgrade --install "$REL" "$ROOT" -n "$NS" --create-namespace -f "$ROOT/examples/e2e.yaml" --wait --timeout 60s \
-  --set auth.betterAuthSecret=dev-secret \
-  --set env.APP_URL="http://$REL-$REL.$NS.svc.cluster.local:12008"
+  --set auth.betterAuthSecret=dev-secret
 
 echo "# Pods"
 kubectl -n "$NS" get pods -o wide
@@ -44,6 +45,8 @@ curl -sS -b "$CJ" -H "Host: $HOST" \
 curl -sS -b "$CJ" -H "Host: $HOST" \
   "http://localhost:12009/trpc/frontend/frontend.endpoints.list?input=%7B%7D" | jq -r '.result.data.data[].name' || true
 
+echo "# Backend endpoints"
+curl -sS -D - -H 'Accept: text/event-stream' http://localhost:12009/metamcp/lab/sse -o /dev/null | sed -n '1,20p' || true
+
 kill $PF >/dev/null 2>&1 || true
 echo "# Done"
-

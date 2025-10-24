@@ -31,7 +31,31 @@ spec:
               service:
                 name: {{ $fullName }}
                 port:
-                  number: {{ $svcPort }}
+                  number: {{ default $svcPort .port }}
+          {{- end }}
+          {{- if (default true $.Values.ingress.mapBackendPaths) }}
+          # Map backend routes to port 12009 by default for out-of-the-box access
+          - path: /metamcp
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: 12009
+          - path: /trpc
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: 12009
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: 12009
           {{- end }}
     {{- end }}
   {{- if .Values.ingress.tls }}
