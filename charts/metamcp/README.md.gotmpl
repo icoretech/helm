@@ -103,5 +103,5 @@ The first listed user is used to apply `disablePublicSignup` if set.
 - Required env: `APP_URL`, `BETTER_AUTH_SECRET`, `DATABASE_URL`.
   - The chart no longer auto-builds `DATABASE_URL`. Set it explicitly.
   - Example for in-chart Postgres (same namespace):
-    `postgresql://metamcp:metamcp@{{ .Release.Name }}-metamcp-postgres.{{ .Release.Namespace }}.svc.cluster.local:5432/metamcp?sslmode=disable`
+    `postgresql://metamcp:metamcp@<release>-metamcp-postgres.<namespace>.svc.cluster.local:5432/metamcp?sslmode=disable`
 - For production, prefer an external Postgres (managed or operator) and disable the in-chart Postgres.
