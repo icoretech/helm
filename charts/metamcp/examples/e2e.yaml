@@ -17,10 +17,10 @@ provision:
       command: ["npx","-y","@modelcontextprotocol/server-everything","stdio"]
     - name: http-everything
       type: STREAMABLE_HTTP
-      url: http://ext-http.e2e.svc.cluster.local:3001/mcp
+      url: http://ext-http.{{ .Release.Namespace }}.svc.cluster.local:3001/mcp
     - name: sse-everything
       type: SSE
-      url: http://ext-sse.e2e.svc.cluster.local:3002/sse
+      url: http://ext-sse.{{ .Release.Namespace }}.svc.cluster.local:3002/sse
   namespaces:
     - name: lab
       servers: ["stdio-everything","http-everything","sse-everything"]

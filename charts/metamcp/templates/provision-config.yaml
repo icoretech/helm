@@ -53,9 +53,13 @@ data:
             if token:
                 sess.headers['Cookie'] = f"better-auth.session_token={token}"
                 sess.headers['Authorization'] = f"Bearer {token}"
+            # align cookie domain to service FQDN so subsequent calls carry the cookie
+            host = SVC.split(':')[0]
+            for c in list(sess.cookies):
+                if c.name == 'better-auth.session_token':
+                    c.domain = host
         except Exception:
             pass
-    # Use default headers; rely on cookie jar from sign-in (APP_URL should be service FQDN)
 
     def trpc_post(path, body):
         return sess.post(f"{BACKEND}{path}", json=body, timeout=12)

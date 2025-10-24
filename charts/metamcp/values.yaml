@@ -136,6 +136,22 @@ provision:
   #   enableOauth: false
   #   useQueryParamAuth: false
 
+# Optional: deploy HTTP/SSE MCP servers as Pods (retains mcp-server logic) and then register
+workloads:
+  servers: []
+  # - name: http-everything
+  #   port: 3001
+  #   node:
+  #     package: "@modelcontextprotocol/server-everything"
+  #     version: "latest"
+  #     args: ["streamableHttp"]
+  # - name: sse-everything
+  #   port: 3002
+  #   node:
+  #     package: "@modelcontextprotocol/server-everything"
+  #     version: "latest"
+  #     args: ["sse"]
+
 # Global: disable public sign-up in MetaMCP (performed by user-bootstrap job if any users are defined)
 disablePublicSignup: false
 

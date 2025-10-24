@@ -30,7 +30,7 @@ case "$CHART" in
   metamcp)
     cleanup
     kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
-    # Spin up two external servers for STREAMABLE_HTTP and SSE
+    # Spin up two external servers for STREAMABLE_HTTP and SSE (chart now consumes them via provision.urls)
     cat <<'YAML' | kubectl -n "$NAMESPACE" apply -f -
 apiVersion: apps/v1
 kind: Deployment
