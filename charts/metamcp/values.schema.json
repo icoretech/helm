@@ -209,18 +209,5 @@
         "mapBackendPaths": { "type": "boolean" }
       }
     }
-    ,"rolloutChecksums": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["kind","name"],
-        "properties": {
-          "apiVersion": { "type": "string" },
-          "kind": { "type": "string" },
-          "name": { "type": "string" },
-          "namespace": { "type": "string" }
-        }
-      }
-    }
   }
 }

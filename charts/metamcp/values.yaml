@@ -79,14 +79,6 @@ extraEnvFrom: []
 # - secretRef:
 #     name: my-extra-secret
 
-# Arbitrary objects to hash into Pod template annotations to force rollouts
-# when they change (looked up at render time).
-# Example:
-# rolloutChecksums:
-#   - kind: Secret
-#     name: my-extra
-#     namespace: metamcp
-rolloutChecksums: []
 
 # Bundled Postgres for MetaMCP. Override env.DATABASE_URL to use an external DB.
 postgres:

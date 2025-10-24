@@ -39,30 +39,6 @@ spec:
         {{- end }}
         {{- end }}
 
-        {{- /* Optional explicit rollout checksums for arbitrary objects */}}
-        {{- range $i, $ref := (default (list) .Values.rolloutChecksums) }}
-        {{- $apiver := (get $ref "apiVersion" | default "v1") -}}
-        {{- $kind := (get $ref "kind") -}}
-        {{- $name := (get $ref "name") -}}
-        {{- $rns := (get $ref "namespace" | default $ns) -}}
-        {{- if and $kind $name }}
-        {{- $obj := (lookup $apiver $kind $rns $name) -}}
-        {{- if $obj }}
-        {{- /* Prefer hashing .data, else .stringData, else .spec, else entire object */}}
-        {{- $hash := (toYaml $obj | sha256sum) -}}
-        {{- if (hasKey $obj "data") }}
-        {{- $hash = (toYaml (default (dict) $obj.data)) | sha256sum -}}
-        {{- else if (hasKey $obj "stringData") }}
-        {{- $hash = (toYaml (default (dict) $obj.stringData)) | sha256sum -}}
-        {{- else if (hasKey $obj "spec") }}
-        {{- $hash = (toYaml (default (dict) $obj.spec)) | sha256sum -}}
-        {{- end }}
-        checksum/rollout-{{ $i }}-{{ $kind | lower }}-{{ $name }}: {{ $hash }}
-        {{- else }}
-        checksum/rollout-{{ $i }}-{{ $kind | lower }}-{{ $name }}: "missing"
-        {{- end }}
-        {{- end }}
-        {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
