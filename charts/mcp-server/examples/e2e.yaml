@@ -1,0 +1,5 @@
+# Minimal MCP Server chart values for e2e
+dependencyUpdate: true
+metamcp:
+  enabled: false
+servers: []

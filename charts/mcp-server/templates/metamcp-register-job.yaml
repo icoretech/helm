@@ -93,8 +93,9 @@ spec:
               # 4) Map servers into namespace
               SRV_LIST=$(curl -sS -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt "${BASE}/trpc/frontend/frontend.mcpServers.list")
               SRV_NAMES=$(echo "$PAYLOAD" | jq -r '.namespace.servers[]')
+              # Build name->uuid map and pick UUIDs for listed server names
               UUID_JSON=$(jq -n --argjson srv "$SRV_LIST" --argjson names "[$(for n in $SRV_NAMES; do printf '"%s" ' "$n"; done)]" '
-                ($srv.result.data.data | map({(._.name): .uuid}) | add) as $map | $names | map($map[.])
+                ($srv.result.data.data | map({(.name): .uuid}) | add) as $map | $names | map($map[.])
               ' 2>/dev/null | jq -c '.')
               curl -sS -i -H "Host: ${HOST_HDR}" -c /tmp/c.txt -b /tmp/c.txt -H 'Content-Type: application/json' \
                 -d '{"uuid":"'"'"$NS_UUID"'"'","name":"'"'"$NS_NAME"'"'","mcpServerUuids":'"$UUID_JSON"'}' \

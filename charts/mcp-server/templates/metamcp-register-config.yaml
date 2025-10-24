@@ -30,7 +30,11 @@ data:
         {{- $servers = append $servers $item -}}
       {{- end -}}
     {{- end -}}
-    {{- $ns := dict "name" (.Release.Name) "servers" (pluck "name" $servers | default (list)) -}}
+    {{- $serverNames := list -}}
+    {{- range $servers }}
+      {{- $serverNames = append $serverNames .name -}}
+    {{- end -}}
+    {{- $ns := dict "name" (.Release.Name) "servers" $serverNames -}}
     {{- $ep := dict "name" (.Release.Name) "transport" "sse" "auth" (dict) -}}
     {{- $payload := dict "servers" $servers "namespace" $ns "endpoint" $ep -}}
 {{ toJson $payload | nindent 4 }}
