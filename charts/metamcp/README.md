@@ -29,6 +29,7 @@ helm upgrade --install metamcp icoretech/metamcp \
 Notes
 - Internal Postgres is bundled and `DATABASE_URL` is auto‑injected. To point to an external DB, just override `env.DATABASE_URL`; there is no dedicated `externalPostgres` block.
 - Required: set `auth.betterAuthSecret`. Set `env.APP_URL` to the in‑cluster Service URL (or your public hostname) so cookies work correctly.
+- Pod rollouts on change: the chart annotates the MetaMCP Deployment with checksums of the base ConfigMap/Secret, every `extraEnvFrom` Secret/ConfigMap it references (looked up at render time), and any entries in `rolloutChecksums`. When those objects change and Helm/Flux reconciles, Pods restart to pick up new values.
 
 ## Provisioning model
 
@@ -157,6 +158,7 @@ users:
 | provision.servers | list | `[]` |  |
 | replicaCount | int | `1` |  |
 | resources | object | `{}` |  |
+| rolloutChecksums | list | `[]` |  |
 | securityContext | object | `{}` |  |
 | service.port | int | `12008` |  |
 | service.type | string | `"ClusterIP"` |  |
