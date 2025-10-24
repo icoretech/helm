@@ -28,10 +28,18 @@ spec:
         {{- with $srv.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with $srv.podAnnotations }}
       annotations:
+        {{- /* roll pods on secretEnv changes */}}
+        {{- if hasKey $srv "secretEnv" }}
+        checksum/secretEnv: {{ toYaml $srv.secretEnv | sha256sum }}
+        {{- end }}
+        {{- /* roll pods on inline config changes */}}
+        {{- if and (hasKey $srv "config") ($srv.config.enabled | default false) }}
+        checksum/config: {{ toYaml $srv.config | sha256sum }}
+        {{- end }}
+        {{- with $srv.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
     spec:
       {{- with $srv.imagePullSecrets }}
       imagePullSecrets:
@@ -60,9 +68,17 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with $srv.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
+      {{- with $srv.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- $hasCache := and (hasKey $srv "cache") ($srv.cache.enabled | default false) -}}
+      {{- $hasConfig := and (hasKey $srv "config") ($srv.config.enabled | default false) -}}
       {{- $hasExtraVols := hasKey $srv "extraVolumes" -}}
-      {{- if or $hasCache $hasExtraVols }}
+      {{- if or (or $hasCache $hasConfig) $hasExtraVols }}
       volumes:
         {{- if $hasCache }}
         - name: cache
@@ -75,6 +91,11 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+        {{- end }}
+        {{- if $hasConfig }}
+        - name: cfg
+          configMap:
+            name: {{ include "metamcp.fullname" $root }}-{{ $name }}-config
         {{- end }}
         {{- with $srv.extraVolumes }}
         {{- toYaml . | nindent 8 }}
@@ -126,12 +147,34 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- /* Per-server env (object map) and optional secret/envFrom */}}
-          {{- $hasEnv := hasKey $srv "env" -}}
+          {{- /* Per-server env: inject cache defaults for node/python */}}
+          {{- $hasCacheMap := and (hasKey $srv "cache") (kindIs "map" $srv.cache) -}}
+          {{- $cacheEnabled := and $hasCacheMap ($srv.cache.enabled | default false) -}}
+          {{- $cachePath := "/cache" -}}
+          {{- if and $hasCacheMap (hasKey $srv.cache "mountPath") }}
+          {{- $cachePath = $srv.cache.mountPath -}}
+          {{- end }}
+          {{- $hasEnvMap := and (hasKey $srv "env") (kindIs "map" $srv.env) -}}
           {{- $hasExtraEnv := hasKey $srv "extraEnv" -}}
-          {{- if or $hasEnv $hasExtraEnv }}
+          {{- if or $cacheEnabled (or $hasEnvMap $hasExtraEnv) }}
           env:
-            {{- if $hasEnv }}
+            {{- if $cacheEnabled }}
+              {{- if hasKey $srv "node" }}
+            - name: NPM_CONFIG_CACHE
+              value: {{ printf "%s/npm" $cachePath | quote }}
+            - name: YARN_CACHE_FOLDER
+              value: {{ printf "%s/yarn" $cachePath | quote }}
+              {{- end }}
+              {{- if hasKey $srv "python" }}
+            - name: UV_CACHE_DIR
+              value: {{ printf "%s/uv" $cachePath | quote }}
+            - name: UV_TOOL_DIR
+              value: {{ printf "%s/uvtools" $cachePath | quote }}
+            - name: PIP_CACHE_DIR
+              value: {{ printf "%s/pip" $cachePath | quote }}
+              {{- end }}
+            {{- end }}
+            {{- if $hasEnvMap }}
             {{- range $k, $v := $srv.env }}
             - name: {{ $k | quote }}
               value: {{ $v | quote }}
@@ -166,12 +209,23 @@ spec:
               containerPort: {{ $srv.port | default 3001 }}
               protocol: TCP
           {{- $hasCacheMount := and $hasCache $srv.cache.mountPath }}
+          {{- $hasConfigMount := and $hasConfig (or ($srv.config.mountPath) ($srv.config.filename)) -}}
           {{- $hasExtraMounts := hasKey $srv "extraVolumeMounts" -}}
-          {{- if or $hasCacheMount $hasExtraMounts }}
+          {{- if or (or $hasCacheMount $hasConfigMount) $hasExtraMounts }}
           volumeMounts:
             {{- if $hasCacheMount }}
             - name: cache
               mountPath: {{ $srv.cache.mountPath | default "/cache" | quote }}
+            {{- end }}
+            {{- if $hasConfigMount }}
+            - name: cfg
+              {{- $mp := (default "/config" $srv.config.mountPath) -}}
+              {{- if $srv.config.filename }}
+              mountPath: {{ printf "%s/%s" $mp $srv.config.filename | quote }}
+              subPath: {{ $srv.config.filename | quote }}
+              {{- else }}
+              mountPath: {{ $mp | quote }}
+              {{- end }}
             {{- end }}
             {{- with $srv.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
@@ -179,6 +233,10 @@ spec:
           {{- end }}
           {{- with $srv.resources }}
           resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $srv.startupProbe }}
+          startupProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
 ---
@@ -190,8 +248,13 @@ metadata:
     {{- include "metamcp.labels" $root | nindent 4 }}
     app.kubernetes.io/component: server
     mcp.icore.tech/server: {{ $name }}
+  {{- if and (hasKey $srv "service") (hasKey $srv.service "annotations") }}
+  annotations:
+    {{- toYaml $srv.service.annotations | nindent 4 }}
+  {{- end }}
 spec:
-  type: ClusterIP
+  {{- $svc := (get $srv "service") }}
+  type: {{ if and $svc (hasKey $svc "type") }}{{ $svc.type }}{{ else }}ClusterIP{{ end }}
   selector:
     {{- include "metamcp.selectorLabels" $root | nindent 4 }}
     app.kubernetes.io/component: server
@@ -200,6 +263,9 @@ spec:
     - name: http
       port: {{ $srv.port | default 3001 }}
       targetPort: http
+    {{- if and $svc (hasKey $svc "extraPorts") }}
+    {{- toYaml $svc.extraPorts | nindent 4 }}
+    {{- end }}
 ---
 {{- end }}
 {{- end }}

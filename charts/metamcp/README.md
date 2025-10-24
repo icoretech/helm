@@ -1,51 +1,98 @@
-# metamcp Helm Chart
+# MetaMCP Helm Chart
 
-MetaMCP aggregator for Model Context Protocol. It aggregates multiple MCP servers (remote SSE/Streamable HTTP) under a single endpoint (namespace), so clients can connect once and access all tools.
+Deploys MetaMCP and a declarative provisioning system that:
 
-- Keep your MCP servers as independent Deployments and register them as remote servers (URL + optional token) in MetaMCP.
-- Define a MetaMCP namespace that selects multiple servers, then expose one endpoint for clients (SSE or Streamable HTTP).
+- Aggregates many MCP servers behind a single endpoint (namespace) for clients.
+- Optionally deploys your HTTP/SSE MCP servers as Pods and auto‑registers them as remote servers in MetaMCP.
+- Can also register remote URLs you host elsewhere (no Pod created here).
+- Can run STDIO servers inside MetaMCP itself when configured (ensure required runtimes exist in the MetaMCP image).
 
-> Note: MetaMCP can also launch STDIO servers as child processes. In Kubernetes, we recommend running each server as its own Pod for observability, security, and scaling, and using MetaMCP only as the aggregator.
+In short: this chart both installs MetaMCP and can pre‑configure it (servers → namespaces → endpoints) from values.yaml. No manual clicking or ad‑hoc scripts required.
 
 ## Endpoints
 
 - Frontend (dashboard): `http://<service>:12008`
 - Backend (internal): `http://<service>:12009`
-- Public MCP endpoints (after defining a namespace):
-  - `/metamcp/<namespace>/sse`
-  - `/metamcp/<namespace>/mcp`
+- MCP endpoint examples after provisioning namespace `lab`:
+  - SSE: `http://<service>:12008/metamcp/lab/sse`
+  - Streamable HTTP: `http://<service>:12008/metamcp/lab/mcp`
 
-## Prerequisites
-
-- Kubernetes 1.26+
-- Helm 3.10+
-
-## Installing the Chart
+## Install
 
 ```bash
 helm upgrade --install metamcp icoretech/metamcp \
-  --namespace metamcp --create-namespace
+  -n metamcp --create-namespace \
+  --set auth.betterAuthSecret=change-me \
+  --set env.APP_URL=http://metamcp-metamcp.metamcp.svc.cluster.local:12008
 ```
 
-## Minimal configuration
+Notes
+- Internal Postgres is bundled and `DATABASE_URL` is auto‑injected. To point to an external DB, just override `env.DATABASE_URL`; there is no dedicated `externalPostgres` block.
+- Required: set `auth.betterAuthSecret`. Set `env.APP_URL` to the in‑cluster Service URL (or your public hostname) so cookies work correctly.
+
+## Provisioning model
+
+Declare everything under `provision.*`:
+
+- Servers:
+  - `type: STDIO` → MetaMCP spawns the process inside its container using `command` + `args` (+ optional `env`). Ensure the MetaMCP image contains the required runtime (e.g., Node/PNPM/NPM or Python/uv).
+  - `type: STREAMABLE_HTTP` or `SSE`:
+    - remote: provide `url` (no Pod is created here) + optional `bearerToken`/`headers`.
+    - deploy: provide `port` and one of `node`/`python`/`image`; the chart creates a Deployment/Service and auto‑derives the URL for registration.
+- Namespaces: group servers by name.
+- Endpoints: expose a namespace via `transport: SSE | STREAMABLE_HTTP`. Note: `STDIO` is a server run mode, not an endpoint transport.
+
+Example
 
 ```yaml
-secretEnv:
-  BETTER_AUTH_SECRET: change-me
-# Optional explicit external URL if exposed via Ingress/Gateway
-# env:
-#   APP_URL: http://metamcp.example.com
+auth:
+  betterAuthSecret: dev-secret
+env:
+  APP_URL: http://metamcp-metamcp.<namespace>.svc.cluster.local:12008
+
+users:
+  - email: admin@example.com
+    password: change-me
+    name: Admin
+
+provision:
+  enabled: true
+  servers:
+    # STDIO executed by MetaMCP
+    - name: stdio-everything
+      type: STDIO
+      command: "npx"
+      args: ["-y","@modelcontextprotocol/server-everything","stdio"]
+
+    # Streamable HTTP & SSE servers deployed by this chart and auto-registered
+    - name: http-everything
+      type: STREAMABLE_HTTP
+      port: 3001
+      node:
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["streamableHttp","--port","3001"]
+    - name: sse-everything
+      type: SSE
+      port: 3001
+      node:
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["sse","--port","3001"]
+
+  namespaces:
+    - name: lab
+      servers: ["stdio-everything","http-everything","sse-everything"]
+
+  endpoints:
+    - name: lab
+      namespace: lab
+      transport: SSE
 ```
-
-The chart deploys an internal Postgres Deployment/Service and injects `DATABASE_URL` automatically.
-
-## Provisioning
-
-Use `provision.*` to declare servers (STDIO/STREAMABLE_HTTP/SSE), namespaces, and endpoints. For HTTP/SSE, either provide a remote `url` or include deploy specs (`port` + `node`/`python`/`image`) and the chart will run a Pod/Service and auto-register it.
 
 ## User seeding (optional)
 
-Seed users at install/upgrade by setting `users` (and optionally disable public signup):
+The chart can create users at install/upgrade and optionally generate API keys (stored in Secrets named like `<release>-metamcp-apikey-<email-slug>`):
 
 ```yaml
 disablePublicSignup: true
@@ -55,20 +102,9 @@ users:
     name: Admin
     createApiKey: true
     apiKeyName: cli
-  - email: analyst@example.com
-    password: change-me
-    name: Analyst
 ```
 
-For entries with `createApiKey: true`, the chart creates a Secret named
-`<release>-metamcp-apikey-<email-slug>` with fields:
-
-- `data.apiKey`: the generated API key (base64-encoded)
-- `data.email`: the user email (base64-encoded)
-
-The first listed user is used to apply `disablePublicSignup` if set.
-
-## Configuration
+## Configuration reference
 
 <!-- markdownlint-disable MD013 -->
 ## Values
@@ -89,6 +125,7 @@ The first listed user is used to apply `disablePublicSignup` if set.
 | fullnameOverride | string | `""` |  |
 | gatewayAPI.enabled | bool | `false` |  |
 | gatewayAPI.hosts | list | `[]` |  |
+| gatewayAPI.mapBackendPaths | bool | `true` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/metatool-ai/metamcp"` |  |
 | image.tag | string | `"latest"` |  |
@@ -99,6 +136,7 @@ The first listed user is used to apply `disablePublicSignup` if set.
 | ingress.hosts[0].host | string | `"metamcp.local"` |  |
 | ingress.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.hosts[0].paths[0].pathType | string | `"ImplementationSpecific"` |  |
+| ingress.mapBackendPaths | bool | `true` |  |
 | ingress.tls | list | `[]` |  |
 | nameOverride | string | `""` |  |
 | nodeSelector | object | `{}` |  |
@@ -130,7 +168,14 @@ The first listed user is used to apply `disablePublicSignup` if set.
 | users | list | `[]` |  |
 <!-- markdownlint-enable MD013 -->
 
-## Notes
+## Design highlights
 
-- Required env: `APP_URL`, `BETTER_AUTH_SECRET`.
-- Required env: `APP_URL`, `BETTER_AUTH_SECRET`.
+- Single source of truth: `provision.servers` drives both deployment (optional) and registration.
+- Internal Postgres only; external DBs supported by overriding `env.DATABASE_URL`.
+- Endpoint transports validated to `SSE` or `STREAMABLE_HTTP`.
+- Secrets/configmaps are checksum‑annotated to trigger rollouts when they change.
+## Examples
+
+- Minimal e2e (in-cluster URLs, no Ingress): `examples/e2e.yaml`
+- Cache PVC per server (requires default StorageClass): `examples/provision-pvc.yaml`
+- Advanced options (resources, HPA, probes, volumes, init containers): `examples/provision-advanced.yaml`

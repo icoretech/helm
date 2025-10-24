@@ -1,0 +1,35 @@
+{{- $list := .Values.provision.servers | default (list) -}}
+{{- range $i, $srv := $list }}
+{{- $root := $ -}}
+{{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+{{- if and (hasKey $srv "networkPolicy") ($srv.networkPolicy.enabled | default false) }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "metamcp.fullname" $root }}-{{ $name }}
+  labels:
+    {{- include "metamcp.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: server
+    mcp.icore.tech/server: {{ $name }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "metamcp.selectorLabels" $root | nindent 6 }}
+      app.kubernetes.io/component: server
+      mcp.icore.tech/server: {{ $name }}
+  policyTypes: ["Ingress"]
+  ingress:
+    - {{- if $srv.networkPolicy.ingressOnlyFromMetaMCP | default true }}
+      from:
+        - podSelector:
+            matchLabels:
+              {{- include "metamcp.selectorLabels" $root | nindent 14 }}
+              app.kubernetes.io/component: app
+      {{- else }}
+      {}
+      {{- end }}
+
+---
+{{- end }}
+{{- end }}
+

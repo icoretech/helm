@@ -48,7 +48,7 @@ Example
 auth:
   betterAuthSecret: dev-secret
 env:
-  APP_URL: http://metamcp-metamcp.{{ .Release.Namespace }}.svc.cluster.local:12008
+  APP_URL: http://metamcp-metamcp.<namespace>.svc.cluster.local:12008
 
 users:
   - email: admin@example.com
@@ -74,11 +74,11 @@ provision:
         args: ["streamableHttp","--port","3001"]
     - name: sse-everything
       type: SSE
-      port: 3002
+      port: 3001
       node:
         package: "@modelcontextprotocol/server-everything"
         version: "latest"
-        args: ["sse","--port","3002"]
+        args: ["sse","--port","3001"]
 
   namespaces:
     - name: lab
@@ -92,7 +92,7 @@ provision:
 
 ## User seeding (optional)
 
-The chart can create users at install/upgrade and optionally generate API keys (stored in Secrets `{{ include "metamcp.fullname" . }}-apikey-<email-slug>`):
+The chart can create users at install/upgrade and optionally generate API keys (stored in Secrets named like `<release>-metamcp-apikey-<email-slug>`):
 
 ```yaml
 disablePublicSignup: true

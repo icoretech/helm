@@ -2,8 +2,7 @@
 {{- range $i, $srv := $list }}
 {{- $root := $ -}}
 {{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
-{{- $hasDeploy := or (hasKey $srv "node") (or (hasKey $srv "python") (hasKey $srv "image")) -}}
-{{- if and $hasDeploy (hasKey $srv "cache") ($srv.cache.enabled | default false) (hasKey $srv.cache "pvc") (hasKey $srv.cache.pvc "size") (not $srv.cache.pvc.existingClaim) }}
+{{- if and (hasKey $srv "cache") ($srv.cache.enabled | default false) (hasKey $srv.cache "pvc") (hasKey $srv.cache.pvc "size") ($srv.cache.pvc.size) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -13,15 +12,14 @@ metadata:
     app.kubernetes.io/component: server
     mcp.icore.tech/server: {{ $name }}
 spec:
-  accessModes: {{- if $srv.cache.pvc.accessModes }} {{ toYaml $srv.cache.pvc.accessModes | nindent 2 }} {{- else }}
-  - ReadWriteOnce
-  {{- end }}
+  accessModes: {{- if $srv.cache.pvc.accessModes }} {{ toYaml $srv.cache.pvc.accessModes | nindent 2 }} {{- else }} ["ReadWriteOnce"] {{- end }}
   resources:
     requests:
-      storage: {{ $srv.cache.pvc.size | default "1Gi" }}
-  {{- with $srv.cache.pvc.storageClassName }}
-  storageClassName: {{ . | quote }}
+      storage: {{ $srv.cache.pvc.size | quote }}
+  {{- if hasKey $srv.cache.pvc "storageClassName" }}
+  storageClassName: {{ $srv.cache.pvc.storageClassName | default "" | quote }}
   {{- end }}
+
 ---
 {{- end }}
 {{- end }}

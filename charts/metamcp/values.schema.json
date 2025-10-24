@@ -64,6 +64,9 @@
               ,"initContainers": { "type": "array", "items": { "type": "object" } }
               ,"readinessProbe": { "type": "object" }
               ,"livenessProbe": { "type": "object" }
+              ,"startupProbe": { "type": "object" }
+              ,"priorityClassName": { "type": "string" }
+              ,"topologySpreadConstraints": { "type": "array", "items": { "type": "object" } }
               ,"cache": {
                 "type": "object",
                 "properties": {
@@ -79,6 +82,38 @@
                       "accessModes": { "type": "array", "items": { "type": "string" } }
                     }
                   }
+                }
+              }
+              ,"service": {
+                "type": "object",
+                "properties": {
+                  "type": { "type": "string" },
+                  "annotations": { "type": "object", "additionalProperties": { "type": "string" } },
+                  "extraPorts": { "type": "array", "items": { "type": "object" } }
+                }
+              }
+              ,"config": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "filename": { "type": "string" },
+                  "mountPath": { "type": "string" },
+                  "contents": {}
+                }
+              }
+              ,"pdb": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "minAvailable": { "type": ["integer","string"] },
+                  "maxUnavailable": { "type": ["integer","string"] }
+                }
+              }
+              ,"networkPolicy": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "ingressOnlyFromMetaMCP": { "type": "boolean" }
                 }
               }
               ,"autoscaling": {
@@ -160,6 +195,18 @@
             }
           }
         }
+      }
+    }
+    ,"ingress": {
+      "type": "object",
+      "properties": {
+        "mapBackendPaths": { "type": "boolean" }
+      }
+    }
+    ,"gatewayAPI": {
+      "type": "object",
+      "properties": {
+        "mapBackendPaths": { "type": "boolean" }
       }
     }
   }
