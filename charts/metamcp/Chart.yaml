@@ -4,7 +4,7 @@ description: MetaMCP aggregator Helm chart for Kubernetes
 type: application
 version: 0.1.0
 appVersion: "latest"
-icon: https://icoretech.github.io/helm/charts/metamcp/logo.png
+icon: https://icoretech.github.io/helm/charts/metamcp/logo.svg
 keywords:
   - mcp
   - gateway
