@@ -1,75 +1,98 @@
-# metamcp Helm Chart
+# MetaMCP Helm Chart
 
-MetaMCP aggregator for Model Context Protocol. It aggregates multiple MCP servers (remote SSE/Streamable HTTP) under a single endpoint (namespace), so clients can connect once and access all tools.
+Deploys MetaMCP and a declarative provisioning system that:
 
-- Keep your MCP servers as independent Deployments and register them as remote servers (URL + optional token) in MetaMCP.
-- Define a MetaMCP namespace that selects multiple servers, then expose one endpoint for clients (SSE or Streamable HTTP).
+- Aggregates many MCP servers behind a single endpoint (namespace) for clients.
+- Optionally deploys your HTTP/SSE MCP servers as Pods and auto‑registers them as remote servers in MetaMCP.
+- Can also register remote URLs you host elsewhere (no Pod created here).
+- Can run STDIO servers inside MetaMCP itself when configured (ensure required runtimes exist in the MetaMCP image).
 
-> Note: MetaMCP can also launch STDIO servers as child processes. In Kubernetes, we recommend running each server as its own Pod for observability, security, and scaling, and using MetaMCP only as the aggregator.
+In short: this chart both installs MetaMCP and can pre‑configure it (servers → namespaces → endpoints) from values.yaml. No manual clicking or ad‑hoc scripts required.
 
 ## Endpoints
 
 - Frontend (dashboard): `http://<service>:12008`
 - Backend (internal): `http://<service>:12009`
-- Public MCP endpoints (after defining a namespace):
-  - `/metamcp/<namespace>/sse`
-  - `/metamcp/<namespace>/mcp`
+- MCP endpoint examples after provisioning namespace `lab`:
+  - SSE: `http://<service>:12008/metamcp/lab/sse`
+  - Streamable HTTP: `http://<service>:12008/metamcp/lab/mcp`
 
-## Prerequisites
-
-- Kubernetes 1.26+
-- Helm 3.10+
-
-## Installing the Chart
+## Install
 
 ```bash
 helm upgrade --install metamcp icoretech/metamcp \
-  --namespace metamcp --create-namespace
+  -n metamcp --create-namespace \
+  --set auth.betterAuthSecret=change-me \
+  --set env.APP_URL=http://metamcp-metamcp.metamcp.svc.cluster.local:12008
 ```
 
-## Minimal configuration
+Notes
+- Internal Postgres is bundled and `DATABASE_URL` is auto‑injected. To point to an external DB, just override `env.DATABASE_URL`; there is no dedicated `externalPostgres` block.
+- Required: set `auth.betterAuthSecret`. Set `env.APP_URL` to the in‑cluster Service URL (or your public hostname) so cookies work correctly.
+
+## Provisioning model
+
+Declare everything under `provision.*`:
+
+- Servers:
+  - `type: STDIO` → MetaMCP spawns the process inside its container using `command` + `args` (+ optional `env`). Ensure the MetaMCP image contains the required runtime (e.g., Node/PNPM/NPM or Python/uv).
+  - `type: STREAMABLE_HTTP` or `SSE`:
+    - remote: provide `url` (no Pod is created here) + optional `bearerToken`/`headers`.
+    - deploy: provide `port` and one of `node`/`python`/`image`; the chart creates a Deployment/Service and auto‑derives the URL for registration.
+- Namespaces: group servers by name.
+- Endpoints: expose a namespace via `transport: SSE | STREAMABLE_HTTP`. Note: `STDIO` is a server run mode, not an endpoint transport.
+
+Example
 
 ```yaml
-secretEnv:
-  BETTER_AUTH_SECRET: change-me
-# Optional explicit external URL if exposed via Ingress/Gateway
-# env:
-#   APP_URL: http://metamcp.example.com
-```
+auth:
+  betterAuthSecret: dev-secret
+env:
+  APP_URL: http://metamcp-metamcp.{{ .Release.Namespace }}.svc.cluster.local:12008
 
-If `postgres.enabled=true` (default), a disposable Postgres Deployment/Service is created for convenience and `DATABASE_URL` is injected automatically. For production, set `postgres.enabled=false` and provide `env.DATABASE_URL` or `secretEnv.DATABASE_URL` to point at your managed database.
+users:
+  - email: admin@example.com
+    password: change-me
+    name: Admin
 
-## Optional bootstrap (apply)
-
-The chart can render and APPLY a bootstrap payload (servers → namespace → endpoint) as a post-install/upgrade hook. Use `mode: print` to only render without changes.
-
-```yaml
-bootstrap:
+provision:
   enabled: true
-  mode: apply   # or print
-  admin:
-    username: admin
-    password: admin
   servers:
-    - type: sse
-      name: server-a
-      url: http://my-server-a.mcp.svc.cluster.local:3000/sse
-    - type: streamable
-      name: server-b
-      url: http://my-server-b.mcp.svc.cluster.local:3001/mcp
-  namespace:
-    name: my
-    servers: ["server-a","server-b"]
-  endpoint:
-    name: my
-    transport: sse
-```
+    # STDIO executed by MetaMCP
+    - name: stdio-everything
+      type: STDIO
+      command: "npx"
+      args: ["-y","@modelcontextprotocol/server-everything","stdio"]
 
-See a complete example in `examples/values-bootstrap.yaml`.
+    # Streamable HTTP & SSE servers deployed by this chart and auto-registered
+    - name: http-everything
+      type: STREAMABLE_HTTP
+      port: 3001
+      node:
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["streamableHttp","--port","3001"]
+    - name: sse-everything
+      type: SSE
+      port: 3002
+      node:
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["sse","--port","3002"]
+
+  namespaces:
+    - name: lab
+      servers: ["stdio-everything","http-everything","sse-everything"]
+
+  endpoints:
+    - name: lab
+      namespace: lab
+      transport: SSE
+```
 
 ## User seeding (optional)
 
-Seed users at install/upgrade by setting `users` (and optionally disable public signup):
+The chart can create users at install/upgrade and optionally generate API keys (stored in Secrets `{{ include "metamcp.fullname" . }}-apikey-<email-slug>`):
 
 ```yaml
 disablePublicSignup: true
@@ -79,31 +102,17 @@ users:
     name: Admin
     createApiKey: true
     apiKeyName: cli
-  - email: analyst@example.com
-    password: change-me
-    name: Analyst
 ```
 
-For entries with `createApiKey: true`, the chart creates a Secret named
-`<release>-metamcp-apikey-<email-slug>` with fields:
-
-- `data.apiKey`: the generated API key (base64-encoded)
-- `data.email`: the user email (base64-encoded)
-
-The first listed user is used to apply `disablePublicSignup` if set.
-
-## Configuration
+## Configuration reference
 
 <!-- markdownlint-disable MD013 -->
 {{ template "chart.valuesSection" . }}
 <!-- markdownlint-enable MD013 -->
 
-## Notes
+## Design highlights
 
-- Required env: `APP_URL`, `BETTER_AUTH_SECRET`.
-- `DATABASE_URL` precedence:
-  - If `env.DATABASE_URL` is set, it wins (recommended for production).
-  - Else if `postgres.enabled=true` (default), the chart injects a connection string to the in-cluster Postgres Service.
-  - Else if `externalPostgres.enabled=true`, the chart injects a connection string from `externalPostgres.*`.
-  - Otherwise, set `env.DATABASE_URL` explicitly.
-- For production, prefer an external Postgres (managed or operator) and disable the in-chart Postgres.
+- Single source of truth: `provision.servers` drives both deployment (optional) and registration.
+- Internal Postgres only; external DBs supported by overriding `env.DATABASE_URL`.
+- Endpoint transports validated to `SSE` or `STREAMABLE_HTTP`.
+- Secrets/configmaps are checksum‑annotated to trigger rollouts when they change.

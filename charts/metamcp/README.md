@@ -37,35 +37,11 @@ secretEnv:
 #   APP_URL: http://metamcp.example.com
 ```
 
-If `postgres.enabled=true` (default), a disposable Postgres Deployment/Service is created for convenience and `DATABASE_URL` is injected automatically. For production, set `postgres.enabled=false` and provide `env.DATABASE_URL` or `secretEnv.DATABASE_URL` to point at your managed database.
+The chart deploys an internal Postgres Deployment/Service and injects `DATABASE_URL` automatically.
 
-## Optional bootstrap (apply)
+## Provisioning
 
-The chart can render and APPLY a bootstrap payload (servers → namespace → endpoint) as a post-install/upgrade hook. Use `mode: print` to only render without changes.
-
-```yaml
-bootstrap:
-  enabled: true
-  mode: apply   # or print
-  admin:
-    username: admin
-    password: admin
-  servers:
-    - type: sse
-      name: server-a
-      url: http://my-server-a.mcp.svc.cluster.local:3000/sse
-    - type: streamable
-      name: server-b
-      url: http://my-server-b.mcp.svc.cluster.local:3001/mcp
-  namespace:
-    name: my
-    servers: ["server-a","server-b"]
-  endpoint:
-    name: my
-    transport: sse
-```
-
-See a complete example in `examples/values-bootstrap.yaml`.
+Use `provision.*` to declare servers (STDIO/STREAMABLE_HTTP/SSE), namespaces, and endpoints. For HTTP/SSE, either provide a remote `url` or include deploy specs (`port` + `node`/`python`/`image`) and the chart will run a Pod/Service and auto-register it.
 
 ## User seeding (optional)
 
@@ -106,24 +82,8 @@ The first listed user is used to apply `disablePublicSignup` if set.
 | autoscaling.minReplicas | int | `1` |  |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` |  |
 | autoscaling.targetMemoryUtilizationPercentage | string | `nil` |  |
-| bootstrap.admin.password | string | `"admin"` |  |
-| bootstrap.admin.username | string | `"admin"` |  |
-| bootstrap.enabled | bool | `false` |  |
-| bootstrap.endpoint.auth | object | `{}` |  |
-| bootstrap.endpoint.name | string | `""` |  |
-| bootstrap.endpoint.transport | string | `"sse"` |  |
-| bootstrap.mode | string | `"apply"` |  |
-| bootstrap.namespace.name | string | `""` |  |
-| bootstrap.namespace.servers | list | `[]` |  |
-| bootstrap.servers | list | `[]` |  |
 | disablePublicSignup | bool | `false` |  |
 | env | object | `{}` |  |
-| externalPostgres.database | string | `""` |  |
-| externalPostgres.enabled | bool | `false` |  |
-| externalPostgres.host | string | `""` |  |
-| externalPostgres.passwordSecretRef | object | `{}` |  |
-| externalPostgres.port | int | `5432` |  |
-| externalPostgres.username | string | `""` |  |
 | extraEnv | list | `[]` |  |
 | extraEnvFrom | list | `[]` |  |
 | fullnameOverride | string | `""` |  |
@@ -153,6 +113,10 @@ The first listed user is used to apply `disablePublicSignup` if set.
 | postgres.persistence.enabled | bool | `false` |  |
 | postgres.persistence.size | string | `"1Gi"` |  |
 | postgres.persistence.storageClassName | string | `""` |  |
+| provision.enabled | bool | `false` |  |
+| provision.endpoints | list | `[]` |  |
+| provision.namespaces | list | `[]` |  |
+| provision.servers | list | `[]` |  |
 | replicaCount | int | `1` |  |
 | resources | object | `{}` |  |
 | securityContext | object | `{}` |  |
@@ -169,9 +133,4 @@ The first listed user is used to apply `disablePublicSignup` if set.
 ## Notes
 
 - Required env: `APP_URL`, `BETTER_AUTH_SECRET`.
-- `DATABASE_URL` precedence:
-  - If `env.DATABASE_URL` is set, it wins (recommended for production).
-  - Else if `postgres.enabled=true` (default), the chart injects a connection string to the in-cluster Postgres Service.
-  - Else if `externalPostgres.enabled=true`, the chart injects a connection string from `externalPostgres.*`.
-  - Otherwise, set `env.DATABASE_URL` explicitly.
-- For production, prefer an external Postgres (managed or operator) and disable the in-chart Postgres.
+- Required env: `APP_URL`, `BETTER_AUTH_SECRET`.

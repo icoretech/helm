@@ -9,7 +9,22 @@ metadata:
     app.kubernetes.io/component: provision
 data:
   provision.json: |
-    {{- toJson (dict "provision" (dict "servers" ($prov.servers | default (list)) "namespaces" ($prov.namespaces | default (list)) "endpoints" ($prov.endpoints | default (list)))) | nindent 4 }}
+    {{- /* Build servers payload with derived serviceBase for entries with deployment specs */ -}}
+    {{- $ns := .Release.Namespace -}}
+    {{- $fullname := include "metamcp.fullname" . -}}
+    {{- $outServers := list -}}
+    {{- range $i, $s := ($prov.servers | default (list)) -}}
+      {{- $name := ($s.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+      {{- $hasDeploy := or (hasKey $s "node") (or (hasKey $s "python") (hasKey $s "image")) -}}
+      {{- $port := (default 3001 $s.port) -}}
+      {{- $svcBase := (printf "%s-%s.%s.svc.cluster.local:%d" $fullname $name $ns ($port | int)) -}}
+      {{- /* Build minimal server dict for the job */ -}}
+      {{- $item := dict "name" $name "enabled" (default true $s.enabled) "type" $s.type "url" $s.url "bearerToken" $s.bearerToken "headers" ($s.headers | default (dict)) "command" ($s.command | default "") "args" ($s.args | default (list)) "env" ($s.env | default (dict)) -}}
+      {{- if $hasDeploy }}{{- $_ := set $item "serviceBase" $svcBase -}}{{- end -}}
+      {{- $outServers = append $outServers $item -}}
+    {{- end -}}
+    {{- toJson (dict "provision" (dict "servers" $outServers "namespaces" ($prov.namespaces | default (list)) "endpoints" ($prov.endpoints | default (list)))) | nindent 4 }}
+  # No separate workloads.json; serviceBase is included per server above when deploy specs exist
   provision.py: |
     import os, json, time
     import requests
@@ -40,26 +55,34 @@ data:
 
     sess = requests.Session()
     sess.headers.update({'Content-Type':'application/json','Accept':'application/json'})
-    try:
-        sess.post(f"{BACKEND}/api/auth/sign-up/email", json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD,'name':'Admin'}, timeout=6)
-    except Exception:
-        pass
-    r = sess.post(f"{BACKEND}/api/auth/sign-in/email", json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD}, timeout=6)
-    if r.status_code != 200:
-        log(f"ERROR signin: {r.status_code} {r.text[:160]}")
-    else:
-        try:
-            token = r.json().get('token')
-            if token:
-                sess.headers['Cookie'] = f"better-auth.session_token={token}"
-                sess.headers['Authorization'] = f"Bearer {token}"
-            # align cookie domain to service FQDN so subsequent calls carry the cookie
-            host = SVC.split(':')[0]
-            for c in list(sess.cookies):
-                if c.name == 'better-auth.session_token':
-                    c.domain = host
-        except Exception:
-            pass
+    def signin(retries=5, delay=1.5):
+        for i in range(retries):
+            try:
+                sess.post(f"{BACKEND}/api/auth/sign-up/email", json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD,'name':'Admin'}, timeout=6)
+            except Exception:
+                pass
+            r = sess.post(f"{BACKEND}/api/auth/sign-in/email", json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD}, timeout=6)
+            if r.status_code == 200:
+                try:
+                    token = r.json().get('token')
+                    if token:
+                        sess.headers['Cookie'] = f"better-auth.session_token={token}"
+                        sess.headers['Authorization'] = f"Bearer {token}"
+                    host = SVC.split(':')[0]
+                    for c in list(sess.cookies):
+                        if c.name == 'better-auth.session_token': c.domain = host
+                    # whoami gate: try a cheap list
+                    lr = sess.get(f"{BACKEND}/trpc/frontend/frontend.mcpServers.list?input=%7B%7D", timeout=6)
+                    if lr.status_code == 200:
+                        return True
+                except Exception:
+                    pass
+            time.sleep(delay)
+        return False
+
+    ok = signin()
+    if not ok:
+        log('ERROR: unable to authenticate after retries')
 
     def trpc_post(path, body):
         return sess.post(f"{BACKEND}{path}", json=body, timeout=12)
@@ -77,13 +100,20 @@ data:
         pass
 
     for s in servers:
+        if not (s.get('enabled', True)):
+            continue
         name = s.get('name'); st = (s.get('type','SSE') or 'SSE').upper()
         if not name: continue
         if name in srv_map: continue
         if st in ('SSE','STREAMABLE'): st = 'SSE' if st=='SSE' else 'STREAMABLE_HTTP'
         body = {'name': name, 'type': st}
         if st in ('SSE','STREAMABLE_HTTP'):
-            if s.get('url'): body['url'] = s['url']
+            url = s.get('url')
+            if not url:
+                base = s.get('serviceBase')
+                if base:
+                    url = base + ('/mcp' if st=='STREAMABLE_HTTP' else '/sse')
+            if url: body['url'] = url
             if s.get('bearerToken'): body['bearerToken'] = s['bearerToken']
             if s.get('headers'): body['headers'] = s['headers']
         if st == 'STDIO':

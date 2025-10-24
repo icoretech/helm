@@ -2,7 +2,7 @@
 auth:
   betterAuthSecret: dev-secret
 env:
-  APP_URL: http://localhost:12008
+  APP_URL: http://metamcp-metamcp.{{ .Release.Namespace }}.svc.cluster.local:12008
 users:
   - email: admin@example.com
     password: change-me
@@ -14,13 +14,22 @@ provision:
   servers:
     - name: stdio-everything
       type: STDIO
-      command: ["npx","-y","@modelcontextprotocol/server-everything","stdio"]
+      command: "npx"
+      args: ["-y","@modelcontextprotocol/server-everything","stdio"]
     - name: http-everything
       type: STREAMABLE_HTTP
-      url: http://ext-http.{{ .Release.Namespace }}.svc.cluster.local:3001/mcp
+      port: 3001
+      node:
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["streamableHttp","--port","3001"]
     - name: sse-everything
       type: SSE
-      url: http://ext-sse.{{ .Release.Namespace }}.svc.cluster.local:3002/sse
+      port: 3002
+      node:
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["sse","--port","3002"]
   namespaces:
     - name: lab
       servers: ["stdio-everything","http-everything","sse-everything"]

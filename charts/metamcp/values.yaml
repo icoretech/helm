@@ -74,7 +74,7 @@ extraEnvFrom: []
 # - secretRef:
 #     name: my-extra-secret
 
-# Minimal Postgres for local/dev. Disable in prod to point at external DB
+# Bundled Postgres for MetaMCP. Override env.DATABASE_URL to use an external DB.
 postgres:
   enabled: true
   image: postgres:16
@@ -87,16 +87,7 @@ postgres:
     size: 1Gi
     storageClassName: ""
 
-# Use an external Postgres instead of the in-chart one
-externalPostgres:
-  enabled: false
-  host: ""
-  port: 5432
-  database: ""
-  username: ""
-  passwordSecretRef: {}
-    # name: my-pg-secret
-    # key: password
+# Note: there is no externalPostgres block; prefer setting env.DATABASE_URL if you need to point MetaMCP to an external database.
 
 # Authentication settings for MetaMCP
 auth:
@@ -109,23 +100,35 @@ auth:
 # Generalized provisioning (multiple servers, namespaces, endpoints)
 provision:
   enabled: false
-  # servers: list of server specs (SSE/STREAMABLE_HTTP/STDIO)
+  # Single source of truth for servers MetaMCP exposes. Each entry can be:
+  # - STDIO (MetaMCP runs it)
+  # - STREAMABLE_HTTP/SSE with either:
+  #     a) url: remote URL to register (no pod), or
+  #     b) node/python/image spec + port: chart deploys the Pod/Service and auto-derives the URL
   servers: []
-  # - name: aws-docs
-  #   type: STREAMABLE_HTTP   # or SSE or STDIO
-  #   url: http://my-aws-docs.svc.cluster.local:3000/mcp
-  #   bearerToken: ""
-  #   headers: { Accept: application/json }
   # - name: stdio-everything
+  #   enabled: true
   #   type: STDIO
-  #   command: ["npx","-y","@modelcontextprotocol/server-everything","streamableHttp"]
-  #   args: []
+  #   command: "npx"
+  #   args: ["-y","@modelcontextprotocol/server-everything","stdio"]
   #   env: { LOG_LEVEL: debug }
+  # - name: http-everything
+  #   enabled: true
+  #   type: STREAMABLE_HTTP
+  #   port: 3001
+  #   node:
+  #     package: "@modelcontextprotocol/server-everything"
+  #     version: "latest"
+  #     args: ["streamableHttp","--port","3001"]
+  # - name: sse-remote
+  #   enabled: true
+  #   type: SSE
+  #   url: http://external.svc.local:3002/sse
 
   # namespaces: list of { name, servers: [<server-names>] }
   namespaces: []
   # - name: lab
-  #   servers: ["aws-docs","stdio-everything"]
+  #   servers: ["stdio-everything","http-everything"]
 
   # endpoints: list of { name, namespace, transport, enableApiKeyAuth, enableOauth, useQueryParamAuth }
   endpoints: []
@@ -135,22 +138,6 @@ provision:
   #   enableApiKeyAuth: true
   #   enableOauth: false
   #   useQueryParamAuth: false
-
-# Optional: deploy HTTP/SSE MCP servers as Pods (retains mcp-server logic) and then register
-workloads:
-  servers: []
-  # - name: http-everything
-  #   port: 3001
-  #   node:
-  #     package: "@modelcontextprotocol/server-everything"
-  #     version: "latest"
-  #     args: ["streamableHttp"]
-  # - name: sse-everything
-  #   port: 3002
-  #   node:
-  #     package: "@modelcontextprotocol/server-everything"
-  #     version: "latest"
-  #     args: ["sse"]
 
 # Global: disable public sign-up in MetaMCP (performed by user-bootstrap job if any users are defined)
 disablePublicSignup: false

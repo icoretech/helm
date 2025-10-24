@@ -25,7 +25,7 @@ spec:
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "metamcp.fullname" . }}
       {{- end }}
-      {{- if .Values.postgres.enabled }}
+      {{- /* always use internal postgres */}}
       initContainers:
         - name: wait-db
           image: {{ .Values.postgres.image }}
@@ -37,7 +37,6 @@ spec:
                 secretKeyRef:
                   name: {{ include "metamcp.postgresFullname" . }}-secret
                   key: password
-      {{- end }}
       containers:
         - name: metamcp
           image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag | quote }}
@@ -53,8 +52,7 @@ spec:
             {{- with .Values.extraEnvFrom }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- $hasDBURL := and (kindIs "map" .Values.env) (hasKey .Values.env "DATABASE_URL") -}}
-          {{- if .Values.postgres.enabled }}
+          {{- $hasDBURL := and (kindIs "map" .Values.env) (hasKey .Values.env "DATABASE_URL") }}
           env:
             - name: APP_URL
               value: {{ include "metamcp.appurl" . | quote }}
@@ -94,25 +92,7 @@ spec:
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- else }}
-          env:
-            - name: APP_URL
-              value: {{ include "metamcp.appurl" . | quote }}
-            {{- if and (not (and (kindIs "map" .Values.env) (hasKey .Values.env "BETTER_AUTH_SECRET"))) (.Values.auth.betterAuthSecret) }}
-            - name: BETTER_AUTH_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "metamcp.fullname" . }}-auth
-                  key: BETTER_AUTH_SECRET
-            {{- end }}
-            {{- if and (not $hasDBURL) .Values.externalPostgres.enabled }}
-            - name: DATABASE_URL
-              value: {{ printf "postgresql://%s@%s:%v/%s?sslmode=disable" (.Values.externalPostgres.username | toString) (.Values.externalPostgres.host | toString) (.Values.externalPostgres.port | int) (.Values.externalPostgres.database | toString) | quote }}
-            {{- end }}
-            {{- with .Values.extraEnv }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
-          {{- end }}
+          {{- /* end internal postgres envs */}}
           livenessProbe:
             httpGet:
               path: /health

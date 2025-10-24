@@ -1,0 +1,93 @@
+{{- $list := .Values.provision.servers | default (list) -}}
+{{- range $i, $srv := $list }}
+{{- $root := $ -}}
+{{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+{{- $hasDeploy := or (hasKey $srv "node") (or (hasKey $srv "python") (hasKey $srv "image")) -}}
+{{- if $hasDeploy }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "metamcp.fullname" $root }}-{{ $name }}
+  labels:
+    {{- include "metamcp.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: server
+    mcp.icore.tech/server: {{ $name }}
+spec:
+  replicas: {{ default 1 $srv.replicas }}
+  selector:
+    matchLabels:
+      {{- include "metamcp.selectorLabels" $root | nindent 6 }}
+      app.kubernetes.io/component: server
+      mcp.icore.tech/server: {{ $name }}
+  template:
+    metadata:
+      labels:
+        {{- include "metamcp.selectorLabels" $root | nindent 8 }}
+        app.kubernetes.io/component: server
+        mcp.icore.tech/server: {{ $name }}
+    spec:
+      containers:
+        - name: server
+          {{- if hasKey $srv "node" }}
+          image: {{ printf "%s:%s" (get $srv.node "image" | default "node") (get $srv.node "tag" | default "24-alpine") | quote }}
+          command: ["npx"]
+          args:
+            - "-y"
+            - {{ (printf "%s@%s" $srv.node.package (default "latest" $srv.node.version)) | quote }}
+            {{- range $arg := (default (list) $srv.node.args) }}
+            - {{ $arg | quote }}
+            {{- end }}
+          {{- else if hasKey $srv "python" }}
+          image: {{ printf "%s:%s" (get $srv.python "image" | default "ghcr.io/astral-sh/uv") (get $srv.python "tag" | default "python3.12-bookworm-slim") | quote }}
+          command:
+            - "uv"
+            - "tool"
+            - "run"
+            {{- if $srv.python.fromGit }}
+            - "--from"
+            - {{ $srv.python.fromGit | quote }}
+            {{- end }}
+            - {{ $srv.python.package | quote }}
+          {{- with $srv.python.args }}
+          args:
+            {{- range $arg := . }}
+            - {{ $arg | quote }}
+            {{- end }}
+          {{- end }}
+          {{- else }}
+          image: {{ printf "%s:%s" (get $srv.image "repository" | default "nginx") (get $srv.image "tag" | default "latest") | quote }}
+          {{- with $srv.image.command }}
+          command: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $srv.image.args }}
+          args: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- end }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: {{ $srv.port | default 3001 }}
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "metamcp.fullname" $root }}-{{ $name }}
+  labels:
+    {{- include "metamcp.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: server
+    mcp.icore.tech/server: {{ $name }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "metamcp.selectorLabels" $root | nindent 4 }}
+    app.kubernetes.io/component: server
+    mcp.icore.tech/server: {{ $name }}
+  ports:
+    - name: http
+      port: {{ $srv.port | default 3001 }}
+      targetPort: http
+---
+{{- end }}
+{{- end }}
+
