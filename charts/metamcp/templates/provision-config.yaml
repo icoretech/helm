@@ -26,7 +26,7 @@ data:
     {{- toJson (dict "provision" (dict "servers" $outServers "namespaces" ($prov.namespaces | default (list)) "endpoints" ($prov.endpoints | default (list)))) | nindent 4 }}
   # No separate workloads.json; serviceBase is included per server above when deploy specs exist
   provision.py: |
-{{ (.Files.Get "charts/metamcp/scripts/provision.py") | indent 4 }}
+{{ (.Files.Get "scripts/provision.py") | indent 4 }}
 {{- end }}
 
 ---
@@ -68,6 +68,10 @@ spec:
               value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.fullname" .) .Release.Namespace | quote }}
             - name: FRONTEND_PORT
               value: {{ .Values.service.port | toString | quote }}
+            - name: ADMIN_EMAIL
+              value: "admin@example.com"
+            - name: ADMIN_PASSWORD
+              value: "change-me"
             - name: ADMIN_EMAIL
               value: "admin@example.com"
             - name: ADMIN_PASSWORD

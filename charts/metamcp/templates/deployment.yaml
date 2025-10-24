@@ -13,6 +13,7 @@ spec:
     metadata:
       labels:
         {{- include "metamcp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: app
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap-env.yaml") . | sha256sum }}
         {{- if .Values.auth.betterAuthSecret }}

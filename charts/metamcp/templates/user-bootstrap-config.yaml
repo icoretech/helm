@@ -12,5 +12,5 @@ data:
     {{- $cfg := dict "users" $users "disablePublicSignup" (.Values.disablePublicSignup | default false) -}}
     {{- toJson $cfg | nindent 4 }}
   user-bootstrap.py: |
-{{ (.Files.Get "charts/metamcp/scripts/user-bootstrap.py") | indent 4 }}
+{{ (.Files.Get "scripts/user-bootstrap.py") | indent 4 }}
 {{- end }}

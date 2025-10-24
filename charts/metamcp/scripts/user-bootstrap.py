@@ -19,7 +19,7 @@ disable_public = bool(cfg.get('disablePublicSignup', False))
 
 for i in range(90):
     try:
-        r = requests.get(f"{FRONTEND}/health", timeout=3)
+        r = requests.get(f"{BACKEND}/health", timeout=3)
         if r.status_code == 200:
             break
     except Exception:
@@ -78,6 +78,14 @@ for u in users:
         resp = s.post(f"{BACKEND}/api/auth/sign-in/email", json={'email': email, 'password': password}, timeout=8)
         if resp.status_code != 200:
             log(f"WARN: sign-in status {resp.status_code}: {resp.text[:160]}")
+        else:
+            try:
+                token = resp.json().get('token')
+                if token:
+                    host = SVC.split(':')[0]
+                    s.cookies.set('better-auth.session_token', token, domain=host, path='/')
+            except Exception:
+                pass
     except Exception as e:
         log(f"WARN: sign-in exception: {e}")
     sessions.append(s)
@@ -128,4 +136,3 @@ if disable_public and sessions:
         log(f"WARN: disablePublicSignup exception: {e}")
 
 log('Completed')
-

@@ -8,6 +8,7 @@ spec:
   type: {{ .Values.service.type }}
   selector:
     {{- include "metamcp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: app
   ports:
     - name: http
       port: {{ .Values.service.port }}

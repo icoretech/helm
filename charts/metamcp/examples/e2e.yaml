@@ -3,6 +3,11 @@ auth:
   betterAuthSecret: dev-secret
 env:
   APP_URL: http://metamcp-metamcp.{{ .Release.Namespace }}.svc.cluster.local:12008
+extraEnv:
+  - name: LOG_LEVEL
+    value: debug
+  - name: DEBUG
+    value: "*"
 users:
   - email: admin@example.com
     password: change-me

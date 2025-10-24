@@ -19,7 +19,7 @@ endpoints = cfg.get('endpoints', [])
 
 for _ in range(60):
     try:
-        if requests.get(f"{FRONTEND}/health", timeout=2).status_code == 200:
+        if requests.get(f"{BACKEND}/health", timeout=2).status_code == 200:
             break
     except Exception:
         pass
@@ -27,8 +27,9 @@ for _ in range(60):
 
 sess = requests.Session()
 sess.headers.update({'Content-Type':'application/json','Accept':'application/json'})
+sess.headers.update({'Host': SVC})
 
-def signin(retries=5, delay=1.5):
+def signin(retries=8, delay=1.5):
     for i in range(retries):
         try:
             sess.post(f"{BACKEND}/api/auth/sign-up/email", json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD,'name':'Admin'}, timeout=6)
@@ -37,13 +38,15 @@ def signin(retries=5, delay=1.5):
         r = sess.post(f"{BACKEND}/api/auth/sign-in/email", json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD}, timeout=6)
         if r.status_code == 200:
             try:
+                # Accept cookie from response plus token header fallback
+                host = SVC.split(':')[0]
+                for c in r.cookies:
+                    sess.cookies.set(c.name, c.value, domain=host, path=c.path or '/')
                 token = r.json().get('token')
                 if token:
+                    sess.cookies.set('better-auth.session_token', token, domain=host, path='/')
                     sess.headers['Cookie'] = f"better-auth.session_token={token}"
                     sess.headers['Authorization'] = f"Bearer {token}"
-                host = SVC.split(':')[0]
-                for c in list(sess.cookies):
-                    if c.name == 'better-auth.session_token': c.domain = host
                 lr = sess.get(f"{BACKEND}/trpc/frontend/frontend.mcpServers.list?input=%7B%7D", timeout=6)
                 if lr.status_code == 200:
                     return True
@@ -52,7 +55,8 @@ def signin(retries=5, delay=1.5):
         time.sleep(delay)
     return False
 
-signin()
+if not signin():
+    log('WARN: signin failed; proceeding and expecting 401s')
 
 def trpc_post(path, body):
     return sess.post(f"{BACKEND}{path}", json=body, timeout=12)
@@ -153,4 +157,3 @@ for ep in endpoints:
     if not (name and nsref): continue
     extra = {k: ep[k] for k in ('enableApiKeyAuth','enableOauth','useQueryParamAuth') if k in ep}
     create_endpoint(name, nsref, ep.get('transport'), extra)
-
