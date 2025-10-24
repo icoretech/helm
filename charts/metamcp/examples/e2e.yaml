@@ -1,4 +1,4 @@
-# Minimal MetaMCP values for e2e
+# Minimal MetaMCP values for e2e (provision)
 auth:
   betterAuthSecret: dev-secret
 env:
@@ -7,23 +7,18 @@ users:
   - email: admin@example.com
     password: change-me
     name: Admin
-    createApiKey: true
-    apiKeyName: cli
 disablePublicSignup: true
-# Default postgres.enabled=true provides in-cluster DB; chart injects DATABASE_URL
-bootstrap:
+
+provision:
   enabled: true
-  mode: apply
-  admin:
-    username: admin@example.com
-    password: change-me
   servers:
-    - name: e2e-sse
-      type: sse
-      url: http://example/sse
-  namespace:
-    name: lab
-    servers: ["e2e-sse"]
-  endpoint:
-    name: lab
-    transport: sse
+    - name: everything
+      type: STDIO
+      command: ["npx","-y","@modelcontextprotocol/server-everything","stdio"]
+  namespaces:
+    - name: lab
+      servers: ["everything"]
+  endpoints:
+    - name: lab
+      namespace: lab
+      transport: SSE

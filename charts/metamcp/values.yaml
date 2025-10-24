@@ -104,28 +104,7 @@ auth:
   # overridden in values.env.BETTER_AUTH_SECRET.
   betterAuthSecret: ""
 
-# Optional bootstrap via a post-install Job (disabled by default)
-# NOTE: MetaMCP currently emphasizes UI/API provisioning. These values
-# are rendered to /cfg/bootstrap.json and printed by the Job in 'print' mode.
-# When upstream admin API routes are finalized, mode 'apply' will
-# POST these resources automatically.
-bootstrap:
-  enabled: false
-  mode: apply   # apply | print (print for debugging only)
-  admin:
-    username: admin
-    password: admin
-  # Servers follow the MetaMCP Import JSON shape (examples in examples/values-bootstrap.yaml)
-  servers: []
-  # Namespace definition and the server names to include
-  namespace:
-    name: ""
-    servers: []
-  # Endpoint bound to the namespace
-  endpoint:
-    name: ""
-    transport: sse   # sse | streamable
-    auth: {}
+## Legacy bootstrap removed; use provision.* instead.
 
 # Generalized provisioning (multiple servers, namespaces, endpoints)
 provision:

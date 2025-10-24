@@ -49,6 +49,13 @@ data:
     r = sess.post(f"{BACKEND}/api/auth/sign-in/email", json={'email': ADMIN_EMAIL, 'password': ADMIN_PASSWORD}, timeout=6)
     if r.status_code != 200:
         log(f"ERROR signin: {r.status_code} {r.text[:140]}")
+    else:
+        try:
+            token = r.json().get('token')
+            if token:
+                sess.headers['Cookie'] = f"better-auth.session_token={token}"
+        except Exception:
+            pass
     # Ensure session cookie matches service domain so cookies are sent to BACKEND host
     try:
         svc_host = SVC.split(':')[0]

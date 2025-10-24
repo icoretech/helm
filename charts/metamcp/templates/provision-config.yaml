@@ -1,0 +1,205 @@
+{{- $prov := .Values.provision -}}
+{{- if and (kindIs "map" $prov) ($prov.enabled | default false) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "metamcp.fullname" . }}-provision
+  labels:
+    {{- include "metamcp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: provision
+data:
+  provision.json: |
+    {{- toJson (dict "provision" (dict "servers" ($prov.servers | default (list)) "namespaces" ($prov.namespaces | default (list)) "endpoints" ($prov.endpoints | default (list)))) | nindent 4 }}
+  provision.py: |
+    import os, json, time
+    import requests
+
+    def log(msg):
+        print(f"[provision] {msg}", flush=True)
+
+    NS = os.environ.get('NAMESPACE','default')
+    SVC = os.environ['SVC']
+    FRONTEND_PORT = os.environ.get('FRONTEND_PORT','12008')
+    FRONTEND = f"http://{SVC}:{FRONTEND_PORT}"
+    BACKEND = f"http://{SVC}:12009"
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL','admin@example.com')
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD','change-me')
+
+    cfg = json.load(open('/cfg/provision.json','r')).get('provision',{})
+    servers = cfg.get('servers', [])
+    namespaces = cfg.get('namespaces', [])
+    endpoints = cfg.get('endpoints', [])
+
+    for _ in range(60):
+        try:
+            if requests.get(f"{FRONTEND}/health", timeout=2).status_code == 200:
+                break
+        except Exception:
+            pass
+        time.sleep(2)
+
+    sess = requests.Session()
+    sess.headers.update({'Content-Type':'application/json','Accept':'application/json'})
+    try:
+        sess.post(f"{BACKEND}/api/auth/sign-up/email", json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD,'name':'Admin'}, timeout=6)
+    except Exception:
+        pass
+    r = sess.post(f"{BACKEND}/api/auth/sign-in/email", json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD}, timeout=6)
+    if r.status_code != 200:
+        log(f"ERROR signin: {r.status_code} {r.text[:160]}")
+    else:
+        try:
+            token = r.json().get('token')
+            if token:
+                sess.headers['Cookie'] = f"better-auth.session_token={token}"
+        except Exception:
+            pass
+    try:
+        svc_host = SVC.split(':')[0]
+        for c in list(sess.cookies):
+            if c.name == 'better-auth.session_token': c.domain = svc_host
+    except Exception:
+        pass
+
+    def trpc_post(path, body):
+        return sess.post(f"{BACKEND}{path}", json=body, timeout=12)
+    def trpc_get(path):
+        return sess.get(f"{BACKEND}{path}", timeout=12)
+
+    # Map existing servers
+    srv_map = {}
+    try:
+        lr = trpc_get('/trpc/frontend/frontend.mcpServers.list?input=%7B%7D')
+        if lr.ok:
+            for s in lr.json().get('result',{}).get('data',{}).get('data',[]):
+                srv_map[s['name']] = s['uuid']
+    except Exception:
+        pass
+
+    for s in servers:
+        name = s.get('name'); st = (s.get('type','SSE') or 'SSE').upper()
+        if not name: continue
+        if name in srv_map: continue
+        if st in ('SSE','STREAMABLE'): st = 'SSE' if st=='SSE' else 'STREAMABLE_HTTP'
+        body = {'name': name, 'type': st}
+        if st in ('SSE','STREAMABLE_HTTP'):
+            if s.get('url'): body['url'] = s['url']
+            if s.get('bearerToken'): body['bearerToken'] = s['bearerToken']
+            if s.get('headers'): body['headers'] = s['headers']
+        if st == 'STDIO':
+            if s.get('command'): body['command'] = s['command']
+            if s.get('args'): body['args'] = s['args']
+            if s.get('env'): body['env'] = s['env']
+        r = trpc_post('/trpc/frontend/frontend.mcpServers.create', body)
+        if r.ok:
+            try:
+                srv_map[name] = r.json()['result']['data']['data']['uuid']
+                log(f"server created: {name}")
+            except Exception:
+                log(f"WARN cannot parse uuid for {name}")
+        else:
+            log(f"WARN server create {name} -> {r.status_code}: {r.text[:160]}")
+
+    def ensure_namespace(name):
+        ns_uuid = None
+        lr = trpc_get('/trpc/frontend/frontend.namespaces.list?input=%7B%7D')
+        if lr.ok:
+            for ns in lr.json().get('result',{}).get('data',{}).get('data',[]):
+                if ns.get('name') == name:
+                    ns_uuid = ns.get('uuid'); break
+        if not ns_uuid:
+            r = trpc_post('/trpc/frontend/frontend.namespaces.create', {'name': name})
+            if r.ok:
+                try:
+                    ns_uuid = r.json()['result']['data']['data']['uuid']
+                    log(f"namespace created: {name}")
+                except Exception:
+                    pass
+        return ns_uuid
+
+    for ns in namespaces:
+        name = ns.get('name'); nssrvs = ns.get('servers') or []
+        if not name: continue
+        nid = ensure_namespace(name)
+        if nid and nssrvs:
+            trpc_post('/trpc/frontend/frontend.namespaces.update', {'uuid': nid,'name': name,'servers': nssrvs})
+
+    def create_endpoint(name, nsref, transport='SSE', extra=None):
+        lr = trpc_get('/trpc/frontend/frontend.namespaces.list?input=%7B%7D')
+        nid = None
+        if lr.ok:
+            for ns in lr.json().get('result',{}).get('data',{}).get('data',[]):
+                if ns.get('uuid') == nsref or ns.get('name') == nsref:
+                    nid = ns.get('uuid'); break
+        if not nid: return
+        tr = (transport or 'SSE').upper()
+        if tr in ('SSE','STREAMABLE'): tr = 'SSE' if tr=='SSE' else 'STREAMABLE_HTTP'
+        body = {'name': name,'namespaceUuid': nid,'transport': tr}
+        if isinstance(extra, dict): body.update(extra)
+        r = trpc_post('/trpc/frontend/frontend.endpoints.create', body)
+        if r.ok: log(f"endpoint created: {name} ({tr})")
+
+    for ep in endpoints:
+        name = ep.get('name'); nsref = ep.get('namespace') or ep.get('namespaceUuid')
+        if not (name and nsref): continue
+        extra = {k: ep[k] for k in ('enableApiKeyAuth','enableOauth','useQueryParamAuth') if k in ep}
+        create_endpoint(name, nsref, ep.get('transport'), extra)
+{{- end }}
+
+---
+{{- $prov := .Values.provision -}}
+{{- if and (kindIs "map" $prov) ($prov.enabled | default false) -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "metamcp.fullname" . }}-provision
+  labels:
+    {{- include "metamcp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: provision
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        {{- include "metamcp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: provision
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "metamcp.fullname" . }}
+      {{- end }}
+      restartPolicy: OnFailure
+      containers:
+        - name: provision
+          image: python:3.12-alpine
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SVC
+              value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.fullname" .) .Release.Namespace | quote }}
+            - name: FRONTEND_PORT
+              value: {{ .Values.service.port | toString | quote }}
+            - name: ADMIN_EMAIL
+              value: "admin@example.com"
+            - name: ADMIN_PASSWORD
+              value: "change-me"
+          volumeMounts:
+            - name: cfg
+              mountPath: /cfg
+              readOnly: true
+          command: ["/bin/sh","-lc"]
+          args:
+            - |
+              set -euo pipefail
+              python3 -m pip install --no-cache-dir requests >/dev/null
+              python3 /cfg/provision.py
+      volumes:
+        - name: cfg
+          configMap:
+            name: {{ include "metamcp.fullname" . }}-provision
+{{- end }}
