@@ -102,20 +102,10 @@ YAML
     echo "MetaMCP UI: http://localhost:12008"
     echo "Admin: admin@example.com / change-me"
     ;;
-  mcp-server)
-    cleanup
-    helm dependency update "$ROOT/charts/mcp-server"
-    helm_lint "$ROOT/charts/mcp-server"
-    install_chart "$ROOT/charts/mcp-server" mcp-server "$ROOT/charts/mcp-server/examples/e2e.yaml"
-    (kubectl -n "$NAMESPACE" port-forward svc/mcp-server-metamcp 12008:12008 12009:12009 >/tmp/mcp-server-e2e-pf.log 2>&1 &) >/dev/null 2>&1
-    sleep 1
-    echo "MetaMCP (subchart) UI: http://localhost:12008"
-    echo "Admin: admin@example.com / change-me"
-    ;;
   *)
-    echo "Usage: $0 {metamcp|mcp-server} [env NAMESPACE=?, TIMEOUT=?]" >&2
+    echo "Usage: $0 metamcp [env NAMESPACE=?, TIMEOUT=?]" >&2
     exit 2
     ;;
- esac
+esac
 
 kubectl -n "$NAMESPACE" get pods -o wide

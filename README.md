@@ -11,7 +11,7 @@ For detailed information on the individual charts and their usage, please naviga
 - [Airbroke](https://icoretech.github.io/helm/charts/airbroke): A modern, React-based open-source error catcher web application.
 - [PgBouncer](https://icoretech.github.io/helm/charts/pgbouncer): A lightweight connection pooler for PostgreSQL.
 - [Next.js](https://icoretech.github.io/helm/charts/nextjs): Generic, no-database Helm chart for Next.js standalone apps.
-- [MCP Server](https://icoretech.github.io/helm/charts/mcp-server): Generic runner for MCP servers (image, Node via npx, Python via uvx/pip).
+- [MetaMCP](https://icoretech.github.io/helm/charts/metamcp): MetaMCP aggregator + declarative provisioning of MCP servers (STDIO/HTTP/SSE), namespaces, and endpoints.
 
 ## Deprecated Charts
 
