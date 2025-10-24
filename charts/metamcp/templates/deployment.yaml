@@ -53,6 +53,7 @@ spec:
             {{- with .Values.extraEnvFrom }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- $hasDBURL := and (kindIs "map" .Values.env) (hasKey .Values.env "DATABASE_URL") -}}
           {{- if .Values.postgres.enabled }}
           env:
             - name: APP_URL
@@ -64,6 +65,32 @@ spec:
                   name: {{ include "metamcp.fullname" . }}-auth
                   key: BETTER_AUTH_SECRET
             {{- end }}
+            {{- if not $hasDBURL }}
+            - name: DATABASE_URL
+              value: {{ printf "postgresql://%s:%s@%s.%s.svc.cluster.local:5432/%s?sslmode=disable" (.Values.postgres.auth.username | toString) (.Values.postgres.auth.password | toString) (include "metamcp.postgresFullname" .) .Release.Namespace (.Values.postgres.auth.database | toString) | quote }}
+            {{- end }}
+            - name: POSTGRES_HOST
+              value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.postgresFullname" .) .Release.Namespace | quote }}
+            - name: PGHOST
+              value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.postgresFullname" .) .Release.Namespace | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.auth.database | quote }}
+            - name: PGDATABASE
+              value: {{ .Values.postgres.auth.database | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.auth.username | quote }}
+            - name: PGUSER
+              value: {{ .Values.postgres.auth.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "metamcp.postgresFullname" . }}-secret
+                  key: password
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "metamcp.postgresFullname" . }}-secret
+                  key: password
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -77,6 +104,10 @@ spec:
                 secretKeyRef:
                   name: {{ include "metamcp.fullname" . }}-auth
                   key: BETTER_AUTH_SECRET
+            {{- end }}
+            {{- if and (not $hasDBURL) .Values.externalPostgres.enabled }}
+            - name: DATABASE_URL
+              value: {{ printf "postgresql://%s@%s:%v/%s?sslmode=disable" (.Values.externalPostgres.username | toString) (.Values.externalPostgres.host | toString) (.Values.externalPostgres.port | int) (.Values.externalPostgres.database | toString) | quote }}
             {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}

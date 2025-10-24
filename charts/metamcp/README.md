@@ -105,6 +105,7 @@ The first listed user is used to apply `disablePublicSignup` if set.
 | autoscaling.maxReplicas | int | `5` |  |
 | autoscaling.minReplicas | int | `1` |  |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` |  |
+| autoscaling.targetMemoryUtilizationPercentage | string | `nil` |  |
 | bootstrap.admin.password | string | `"admin"` |  |
 | bootstrap.admin.username | string | `"admin"` |  |
 | bootstrap.enabled | bool | `false` |  |
@@ -167,8 +168,10 @@ The first listed user is used to apply `disablePublicSignup` if set.
 
 ## Notes
 
-- Required env: `APP_URL`, `BETTER_AUTH_SECRET`, `DATABASE_URL`.
-  - The chart no longer auto-builds `DATABASE_URL`. Set it explicitly.
-  - Example for in-chart Postgres (same namespace):
-    `postgresql://metamcp:metamcp@<release>-metamcp-postgres.<namespace>.svc.cluster.local:5432/metamcp?sslmode=disable`
+- Required env: `APP_URL`, `BETTER_AUTH_SECRET`.
+- `DATABASE_URL` precedence:
+  - If `env.DATABASE_URL` is set, it wins (recommended for production).
+  - Else if `postgres.enabled=true` (default), the chart injects a connection string to the in-cluster Postgres Service.
+  - Else if `externalPostgres.enabled=true`, the chart injects a connection string from `externalPostgres.*`.
+  - Otherwise, set `env.DATABASE_URL` explicitly.
 - For production, prefer an external Postgres (managed or operator) and disable the in-chart Postgres.
