@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "metamcp.fullname" . }}
+  labels:
+    {{- include "metamcp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "metamcp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: app
+  template:
+    metadata:
+      labels:
+        {{- include "metamcp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: app
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-env.yaml") . | sha256sum }}
+        {{- if .Values.auth.betterAuthSecret }}
+        checksum/auth: {{ include (print $.Template.BasePath "/secret-auth.yaml") . | sha256sum }}
+        {{- end }}
+        {{- /* Auto checksums for extraEnvFrom refs (Secrets/ConfigMaps) */}}
+        {{- $ns := .Release.Namespace -}}
+        {{- range $i, $src := (default (list) .Values.extraEnvFrom) }}
+        {{- if and (kindIs "map" $src) (hasKey $src "secretRef") }}
+        {{- $n := (get $src.secretRef "name") -}}
+        {{- if $n }}
+        {{- $sec := (lookup "v1" "Secret" $ns $n) -}}
+        checksum/envfrom-secret-{{ $n }}: {{- if $sec -}}{{ (toYaml (default (dict) $sec.data)) | sha256sum }}{{- else -}}"missing"{{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if and (kindIs "map" $src) (hasKey $src "configMapRef") }}
+        {{- $n := (get $src.configMapRef "name") -}}
+        {{- if $n }}
+        {{- $cm := (lookup "v1" "ConfigMap" $ns $n) -}}
+        checksum/envfrom-config-{{ $n }}: {{- if $cm -}}{{ (toYaml (default (dict) $cm.data)) | sha256sum }}{{- else -}}"missing"{{- end }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      terminationGracePeriodSeconds: 5
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "metamcp.fullname" . }}
+      {{- end }}
+      {{- /* always use internal postgres */}}
+      initContainers:
+        - name: wait-db
+          image: {{ .Values.postgres.image }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh","-lc","until pg_isready -h {{ include "metamcp.postgresFullname" . }}.{{ .Release.Namespace }}.svc.cluster.local -p 5432 -U {{ .Values.postgres.auth.username }}; do echo waiting for db; sleep 2; done"]
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "metamcp.postgresFullname" . }}-secret
+                  key: password
+      containers:
+        - name: metamcp
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+            - name: backend
+              containerPort: 12009
+          envFrom:
+            - configMapRef:
+                name: {{ include "metamcp.fullname" . }}-env
+            {{- with .Values.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- $hasDBURL := and (kindIs "map" .Values.env) (hasKey .Values.env "DATABASE_URL") }}
+          env:
+            - name: APP_URL
+              value: {{ include "metamcp.appurl" . | quote }}
+            {{- if and (not (and (kindIs "map" .Values.env) (hasKey .Values.env "BETTER_AUTH_SECRET"))) (.Values.auth.betterAuthSecret) }}
+            - name: BETTER_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "metamcp.fullname" . }}-auth
+                  key: BETTER_AUTH_SECRET
+            {{- end }}
+            {{- if not $hasDBURL }}
+            - name: DATABASE_URL
+              value: {{ printf "postgresql://%s:%s@%s.%s.svc.cluster.local:5432/%s?sslmode=disable" (.Values.postgres.auth.username | toString) (.Values.postgres.auth.password | toString) (include "metamcp.postgresFullname" .) .Release.Namespace (.Values.postgres.auth.database | toString) | quote }}
+            {{- end }}
+            - name: POSTGRES_HOST
+              value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.postgresFullname" .) .Release.Namespace | quote }}
+            - name: PGHOST
+              value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.postgresFullname" .) .Release.Namespace | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.auth.database | quote }}
+            - name: PGDATABASE
+              value: {{ .Values.postgres.auth.database | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.auth.username | quote }}
+            - name: PGUSER
+              value: {{ .Values.postgres.auth.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "metamcp.postgresFullname" . }}-secret
+                  key: password
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "metamcp.postgresFullname" . }}-secret
+                  key: password
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- /* end internal postgres envs */}}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

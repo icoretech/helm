@@ -1,0 +1,31 @@
+{{- $list := .Values.provision.servers | default (list) -}}
+{{- range $i, $srv := $list }}
+{{- $root := $ -}}
+{{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+{{- if and (hasKey $srv "pdb") ($srv.pdb.enabled | default false) }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "metamcp.fullname" $root }}-{{ $name }}
+  labels:
+    {{- include "metamcp.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: server
+    mcp.icore.tech/server: {{ $name }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "metamcp.selectorLabels" $root | nindent 6 }}
+      app.kubernetes.io/component: server
+      mcp.icore.tech/server: {{ $name }}
+  {{- if hasKey $srv.pdb "minAvailable" }}
+  minAvailable: {{ $srv.pdb.minAvailable }}
+  {{- else if hasKey $srv.pdb "maxUnavailable" }}
+  maxUnavailable: {{ $srv.pdb.maxUnavailable }}
+  {{- else }}
+  minAvailable: 1
+  {{- end }}
+
+---
+{{- end }}
+{{- end }}
+

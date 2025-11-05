@@ -1,0 +1,213 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "env": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "betterAuthSecret": { "type": "string" }
+      }
+    },
+    "users": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["email", "password", "name"],
+        "properties": {
+          "email": { "type": "string" },
+          "password": { "type": "string" },
+          "name": { "type": "string" },
+          "createApiKey": { "type": "boolean" },
+          "apiKeyName": { "type": "string" }
+        }
+      }
+    },
+    "provision": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "servers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "type"],
+            "properties": {
+              "name": { "type": "string" },
+              "enabled": { "type": "boolean", "default": true },
+              "type": { "type": "string", "enum": ["SSE", "STREAMABLE_HTTP", "STDIO"] },
+              "url": { "type": ["string","null"] },
+              "bearerToken": { "type": "string" },
+              "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+              "command": { "type": ["string","null"] },
+              "args": { "type": "array", "items": { "type": "string" } },
+              "env": { "type": "object", "additionalProperties": { "type": "string" } },
+              "extraEnv": { "type": "array", "items": { "type": "object" } },
+              "envFrom": { "type": "array", "items": { "type": "object" } },
+              "secretEnv": { "type": "object", "additionalProperties": { "type": "string" } }
+              ,"port": { "type": ["integer","null"], "minimum": 1 }
+              ,"resources": { "type": "object" }
+              ,"securityContext": { "type": "object" }
+              ,"podSecurityContext": { "type": "object" }
+              ,"podLabels": { "type": "object", "additionalProperties": { "type": "string" } }
+              ,"podAnnotations": { "type": "object", "additionalProperties": { "type": "string" } }
+              ,"imagePullSecrets": { "type": "array", "items": { "type": "object" } }
+              ,"serviceAccountName": { "type": "string" }
+              ,"nodeSelector": { "type": "object", "additionalProperties": { "type": "string" } }
+              ,"tolerations": { "type": "array", "items": { "type": "object" } }
+              ,"affinity": { "type": "object" }
+              ,"extraVolumes": { "type": "array", "items": { "type": "object" } }
+              ,"extraVolumeMounts": { "type": "array", "items": { "type": "object" } }
+              ,"initContainers": { "type": "array", "items": { "type": "object" } }
+              ,"readinessProbe": { "type": "object" }
+              ,"livenessProbe": { "type": "object" }
+              ,"startupProbe": { "type": "object" }
+              ,"priorityClassName": { "type": "string" }
+              ,"topologySpreadConstraints": { "type": "array", "items": { "type": "object" } }
+              ,"cache": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "mountPath": { "type": "string" },
+                  "emptyDir": { "type": ["object","null"] },
+                  "pvc": {
+                    "type": "object",
+                    "properties": {
+                      "existingClaim": { "type": "string" },
+                      "size": { "type": "string" },
+                      "storageClassName": { "type": ["string","null"] },
+                      "accessModes": { "type": "array", "items": { "type": "string" } }
+                    }
+                  }
+                }
+              }
+              ,"service": {
+                "type": "object",
+                "properties": {
+                  "type": { "type": "string" },
+                  "annotations": { "type": "object", "additionalProperties": { "type": "string" } },
+                  "extraPorts": { "type": "array", "items": { "type": "object" } }
+                }
+              }
+              ,"config": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "filename": { "type": "string" },
+                  "mountPath": { "type": "string" },
+                  "contents": {}
+                }
+              }
+              ,"pdb": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "minAvailable": { "type": ["integer","string"] },
+                  "maxUnavailable": { "type": ["integer","string"] }
+                }
+              }
+              ,"networkPolicy": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "ingressOnlyFromMetaMCP": { "type": "boolean" }
+                }
+              }
+              ,"autoscaling": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "minReplicas": { "type": "integer", "minimum": 1 },
+                  "maxReplicas": { "type": "integer", "minimum": 1 },
+                  "targetCPUUtilizationPercentage": { "type": ["integer","null"], "minimum": 1 },
+                  "targetMemoryUtilizationPercentage": { "type": ["integer","null"], "minimum": 1 }
+                }
+              }
+              ,"node": {
+                "type": "object",
+                "properties": {
+                  "package": { "type": "string" },
+                  "version": { "type": "string" },
+                  "args": { "type": "array", "items": { "type": "string" } },
+                  "image": { "type": "string" },
+                  "tag": { "type": "string" }
+                }
+              },
+              "python": {
+                "type": "object",
+                "properties": {
+                  "package": { "type": "string" },
+                  "fromGit": { "type": "string" },
+                  "args": { "type": "array", "items": { "type": "string" } },
+                  "image": { "type": "string" },
+                  "tag": { "type": "string" }
+                }
+              },
+              "image": {
+                "type": "object",
+                "properties": {
+                  "repository": { "type": "string" },
+                  "tag": { "type": "string" },
+                  "command": { "type": "array", "items": { "type": "string" } },
+                  "args": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            },
+            "allOf": [
+              { "if": { "properties": { "type": { "const": "STDIO" } } }, "then": { "required": ["command"] } },
+              { "if": { "properties": { "type": { "enum": ["SSE", "STREAMABLE_HTTP"] } } },
+                "then": {
+                  "anyOf": [
+                    { "required": ["url"] },
+                    { "required": ["port"], "properties": { "port": {"type":"integer"} } }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "servers": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "namespace", "transport"],
+            "properties": {
+              "name": { "type": "string" },
+              "namespace": { "type": "string" },
+              "transport": { "type": "string", "enum": ["SSE", "STREAMABLE_HTTP"] },
+              "enableApiKeyAuth": { "type": "boolean" },
+              "enableOauth": { "type": "boolean" },
+              "useQueryParamAuth": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
+    ,"ingress": {
+      "type": "object",
+      "properties": {
+        "mapBackendPaths": { "type": "boolean" }
+      }
+    }
+    ,"gatewayAPI": {
+      "type": "object",
+      "properties": {
+        "mapBackendPaths": { "type": "boolean" }
+      }
+    }
+  }
+}

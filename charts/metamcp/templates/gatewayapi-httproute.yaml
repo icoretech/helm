@@ -1,0 +1,44 @@
+{{- if and .Values.gatewayAPI.enabled (gt (len .Values.gatewayAPI.hosts) 0) (gt (len .Values.gatewayAPI.parents) 0) }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "metamcp.fullname" . }}
+  labels:
+    {{- include "metamcp.labels" . | nindent 4 }}
+spec:
+  hostnames:
+    {{- toYaml .Values.gatewayAPI.hosts | nindent 4 }}
+  parentRefs:
+    {{- toYaml .Values.gatewayAPI.parents | nindent 4 }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ include "metamcp.fullname" . }}
+          port: {{ .Values.service.port }}
+    {{- if (default true .Values.gatewayAPI.mapBackendPaths) }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /metamcp
+      backendRefs:
+        - name: {{ include "metamcp.fullname" . }}
+          port: 12009
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /trpc
+      backendRefs:
+        - name: {{ include "metamcp.fullname" . }}
+          port: 12009
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: {{ include "metamcp.fullname" . }}
+          port: 12009
+    {{- end }}
+{{- end }}

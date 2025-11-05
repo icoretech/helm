@@ -1,0 +1,26 @@
+{{- $list := .Values.provision.servers | default (list) -}}
+{{- range $i, $srv := $list }}
+{{- $root := $ -}}
+{{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+{{- if and (hasKey $srv "cache") ($srv.cache.enabled | default false) (hasKey $srv.cache "pvc") (hasKey $srv.cache.pvc "size") ($srv.cache.pvc.size) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "metamcp.fullname" $root }}-{{ $name }}-cache
+  labels:
+    {{- include "metamcp.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: server
+    mcp.icore.tech/server: {{ $name }}
+spec:
+  accessModes: {{- if $srv.cache.pvc.accessModes }} {{ toYaml $srv.cache.pvc.accessModes | nindent 2 }} {{- else }} ["ReadWriteOnce"] {{- end }}
+  resources:
+    requests:
+      storage: {{ $srv.cache.pvc.size | quote }}
+  {{- if hasKey $srv.cache.pvc "storageClassName" }}
+  storageClassName: {{ $srv.cache.pvc.storageClassName | default "" | quote }}
+  {{- end }}
+
+---
+{{- end }}
+{{- end }}
+

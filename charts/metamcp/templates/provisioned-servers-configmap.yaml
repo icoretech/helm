@@ -1,0 +1,27 @@
+{{- $list := .Values.provision.servers | default (list) -}}
+{{- range $i, $srv := $list }}
+{{- $root := $ -}}
+{{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+{{- if and (hasKey $srv "config") ($srv.config.enabled | default false) (hasKey $srv.config "contents") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "metamcp.fullname" $root }}-{{ $name }}-config
+  labels:
+    {{- include "metamcp.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: server
+    mcp.icore.tech/server: {{ $name }}
+data:
+  {{- $fname := (default "config.json" $srv.config.filename) -}}
+  {{ $fname }}: |
+    {{- /* Preserve indentation of multi-line content */ -}}
+    {{- if kindIs "string" $srv.config.contents }}
+{{ $srv.config.contents | indent 4 }}
+    {{- else }}
+{{ $srv.config.contents | toYaml | indent 4 }}
+    {{- end }}
+
+---
+{{- end }}
+{{- end }}
+

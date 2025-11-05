@@ -1,0 +1,120 @@
+# Advanced server provisioning exercising most per-server options.
+# Note: Secrets/ConfigMaps referenced here should be created separately.
+
+auth:
+  betterAuthSecret: dev-secret
+
+users:
+  - email: admin@example.com
+    password: change-me
+    name: Admin
+
+provision:
+  enabled: true
+  servers:
+    - name: http-everything
+      type: STREAMABLE_HTTP
+      port: 3001
+      node:
+        image: node
+        tag: 24-alpine
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["streamableHttp"]
+      resources:
+        requests: { cpu: "100m", memory: "128Mi" }
+        limits:   { cpu: "500m", memory: "512Mi" }
+      readinessProbe:
+        httpGet: { path: "/mcp", port: "http" }
+        initialDelaySeconds: 2
+        periodSeconds: 5
+      livenessProbe:
+        tcpSocket: { port: "http" }
+        initialDelaySeconds: 10
+        periodSeconds: 10
+      envFrom:
+        - secretRef: { name: http-everything-env }  # created by e2e harness
+      podLabels:
+        app.kubernetes.io/part-of: metamcp
+      podAnnotations:
+        example/icore: "true"
+      imagePullSecrets:
+        - name: regcred
+      serviceAccountName: ""
+      podSecurityContext: {}
+      securityContext: {}
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations: []
+      affinity: {}
+      extraVolumes:
+        - name: cfg
+          configMap: { name: http-everything-config }   # created by e2e harness
+      extraVolumeMounts:
+        - name: cfg
+          mountPath: /app/config
+      autoscaling:
+        enabled: true
+        minReplicas: 1
+        maxReplicas: 3
+        targetCPUUtilizationPercentage: 70
+      pdb:
+        enabled: true
+        minAvailable: 1
+      networkPolicy:
+        enabled: true
+        ingressOnlyFromMetaMCP: true
+      service:
+        type: ClusterIP
+        annotations:
+          example/service: "true"
+        extraPorts:
+          - name: metrics
+            port: 9090
+            targetPort: 9090
+
+    - name: sse-everything
+      type: SSE
+      port: 3001
+      node:
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["sse"]
+      config:
+        enabled: true
+        filename: server.json
+        mountPath: /app/config
+        contents:
+          demo: true
+      initContainers:
+        - name: wait-a-bit
+          image: busybox:1.36
+          command: ["/bin/sh","-lc","echo init && sleep 1"]
+      cache:
+        enabled: true
+        mountPath: /cache
+        pvc:
+          existingClaim: sse-everything-cache
+      readinessProbe:
+        tcpSocket: { port: "http" }
+        initialDelaySeconds: 2
+        periodSeconds: 5
+      livenessProbe:
+        httpGet: { path: "/sse", port: "http" }
+        initialDelaySeconds: 10
+        periodSeconds: 10
+      pdb:
+        enabled: true
+        minAvailable: 1
+      networkPolicy:
+        enabled: true
+        ingressOnlyFromMetaMCP: true
+
+  namespaces:
+    - name: lab
+      servers: ["http-everything","sse-everything"]
+
+  endpoints:
+    - name: lab
+      namespace: lab
+      transport: SSE

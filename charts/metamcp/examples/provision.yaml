@@ -1,0 +1,44 @@
+# Provision multiple servers/namespaces/endpoints via MetaMCP
+auth:
+  betterAuthSecret: dev-secret
+env:
+  APP_URL: http://localhost:12008
+users:
+  - email: admin@example.com
+    password: change-me
+    name: Admin
+
+provision:
+  enabled: true
+  servers:
+    # Remote streamable-http server (replace URL with your MCP server)
+    - name: docs
+      type: STREAMABLE_HTTP
+      url: http://my-docs.svc.cluster.local:3000/mcp
+      # Provide secrets via an existing Secret (recommended)
+      envFrom:
+        - secretRef:
+            name: docs-env
+    # Example STDIO (requires runtime available in the MetaMCP image)
+    - name: everything
+      type: STDIO
+      command: "npx"
+      args: ["-y","@modelcontextprotocol/server-everything","streamableHttp"]
+      env: { LOG_LEVEL: debug }
+    # Deploy-and-register an SSE server with inline secret
+    - name: sse-example
+      type: SSE
+      port: 3002
+      node:
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["sse","--port","3002"]
+      secretEnv:
+        GITHUB_TOKEN: "replace-me"
+  namespaces:
+    - name: lab
+      servers: ["docs","everything"]
+  endpoints:
+    - name: lab
+      namespace: lab
+      transport: SSE

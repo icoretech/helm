@@ -1,0 +1,93 @@
+{{- $prov := .Values.provision -}}
+{{- if and (kindIs "map" $prov) ($prov.enabled | default false) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "metamcp.fullname" . }}-provision
+  labels:
+    {{- include "metamcp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: provision
+data:
+  provision.json: |
+    {{- /* Build servers payload with derived serviceBase for entries with deployment specs */ -}}
+    {{- $ns := .Release.Namespace -}}
+    {{- $fullname := include "metamcp.fullname" . -}}
+    {{- $outServers := list -}}
+    {{- range $i, $s := ($prov.servers | default (list)) -}}
+      {{- $name := ($s.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+      {{- $hasDeploy := or (hasKey $s "node") (or (hasKey $s "python") (hasKey $s "image")) -}}
+      {{- $port := (default 3001 $s.port) -}}
+      {{- $svcBase := (printf "%s-%s.%s.svc.cluster.local:%d" $fullname $name $ns ($port | int)) -}}
+      {{- /* Build minimal server dict for the job */ -}}
+      {{- $item := dict "name" $name "enabled" (default true $s.enabled) "type" $s.type "url" $s.url "bearerToken" $s.bearerToken "headers" ($s.headers | default (dict)) "command" ($s.command | default "") "args" ($s.args | default (list)) "env" ($s.env | default (dict)) -}}
+      {{- if $hasDeploy }}{{- $_ := set $item "serviceBase" $svcBase -}}{{- end -}}
+      {{- $outServers = append $outServers $item -}}
+    {{- end -}}
+    {{- toJson (dict "provision" (dict "servers" $outServers "namespaces" ($prov.namespaces | default (list)) "endpoints" ($prov.endpoints | default (list)))) | nindent 4 }}
+  # No separate workloads.json; serviceBase is included per server above when deploy specs exist
+  provision.py: |
+{{ (.Files.Get "scripts/provision.py") | indent 4 }}
+{{- end }}
+
+---
+{{- $prov := .Values.provision -}}
+{{- if and (kindIs "map" $prov) ($prov.enabled | default false) -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "metamcp.fullname" . }}-provision
+  labels:
+    {{- include "metamcp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: provision
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        {{- include "metamcp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: provision
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "metamcp.fullname" . }}
+      {{- end }}
+      restartPolicy: OnFailure
+      containers:
+        - name: provision
+          image: python:3.12-alpine
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SVC
+              value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.fullname" .) .Release.Namespace | quote }}
+            - name: FRONTEND_PORT
+              value: {{ .Values.service.port | toString | quote }}
+            - name: ADMIN_EMAIL
+              value: "admin@example.com"
+            - name: ADMIN_PASSWORD
+              value: "change-me"
+            - name: ADMIN_EMAIL
+              value: "admin@example.com"
+            - name: ADMIN_PASSWORD
+              value: "change-me"
+          volumeMounts:
+            - name: cfg
+              mountPath: /cfg
+              readOnly: true
+          command: ["/bin/sh","-lc"]
+          args:
+            - |
+              set -euo pipefail
+              python3 -m pip install --no-cache-dir requests >/dev/null
+              python3 /cfg/provision.py
+      volumes:
+        - name: cfg
+          configMap:
+            name: {{ include "metamcp.fullname" . }}-provision
+{{- end }}

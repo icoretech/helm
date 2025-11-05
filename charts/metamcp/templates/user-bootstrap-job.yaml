@@ -1,0 +1,67 @@
+{{- $users := .Values.users | default (list) -}}
+{{- if gt (len $users) 0 }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "metamcp.fullname" . }}-user-bootstrap
+  labels:
+    {{- include "metamcp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: user-bootstrap
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        {{- include "metamcp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: user-bootstrap
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "metamcp.fullname" . }}
+      {{- end }}
+      restartPolicy: Never
+      containers:
+        - name: seeder
+          image: python:3.12-alpine
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SVC
+              value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.fullname" .) .Release.Namespace | quote }}
+            - name: FRONTEND_PORT
+              value: {{ .Values.service.port | toString | quote }}
+            - name: SECRET_PREFIX
+              value: {{ include "metamcp.fullname" . | quote }}
+          command: ["/bin/sh","-lc"]
+          args:
+            - |
+              set -euo pipefail
+              python3 -m pip install --no-cache-dir requests >/dev/null
+              python3 /opt/bootstrap/user-bootstrap.py
+          volumeMounts:
+            - name: cfg
+              mountPath: /cfg
+              readOnly: true
+            - name: script
+              mountPath: /opt/bootstrap
+              readOnly: true
+      volumes:
+        - name: cfg
+          configMap:
+            name: {{ include "metamcp.fullname" . }}-user-bootstrap
+            items:
+              - key: config.json
+                path: config.json
+        - name: script
+          configMap:
+            name: {{ include "metamcp.fullname" . }}-user-bootstrap
+            items:
+              - key: user-bootstrap.py
+                path: user-bootstrap.py
+{{- end }}

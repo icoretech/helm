@@ -1,0 +1,165 @@
+# Default values for metamcp.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/metatool-ai/metamcp
+  pullPolicy: IfNotPresent
+  tag: latest
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 12008
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: metamcp.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+          # port: 12008   # optional per-path override
+  tls: []
+  # Also map backend routes (/metamcp, /trpc, /api) to port 12009 by default
+  mapBackendPaths: true
+
+gatewayAPI:
+  enabled: false
+  # HTTPRoute parents, e.g.:
+  # parents:
+  #   - name: my-shared-gateway
+  #     namespace: gateway-system
+  #     sectionName: http
+  hosts: []
+  # Map backend routes (/metamcp, /trpc, /api) to port 12009 by default
+  mapBackendPaths: true
+
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  # Optional memory target (utilization %)
+  targetMemoryUtilizationPercentage: null
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Extra env as ConfigMap
+env: {}
+
+# Additional env vars (list style)
+extraEnv: []
+# - name: LOG_LEVEL
+#   value: debug
+extraEnvFrom: []
+# - secretRef:
+#     name: my-extra-secret
+
+
+# Bundled Postgres for MetaMCP. Override env.DATABASE_URL to use an external DB.
+postgres:
+  enabled: true
+  image: postgres:16
+  auth:
+    database: metamcp
+    username: metamcp
+    password: metamcp
+  persistence:
+    enabled: false
+    size: 1Gi
+    storageClassName: ""
+
+# Note: there is no externalPostgres block; prefer setting env.DATABASE_URL if you need to point MetaMCP to an external database.
+
+# Authentication settings for MetaMCP
+auth:
+  # If set, chart will create a secret and inject BETTER_AUTH_SECRET unless
+  # overridden in values.env.BETTER_AUTH_SECRET.
+  betterAuthSecret: ""
+
+## Legacy bootstrap removed; use provision.* instead.
+
+# Generalized provisioning (multiple servers, namespaces, endpoints)
+provision:
+  enabled: false
+  # Single source of truth for servers MetaMCP exposes. Each entry can be:
+  # - STDIO (MetaMCP runs it)
+  # - STREAMABLE_HTTP/SSE with either:
+  #     a) url: remote URL to register (no pod), or
+  #     b) node/python/image spec + port: chart deploys the Pod/Service and auto-derives the URL
+  servers: []
+  # - name: stdio-everything
+  #   enabled: true
+  #   type: STDIO
+  #   command: "npx"
+  #   args: ["-y","@modelcontextprotocol/server-everything","stdio"]
+  #   env: { LOG_LEVEL: debug }
+  # - name: http-everything
+  #   enabled: true
+  #   type: STREAMABLE_HTTP
+  #   port: 3001
+  #   node:
+  #     package: "@modelcontextprotocol/server-everything"
+  #     version: "latest"
+  #     args: ["streamableHttp","--port","3001"]
+  # - name: sse-remote
+  #   enabled: true
+  #   type: SSE
+  #   url: http://external.svc.local:3002/sse
+
+  # namespaces: list of { name, servers: [<server-names>] }
+  namespaces: []
+  # - name: lab
+  #   servers: ["stdio-everything","http-everything"]
+
+  # endpoints: list of { name, namespace, transport, enableApiKeyAuth, enableOauth, useQueryParamAuth }
+  endpoints: []
+  # - name: lab
+  #   namespace: lab
+  #   transport: SSE   # or STREAMABLE_HTTP
+  #   enableApiKeyAuth: true
+  #   enableOauth: false
+  #   useQueryParamAuth: false
+
+# Global: disable public sign-up in MetaMCP (performed by user-bootstrap job if any users are defined)
+disablePublicSignup: false
+
+# Optional list of users to seed into MetaMCP (post-install/upgrade Job)
+# Each item supports:
+# - email (string) – required
+# - password (string) – required
+# - name (string) – required by MetaMCP sign-up
+# - role (string: user|admin) – reserved for future if MetaMCP exposes it
+# - createApiKey (bool) – when true, create an API key for the user
+# - apiKeyName (string) – optional name for the API key
+users: []
+# - email: admin@example.com
+#   password: change-me
+#   name: Admin
+#   role: user
+#   createApiKey: true
+#   apiKeyName: cli

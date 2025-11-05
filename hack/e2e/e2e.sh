@@ -1,130 +1,111 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Basic e2e for mcp-server chart using current kube context (kind or docker-desktop).
-# - Installs examples and runs minimal smoke checks with in-cluster curl jobs.
-
-NS="mcp-e2e"
+CHART=${1:-}
+NAMESPACE=${NAMESPACE:-e2e}
+TIMEOUT=${TIMEOUT:-50s}
+ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")"/../.. && pwd)
 
 cleanup() {
-  set +e
-  helm uninstall e2e-node -n "$NS" >/dev/null 2>&1
-  kubectl -n "$NS" delete job -l e2e.mcp.icore.tech/temp=true --ignore-not-found >/dev/null 2>&1
-  kubectl delete ns "$NS" --ignore-not-found --wait=false >/dev/null 2>&1
-}
-trap cleanup EXIT
-
-kubectl get ns "$NS" >/dev/null 2>&1 || kubectl create ns "$NS" >/dev/null
-
-fail() { echo "E2E FAIL: $*" >&2; exit 1; }
-hr() { echo "-----------------------------"; }
-
-wait_ready() {
-  local sel=$1 timeout=${2:-60s}
-  kubectl -n "$NS" wait --for=condition=Ready pod -l "$sel" --timeout="$timeout"
+  # kill port-forwards
+  pkill -f "port-forward.*12008:12008" >/dev/null 2>&1 || true
+  pkill -f "port-forward.*12009:12009" >/dev/null 2>&1 || true
+  # delete known namespaces
+  kubectl delete ns metamcp metamcp2 metamcp3 e2e --wait=true --ignore-not-found
 }
 
-smoke_curl() {
-  local name=$1 url=$2 expect=${3:-200}
-  kubectl -n "$NS" delete job "$name" --ignore-not-found >/dev/null 2>&1 || true
-  cat <<EOF | kubectl -n "$NS" apply -f - >/dev/null
-apiVersion: batch/v1
-kind: Job
+helm_lint() {
+  helm lint "$1"
+}
+
+install_chart() {
+  local chart_dir=$1
+  local release=$2
+  local values=$3
+  kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
+  helm upgrade --install "$release" "$chart_dir" -n "$NAMESPACE" -f "$values" --wait --timeout "$TIMEOUT"
+}
+
+case "$CHART" in
+  metamcp)
+    cleanup
+    kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
+    # Spin up two external servers for STREAMABLE_HTTP and SSE (chart now consumes them via provision.urls)
+    cat <<'YAML' | kubectl -n "$NAMESPACE" apply -f -
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: $name
-  labels:
-    e2e.mcp.icore.tech/temp: "true"
-  labels:
-    e2e.mcp.icore.tech/temp: "true"
+  name: ext-http
 spec:
-  backoffLimit: 0
+  replicas: 1
+  selector:
+    matchLabels: {app: ext-http}
   template:
+    metadata: {labels: {app: ext-http}}
     spec:
-      restartPolicy: Never
       containers:
-      - name: curl
-        image: alpine:3.20
-        command: ["sh","-lc"]
-        args:
-          - |
-            apk add --no-cache curl >/dev/null
-            CODE=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 12 $url || true)
-            echo ${CODE:-000}
-EOF
-  kubectl -n "$NS" wait --for=condition=complete job/$name --timeout=120s >/dev/null || true
-  code=$(kubectl -n "$NS" logs job/$name || true)
-  echo "$name => HTTP $code"
-  [[ "$code" == "$expect" || "$code" == 200 || "$code" == 400 || "$code" == 404 ]] || fail "$name unexpected HTTP code $code"
-}
-
-# Gateway JSON‑RPC smoke via SSE -> messages endpoint
-smoke_gw_jsonrpc() {
-  local name=$1 base=$2 sse_path=$3 expect=${4:-200}
-  kubectl -n "$NS" delete job "$name" --ignore-not-found >/dev/null 2>&1 || true
-  cat <<EOF | kubectl -n "$NS" apply -f - >/dev/null
-apiVersion: batch/v1
-kind: Job
+        - name: http
+          image: node:24-alpine
+          command: ["npx"]
+          args: ["-y","@modelcontextprotocol/server-everything","streamableHttp","--port","3001"]
+          ports:
+            - containerPort: 3001
+---
+apiVersion: v1
+kind: Service
 metadata:
-  name: $name
+  name: ext-http
 spec:
-  backoffLimit: 0
-  template:
-    spec:
-      restartPolicy: Never
-      containers:
-      - name: sh
-        image: alpine:3.20
-        command: ["sh","-lc"]
-        args:
-          - |
-            apk add --no-cache curl >/dev/null
-            EP=$(curl -sS --no-buffer --max-time 18 -H 'Accept: text/event-stream' $base$sse_path \
-              | sed -n 's/^data: //p' | sed -n 's/.*endpoint: \(.*\)/\1/p' | head -n1)
-            if [ -z "$EP" ]; then echo "000"; exit 0; fi
-            CODE=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 12 \
-              -H 'Accept: application/json, text/event-stream' -H 'content-type: application/json' \
-              --data '{"jsonrpc":"2.0","id":"1","method":"initialize","params":{"capabilities":{}}}' \
-              $base$EP || true)
-            echo ${CODE:-000}
-EOF
-  kubectl -n "$NS" wait --for=condition=complete job/$name --timeout=180s >/dev/null || true
-  code=$(kubectl -n "$NS" logs job/$name || true)
-  echo "$name => HTTP $code"
-  [[ "$code" == "$expect" || "$code" == 200 || "$code" == 400 ]] || fail "$name unexpected HTTP code $code"
-}
-
-# Ensure chart dependencies are packaged (vendor subchart via file://)
-hr; echo "Build chart dependencies"; hr
-helm dependency build charts/mcp-server >/dev/null
-
-hr; echo "Install: node-server-everything example"; hr
-helm upgrade --install e2e-node charts/mcp-server -n "$NS" -f charts/mcp-server/examples/node-server-everything.yaml --wait --timeout 180s
-wait_ready 'app.kubernetes.io/instance=e2e-node' 60s
-# Resolve ClusterIP for stability (service is suffixed by server name "everything")
-NODE_IP=$(kubectl -n "$NS" get svc e2e-node-mcp-server-everything -o jsonpath='{.spec.clusterIP}')
-# Simple TCP reachability (Node HTTP) on 3001 using nc
-kubectl -n "$NS" delete job curl-node --ignore-not-found >/dev/null 2>&1 || true
-cat <<EOF | kubectl -n "$NS" apply -f - >/dev/null
-apiVersion: batch/v1
-kind: Job
+  selector: {app: ext-http}
+  ports:
+    - port: 3001
+      targetPort: 3001
+      name: http
+---
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: curl-node
-  labels:
-    e2e.mcp.icore.tech/temp: "true"
+  name: ext-sse
 spec:
-  backoffLimit: 0
+  replicas: 1
+  selector:
+    matchLabels: {app: ext-sse}
   template:
+    metadata: {labels: {app: ext-sse}}
     spec:
-      restartPolicy: Never
       containers:
-      - name: nc
-        image: alpine:3.20
-        command: ["sh","-lc"]
-        args: ["apk add --no-cache busybox-extras >/dev/null; nc -z -w 3 $NODE_IP 3001 && echo 200 || echo 000"]
-EOF
-kubectl -n "$NS" wait --for=condition=complete job/curl-node --timeout=60s >/dev/null || true
-code=$(kubectl -n "$NS" logs job/curl-node || true)
-echo "curl-node => TCP $code"
-[[ "$code" == 200 ]] || fail "curl-node tcp failed"
+        - name: sse
+          image: node:24-alpine
+          command: ["npx"]
+          args: ["-y","@modelcontextprotocol/server-everything","sse","--port","3002"]
+          ports:
+            - containerPort: 3002
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ext-sse
+spec:
+  selector: {app: ext-sse}
+  ports:
+    - port: 3002
+      targetPort: 3002
+      name: sse
+YAML
+    helm_lint "$ROOT/charts/metamcp"
+    # Use Service FQDN for APP_URL to make in-cluster auth cookies valid for provisioning
+    helm upgrade --install metamcp "$ROOT/charts/metamcp" -n "$NAMESPACE" -f "$ROOT/charts/metamcp/examples/e2e.yaml" \
+      --set env.APP_URL=http://metamcp-metamcp.$NAMESPACE.svc.cluster.local:12008 --wait --timeout "$TIMEOUT"
+    # Port-forward for UI convenience
+    (kubectl -n "$NAMESPACE" port-forward svc/metamcp-metamcp 12008:12008 12009:12009 >/tmp/metamcp-e2e-pf.log 2>&1 &) >/dev/null 2>&1
+    sleep 1
+    echo "MetaMCP UI: http://localhost:12008"
+    echo "Admin: admin@example.com / change-me"
+    ;;
+  *)
+    echo "Usage: $0 metamcp [env NAMESPACE=?, TIMEOUT=?]" >&2
+    exit 2
+    ;;
+esac
 
-echo "E2E OK"
+kubectl -n "$NAMESPACE" get pods -o wide

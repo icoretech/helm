@@ -1,0 +1,271 @@
+{{- $list := .Values.provision.servers | default (list) -}}
+{{- range $i, $srv := $list }}
+{{- $root := $ -}}
+{{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
+{{- $hasDeploy := or (hasKey $srv "node") (or (hasKey $srv "python") (hasKey $srv "image")) -}}
+{{- if $hasDeploy }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "metamcp.fullname" $root }}-{{ $name }}
+  labels:
+    {{- include "metamcp.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: server
+    mcp.icore.tech/server: {{ $name }}
+spec:
+  replicas: {{ default 1 $srv.replicas }}
+  selector:
+    matchLabels:
+      {{- include "metamcp.selectorLabels" $root | nindent 6 }}
+      app.kubernetes.io/component: server
+      mcp.icore.tech/server: {{ $name }}
+  template:
+    metadata:
+      labels:
+        {{- include "metamcp.selectorLabels" $root | nindent 8 }}
+        app.kubernetes.io/component: server
+        mcp.icore.tech/server: {{ $name }}
+        {{- with $srv.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- /* roll pods on secretEnv changes */}}
+        {{- if hasKey $srv "secretEnv" }}
+        checksum/secretEnv: {{ toYaml $srv.secretEnv | sha256sum }}
+        {{- end }}
+        {{- /* roll pods on inline config changes */}}
+        {{- if and (hasKey $srv "config") ($srv.config.enabled | default false) }}
+        checksum/config: {{ toYaml $srv.config | sha256sum }}
+        {{- end }}
+        {{- with $srv.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with $srv.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.serviceAccountName }}
+      serviceAccountName: {{ . }}
+      {{- end }}
+      {{- with $srv.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $srv.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
+      {{- with $srv.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- $hasCache := and (hasKey $srv "cache") ($srv.cache.enabled | default false) -}}
+      {{- $hasConfig := and (hasKey $srv "config") ($srv.config.enabled | default false) -}}
+      {{- $hasExtraVols := hasKey $srv "extraVolumes" -}}
+      {{- if or (or $hasCache $hasConfig) $hasExtraVols }}
+      volumes:
+        {{- if $hasCache }}
+        - name: cache
+          {{- if and (hasKey $srv.cache "pvc") (hasKey $srv.cache.pvc "existingClaim") ($srv.cache.pvc.existingClaim) }}
+          persistentVolumeClaim:
+            claimName: {{ $srv.cache.pvc.existingClaim }}
+          {{- else if and (hasKey $srv.cache "pvc") (hasKey $srv.cache.pvc "size") }}
+          persistentVolumeClaim:
+            claimName: {{ include "metamcp.fullname" $root }}-{{ $name }}-cache
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}
+        {{- if $hasConfig }}
+        - name: cfg
+          configMap:
+            name: {{ include "metamcp.fullname" $root }}-{{ $name }}-config
+        {{- end }}
+        {{- with $srv.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: server
+          {{- if hasKey $srv "node" }}
+          image: {{ printf "%s:%s" (get $srv.node "image" | default "node") (get $srv.node "tag" | default "24-alpine") | quote }}
+          command: ["npx"]
+          args:
+            - "-y"
+            - {{ (printf "%s@%s" $srv.node.package (default "latest" $srv.node.version)) | quote }}
+            {{- range $arg := (default (list) $srv.node.args) }}
+            - {{ $arg | quote }}
+            {{- end }}
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - {{ ($srv.port | default 3001) | toString | quote }}
+          {{- else if hasKey $srv "python" }}
+          image: {{ printf "%s:%s" (get $srv.python "image" | default "ghcr.io/astral-sh/uv") (get $srv.python "tag" | default "python3.12-bookworm-slim") | quote }}
+          command:
+            - "uv"
+            - "tool"
+            - "run"
+            {{- if $srv.python.fromGit }}
+            - "--from"
+            - {{ $srv.python.fromGit | quote }}
+            {{- end }}
+            - {{ $srv.python.package | quote }}
+          {{- with $srv.python.args }}
+          args:
+            {{- range $arg := . }}
+            - {{ $arg | quote }}
+            {{- end }}
+          {{- end }}
+          {{- else }}
+          image: {{ printf "%s:%s" (get $srv.image "repository" | default "nginx") (get $srv.image "tag" | default "latest") | quote }}
+          {{- with $srv.image.command }}
+          command: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $srv.image.args }}
+          args: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- end }}
+          imagePullPolicy: IfNotPresent
+          {{- with $srv.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- /* Per-server env: inject cache defaults for node/python */}}
+          {{- $hasCacheMap := and (hasKey $srv "cache") (kindIs "map" $srv.cache) -}}
+          {{- $cacheEnabled := and $hasCacheMap ($srv.cache.enabled | default false) -}}
+          {{- $cachePath := "/cache" -}}
+          {{- if and $hasCacheMap (hasKey $srv.cache "mountPath") }}
+          {{- $cachePath = $srv.cache.mountPath -}}
+          {{- end }}
+          {{- $hasEnvMap := and (hasKey $srv "env") (kindIs "map" $srv.env) -}}
+          {{- $hasExtraEnv := hasKey $srv "extraEnv" -}}
+          {{- if or $cacheEnabled (or $hasEnvMap $hasExtraEnv) }}
+          env:
+            {{- if $cacheEnabled }}
+              {{- if hasKey $srv "node" }}
+            - name: NPM_CONFIG_CACHE
+              value: {{ printf "%s/npm" $cachePath | quote }}
+            - name: YARN_CACHE_FOLDER
+              value: {{ printf "%s/yarn" $cachePath | quote }}
+              {{- end }}
+              {{- if hasKey $srv "python" }}
+            - name: UV_CACHE_DIR
+              value: {{ printf "%s/uv" $cachePath | quote }}
+            - name: UV_TOOL_DIR
+              value: {{ printf "%s/uvtools" $cachePath | quote }}
+            - name: PIP_CACHE_DIR
+              value: {{ printf "%s/pip" $cachePath | quote }}
+              {{- end }}
+            {{- end }}
+            {{- if $hasEnvMap }}
+            {{- range $k, $v := $srv.env }}
+            - name: {{ $k | quote }}
+              value: {{ $v | quote }}
+            {{- end }}
+            {{- end }}
+            {{- with $srv.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- $hasEnvFrom := hasKey $srv "envFrom" -}}
+          {{- $hasSecretEnv := hasKey $srv "secretEnv" -}}
+          {{- if or $hasEnvFrom $hasSecretEnv }}
+          envFrom:
+            {{- if $hasSecretEnv }}
+            - secretRef:
+                name: {{ include "metamcp.fullname" $root }}-{{ $name }}-env
+            {{- end }}
+            {{- with $srv.envFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with $srv.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $srv.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ $srv.port | default 3001 }}
+              protocol: TCP
+          {{- $hasCacheMount := and $hasCache $srv.cache.mountPath }}
+          {{- $hasConfigMount := and $hasConfig (or ($srv.config.mountPath) ($srv.config.filename)) -}}
+          {{- $hasExtraMounts := hasKey $srv "extraVolumeMounts" -}}
+          {{- if or (or $hasCacheMount $hasConfigMount) $hasExtraMounts }}
+          volumeMounts:
+            {{- if $hasCacheMount }}
+            - name: cache
+              mountPath: {{ $srv.cache.mountPath | default "/cache" | quote }}
+            {{- end }}
+            {{- if $hasConfigMount }}
+            - name: cfg
+              {{- $mp := (default "/config" $srv.config.mountPath) -}}
+              {{- if $srv.config.filename }}
+              mountPath: {{ printf "%s/%s" $mp $srv.config.filename | quote }}
+              subPath: {{ $srv.config.filename | quote }}
+              {{- else }}
+              mountPath: {{ $mp | quote }}
+              {{- end }}
+            {{- end }}
+            {{- with $srv.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with $srv.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $srv.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "metamcp.fullname" $root }}-{{ $name }}
+  labels:
+    {{- include "metamcp.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: server
+    mcp.icore.tech/server: {{ $name }}
+  {{- if and (hasKey $srv "service") (hasKey $srv.service "annotations") }}
+  annotations:
+    {{- toYaml $srv.service.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- $svc := (get $srv "service") }}
+  type: {{ if and $svc (hasKey $svc "type") }}{{ $svc.type }}{{ else }}ClusterIP{{ end }}
+  selector:
+    {{- include "metamcp.selectorLabels" $root | nindent 4 }}
+    app.kubernetes.io/component: server
+    mcp.icore.tech/server: {{ $name }}
+  ports:
+    - name: http
+      port: {{ $srv.port | default 3001 }}
+      targetPort: http
+    {{- if and $svc (hasKey $svc "extraPorts") }}
+    {{- toYaml $svc.extraPorts | nindent 4 }}
+    {{- end }}
+---
+{{- end }}
+{{- end }}

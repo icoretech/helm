@@ -11,3 +11,5 @@ charts/*/Chart.lock
 node_modules/
 
 .serena/
+
+AGENTS.md

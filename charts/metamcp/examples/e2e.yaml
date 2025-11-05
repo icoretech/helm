@@ -1,0 +1,39 @@
+# Minimal MetaMCP values for e2e (provision)
+auth:
+  betterAuthSecret: dev-secret
+env: {}
+users:
+  - email: admin@example.com
+    password: change-me
+    name: Admin
+disablePublicSignup: true
+
+provision:
+  enabled: true
+  servers:
+    - name: stdio-everything
+      type: STDIO
+      command: "npx"
+      args: ["-y","@modelcontextprotocol/server-everything","stdio"]
+    - name: http-everything
+      type: STREAMABLE_HTTP
+      port: 3001
+      node:
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["streamableHttp","--port","3001"]
+    - name: sse-everything
+      type: SSE
+      port: 3001
+      node:
+        package: "@modelcontextprotocol/server-everything"
+        version: "latest"
+        args: ["sse"]
+  namespaces:
+    - name: lab
+      servers: ["stdio-everything","http-everything","sse-everything"]
+  endpoints:
+    - name: lab
+      namespace: lab
+      transport: SSE
+      enableApiKeyAuth: false

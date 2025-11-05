@@ -1,0 +1,17 @@
+1. MetaMCP URL
+
+   http://{{ include "metamcp.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+
+   Public MCP endpoints are served by the backend (port 12009):
+   - http://{{ include "metamcp.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:12009/metamcp/<namespace>/sse
+   - http://{{ include "metamcp.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:12009/metamcp/<namespace>/mcp
+   - http://{{ include "metamcp.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:12009/metamcp/<namespace>/api
+
+2. Postgres
+
+   {{- if .Values.postgres.enabled }}
+   A Postgres instance is deployed as {{ include "metamcp.postgresFullname" . }}.
+   The application receives DATABASE_URL and PG* envs pointing at the Service FQDN.
+   {{- else }}
+   Postgres is disabled. Provide DATABASE_URL and related env via values.env/secretEnv.
+   {{- end }}
