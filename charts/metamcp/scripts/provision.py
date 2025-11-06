@@ -75,14 +75,16 @@ def signin(retries=8, delay=1.5):
                 if not token:
                     # try to read cookie set by server and mirror it under our in-cluster host
                     for c in sess.cookies:
-                        if c.name == 'better-auth.session_token' and c.value:
+                        if c.name in ('better-auth.session_token','__Secure-better-auth.session_token') and c.value:
                             token = c.value
                             break
                 if token:
-                    try:
-                        sess.cookies.set('better-auth.session_token', token, domain=host, path='/')
-                    except Exception:
-                        sess.cookies.set('better-auth.session_token', token)
+                    # set both cookie names to maximize compatibility with secure-cookie deployments
+                    for cname in ('better-auth.session_token','__Secure-better-auth.session_token'):
+                        try:
+                            sess.cookies.set(cname, token, domain=host, path='/')
+                        except Exception:
+                            sess.cookies.set(cname, token)
                     sess.headers['Authorization'] = f"Bearer {token}"
                 # Persist cookies to mozilla jar and reload next time
                 try:
