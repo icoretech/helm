@@ -208,7 +208,10 @@ for ns in namespaces:
             srv_ids.append(sid)
     if nid and srv_ids:
         try:
-            trpc_post('/trpc/frontend/frontend.namespaces.update', {'uuid': nid,'name': name,'servers': srv_ids, **({'description': desc} if desc else {})})
+            payload = {'uuid': nid, 'name': name, 'mcpServerUuids': srv_ids}
+            if desc:
+                payload['description'] = desc
+            trpc_post('/trpc/frontend/frontend.namespaces.update', payload)
         except Exception:
             pass
 
