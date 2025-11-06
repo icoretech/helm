@@ -193,6 +193,32 @@ for s in servers:
     if st in ('SSE','STREAMABLE'):
         st = 'SSE' if st=='SSE' else 'STREAMABLE_HTTP'
     body = {'name': name, 'type': st}
+    # Pre-compute desired fields for STDIO so we can also update existing servers
+    desired_cmd = None
+    desired_args = None
+    desired_env = None
+    if st == 'STDIO':
+        cmd = s.get('command')
+        args = s.get('args') or []
+        if isinstance(cmd, list) and len(cmd) > 0:
+            desired_cmd = cmd[0]
+            desired_args = (args + cmd[1:]) if isinstance(args, list) else cmd[1:]
+        elif isinstance(cmd, str):
+            desired_cmd = cmd
+            if isinstance(args, list) and args:
+                desired_args = args
+        env_map = {}
+        if s.get('env') and isinstance(s['env'], dict):
+            env_map.update({k:str(v) for k,v in s['env'].items()})
+        for src in (s.get('envFrom') or []):
+            if not isinstance(src, dict):
+                continue
+            if 'secretRef' in src and isinstance(src['secretRef'], dict) and src['secretRef'].get('name'):
+                env_map.update(k8s_get_secret_data(src['secretRef']['name']))
+            if 'configMapRef' in src and isinstance(src['configMapRef'], dict) and src['configMapRef'].get('name'):
+                env_map.update(k8s_get_configmap_data(src['configMapRef']['name']))
+        if env_map:
+            desired_env = env_map
     desired_url = None
     if st in ('SSE','STREAMABLE_HTTP'):
         desired_url = s.get('url')
@@ -231,7 +257,7 @@ for s in servers:
         if s.get('headers'):
             body['headers'] = s['headers']
 
-    # If server exists and updates are allowed, patch safe fields for HTTP/SSE
+    # If server exists and updates are allowed, patch safe fields
     if name in srv_map:
         if UPDATE_EXISTING and st in ('SSE','STREAMABLE_HTTP'):
             try:
@@ -255,31 +281,33 @@ for s in servers:
                         log(f"WARN server update {name} -> {r.status_code}: {r.text[:160]}")
             except Exception:
                 pass
+        elif UPDATE_EXISTING and st == 'STDIO':
+            try:
+                current = srv_info.get(name, {})
+                patch = {'uuid': current.get('uuid'), 'name': name, 'type': st}
+                changed = False
+                if desired_cmd is not None and (current.get('command') or '') != desired_cmd:
+                    patch['command'] = desired_cmd; changed = True
+                if desired_args is not None and (current.get('args') or []) != desired_args:
+                    patch['args'] = desired_args; changed = True
+                if desired_env is not None and (current.get('env') or {}) != desired_env:
+                    patch['env'] = desired_env; changed = True
+                if changed:
+                    r = trpc_post('/trpc/frontend/frontend.mcpServers.update', patch)
+                    if r.ok:
+                        log(f"server updated: {name}")
+                    else:
+                        log(f"WARN server update {name} -> {r.status_code}: {r.text[:160]}")
+            except Exception:
+                pass
         continue
     if st == 'STDIO':
-        cmd = s.get('command')
-        args = s.get('args') or []
-        if isinstance(cmd, list) and len(cmd) > 0:
-            body['command'] = cmd[0]
-            body['args'] = (args + cmd[1:]) if isinstance(args, list) else cmd[1:]
-        elif isinstance(cmd, str):
-            body['command'] = cmd
-            if isinstance(args, list) and args:
-                body['args'] = args
-        env_map = {}
-        if s.get('env') and isinstance(s['env'], dict):
-            env_map.update({k:str(v) for k,v in s['env'].items()})
-        # STDIO envFrom: resolve Secrets/ConfigMaps into env for MetaMCP-registered servers
-        # Resolve envFrom (Secrets/ConfigMaps): pull all key=val pairs into env
-        for src in (s.get('envFrom') or []):
-            if not isinstance(src, dict):
-                continue
-            if 'secretRef' in src and isinstance(src['secretRef'], dict) and src['secretRef'].get('name'):
-                env_map.update(k8s_get_secret_data(src['secretRef']['name']))
-            if 'configMapRef' in src and isinstance(src['configMapRef'], dict) and src['configMapRef'].get('name'):
-                env_map.update(k8s_get_configmap_data(src['configMapRef']['name']))
-        if env_map:
-            body['env'] = env_map
+        if desired_cmd is not None:
+            body['command'] = desired_cmd
+        if desired_args is not None:
+            body['args'] = desired_args
+        if desired_env is not None:
+            body['env'] = desired_env
     r = trpc_post('/trpc/frontend/frontend.mcpServers.create', body)
     if r.ok:
         try:
