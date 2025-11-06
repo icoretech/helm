@@ -39,7 +39,8 @@ Declare everything under `provision.*`:
   - `type: STDIO` → MetaMCP spawns the process inside its container using `command` + `args` (+ optional `env`). Ensure the MetaMCP image contains the required runtime (e.g., Node/PNPM/NPM or Python/uv).
   - `type: STREAMABLE_HTTP` or `SSE`:
     - remote: provide `url` (no Pod is created here) + optional `bearerToken`/`headers`.
-    - deploy: provide `port` and one of `node`/`python`/`image`; the chart creates a Deployment/Service and auto‑derives the URL for registration.
+    - deploy: provide one of `node`/`python`/`image` and optionally `port` (defaults to `3001`);
+      the chart creates a Deployment/Service and auto‑derives the URL for registration.
 - Namespaces: group servers by name.
 - Endpoints: expose a namespace via `transport: SSE | STREAMABLE_HTTP`. Note: `STDIO` is a server run mode, not an endpoint transport.
 
@@ -104,6 +105,12 @@ users:
     createApiKey: true
     apiKeyName: cli
 ```
+
+Provisioning authentication
+
+- The provisioning Job authenticates using the first entry in `users` (email/password).
+- If `users` is empty, it falls back to `admin@example.com` / `change-me` for quick‑start only.
+- In production, always set `users[0]` and consider `disablePublicSignup: true`.
 
 ## Configuration reference
 
