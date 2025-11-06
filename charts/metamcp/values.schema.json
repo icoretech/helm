@@ -199,7 +199,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "namespace", "transport"],
+            "required": ["name", "namespace"],
             "properties": {
               "name": { "type": "string" },
               "namespace": { "type": "string" },
