@@ -72,10 +72,6 @@ spec:
               value: "admin@example.com"
             - name: ADMIN_PASSWORD
               value: "change-me"
-            - name: ADMIN_EMAIL
-              value: "admin@example.com"
-            - name: ADMIN_PASSWORD
-              value: "change-me"
           volumeMounts:
             - name: cfg
               mountPath: /cfg
