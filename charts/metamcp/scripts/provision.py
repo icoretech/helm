@@ -172,13 +172,15 @@ def k8s_get_configmap_data(name: str):
         pass
     return {}
 
-# Map existing servers
+# Map existing servers (name -> uuid and full info)
 srv_map = {}
+srv_info = {}
 try:
     lr = trpc_get('/trpc/frontend/frontend.mcpServers.list?input=%7B%7D')
     if lr.ok:
         for s in lr.json().get('result',{}).get('data',{}).get('data',[]):
             srv_map[s['name']] = s['uuid']
+            srv_info[s['name']] = s
 except Exception:
     pass
 
@@ -186,23 +188,24 @@ for s in servers:
     if not (s.get('enabled', True)):
         continue
     name = s.get('name'); st = (s.get('type','SSE') or 'SSE').upper()
-    if not name or name in srv_map:
+    if not name:
         continue
     if st in ('SSE','STREAMABLE'):
         st = 'SSE' if st=='SSE' else 'STREAMABLE_HTTP'
     body = {'name': name, 'type': st}
+    desired_url = None
     if st in ('SSE','STREAMABLE_HTTP'):
-        url = s.get('url')
-        if not url:
+        desired_url = s.get('url')
+        if not desired_url:
             base = s.get('serviceBase')
             if base:
                 suffix = '/mcp' if st=='STREAMABLE_HTTP' else '/sse'
                 # ensure scheme
                 if base.startswith('http://') or base.startswith('https://'):
-                    url = base + suffix
+                    desired_url = base + suffix
                 else:
-                    url = 'http://' + base + suffix
-            # proactive readiness: if we know serviceBase, wait for port to accept before creating record
+                    desired_url = 'http://' + base + suffix
+            # proactive readiness for deployed servers
             if base:
                 try:
                     hostport = base.split('://')[-1]
@@ -212,7 +215,6 @@ for s in servers:
                 if host and port:
                     log(f"[ready] waiting tcp {host}:{port} …")
                     max_tries = 8
-                    tried = 0
                     ok = False
                     for _ in range(max_tries):
                         try:
@@ -222,9 +224,38 @@ for s in servers:
                         except Exception:
                             time.sleep(1)
                     log(f"[ready] tcp {host}:{port} -> {'ok' if ok else 'timeout'}")
-        if url: body['url'] = url
-        if s.get('bearerToken'): body['bearerToken'] = s['bearerToken']
-        if s.get('headers'): body['headers'] = s['headers']
+        if desired_url:
+            body['url'] = desired_url
+        if s.get('bearerToken'):
+            body['bearerToken'] = s['bearerToken']
+        if s.get('headers'):
+            body['headers'] = s['headers']
+
+    # If server exists and updates are allowed, patch safe fields for HTTP/SSE
+    if name in srv_map:
+        if UPDATE_EXISTING and st in ('SSE','STREAMABLE_HTTP'):
+            try:
+                current = srv_info.get(name, {})
+                patch = {'uuid': current.get('uuid'), 'name': name, 'type': st}
+                changed = False
+                if desired_url and (current.get('url') or '') != desired_url:
+                    patch['url'] = desired_url; changed = True
+                if 'bearerToken' in body and (current.get('bearerToken') or '') != body.get('bearerToken'):
+                    patch['bearerToken'] = body['bearerToken']; changed = True
+                if 'headers' in body:
+                    # best-effort compare
+                    cur_headers = current.get('headers') or {}
+                    if cur_headers != body['headers']:
+                        patch['headers'] = body['headers']; changed = True
+                if changed:
+                    r = trpc_post('/trpc/frontend/frontend.mcpServers.update', patch)
+                    if r.ok:
+                        log(f"server updated: {name}")
+                    else:
+                        log(f"WARN server update {name} -> {r.status_code}: {r.text[:160]}")
+            except Exception:
+                pass
+        continue
     if st == 'STDIO':
         cmd = s.get('command')
         args = s.get('args') or []
