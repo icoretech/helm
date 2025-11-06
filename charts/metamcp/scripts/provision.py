@@ -93,6 +93,9 @@ def trpc_post(path, body):
     return sess.post(f"{BACKEND}{path}", headers={'Content-Type':'application/json','Host': SVC}, json=body, timeout=12)
 def trpc_get(path):
     return sess.get(f"{BACKEND}{path}", headers={'Host': SVC}, timeout=12)
+def trpc_post_batch(path, body):
+    # Wrap body as {"0": body} and use ?batch=1 to match UI routes
+    return sess.post(f"{BACKEND}{path}?batch=1", headers={'Content-Type':'application/json','Host': SVC}, json={"0": body}, timeout=12)
 
 # Map existing servers
 srv_map = {}
@@ -211,7 +214,7 @@ for ns in namespaces:
             payload = {'uuid': nid, 'name': name, 'mcpServerUuids': srv_ids}
             if desc:
                 payload['description'] = desc
-            trpc_post('/trpc/frontend/frontend.namespaces.update', payload)
+            trpc_post_batch('/trpc/frontend/frontend.namespaces.update', payload)
         except Exception:
             pass
 
