@@ -193,3 +193,23 @@ Provisioning authentication
 - Minimal e2e (in-cluster URLs, no Ingress): `examples/e2e.yaml`
 - Cache PVC per server (requires default StorageClass): `examples/provision-pvc.yaml`
 - Advanced options (resources, HPA, probes, volumes, init containers): `examples/provision-advanced.yaml`
+# STDIO server with env and Secret-backed env
+
+provision:
+  enabled: true
+  servers:
+    - name: figma
+      type: STDIO
+      command: "npx"
+      args: ["-y", "figma-developer-mcp", "--stdio"]
+      # Plain env (non-secret)
+      env:
+        LOG_LEVEL: debug
+      # Secret-backed env: the provision Job reads Secret/<name> key=<key> and sets VAR=value when creating the server
+      stdioSecretEnv:
+        FIGMA_API_KEY:
+          name: figma-mcp-env
+          key: FIGMA_API_KEY
+        FIGMA_PERSONAL_ACCESS_TOKEN:
+          name: figma-mcp-env
+          key: FIGMA_PERSONAL_ACCESS_TOKEN

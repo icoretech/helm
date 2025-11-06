@@ -48,6 +48,17 @@
               "extraEnv": { "type": "array", "items": { "type": "object" } },
               "envFrom": { "type": "array", "items": { "type": "object" } },
               "secretEnv": { "type": "object", "additionalProperties": { "type": "string" } }
+              ,"stdioSecretEnv": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "type": "string" },
+                    "key": { "type": "string" }
+                  },
+                  "required": ["name"]
+                }
+              }
               ,"port": { "type": ["integer","null"], "minimum": 1 }
               ,"resources": { "type": "object" }
               ,"securityContext": { "type": "object" }
@@ -158,8 +169,7 @@
             },
             "allOf": [
               { "if": { "properties": { "type": { "const": "STDIO" } } }, "then": { "required": ["command"] } },
-              { "if": { "properties": { "type": { "const": "STDIO" } } }, "then": { "not": { "required": ["cache"] } } },
-              { "if": { "properties": { "type": { "const": "STDIO" } } }, "then": { "not": { "anyOf": [ { "required": ["envFrom"] }, { "required": ["secretEnv"] } ] } } }
+              { "if": { "properties": { "type": { "const": "STDIO" } } }, "then": { "not": { "required": ["cache"] } } }
             ]
           }
         },

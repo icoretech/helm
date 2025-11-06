@@ -3,6 +3,7 @@ import requests
 import http.cookiejar as cookiejar
 import socket
 from urllib.parse import urlparse
+import base64
 
 def log(msg):
     print(f"[provision] {msg}", flush=True)
@@ -160,7 +161,19 @@ for s in servers:
             body['command'] = cmd
             if isinstance(args, list) and args:
                 body['args'] = args
-        if s.get('env'): body['env'] = s['env']
+        env_map = {}
+        if s.get('env') and isinstance(s['env'], dict):
+            env_map.update({k:str(v) for k,v in s['env'].items()})
+        # Resolve stdioSecretEnv: { VAR: { name: <secret>, key: <key> (defaults to VAR) } }
+        sec = s.get('stdioSecretEnv')
+        if sec and isinstance(sec, dict):
+            for var, ref in sec.items():
+                if isinstance(ref, dict) and ref.get('name'):
+                    val = k8s_get_secret_val(ref['name'], ref.get('key') or var)
+                    if val is not None:
+                        env_map[var] = val
+        if env_map:
+            body['env'] = env_map
     r = trpc_post('/trpc/frontend/frontend.mcpServers.create', body)
     if r.ok:
         try:
@@ -294,3 +307,18 @@ try:
             trpc_post('/trpc/frontend/frontend.mcpServers.update', payload)
 except Exception:
     pass
+def k8s_get_secret_val(name: str, key: str):
+    try:
+        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
+        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+        ns = NS
+        url = f"https://kubernetes.default.svc/api/v1/namespaces/{ns}/secrets/{name}"
+        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
+        if r.status_code == 200:
+            data = r.json().get('data',{})
+            b = data.get(key)
+            if b:
+                return base64.b64decode(b).decode()
+    except Exception:
+        pass
+    return None
