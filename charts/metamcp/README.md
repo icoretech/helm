@@ -84,6 +84,7 @@ provision:
 
   namespaces:
     - name: lab
+      description: "Sandbox tools"
       servers: ["stdio-everything","http-everything","sse-everything"]
 
   endpoints:

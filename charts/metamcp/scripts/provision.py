@@ -168,7 +168,7 @@ for s in servers:
     else:
         log(f"WARN server create {name} -> {r.status_code}: {r.text[:160]}")
 
-def ensure_namespace(name):
+def ensure_namespace(name, description=None):
     ns_uuid = None
     lr = trpc_get('/trpc/frontend/frontend.namespaces.list?input=%7B%7D')
     if lr.ok:
@@ -176,11 +176,21 @@ def ensure_namespace(name):
             if ns.get('name') == name:
                 ns_uuid = ns.get('uuid'); break
     if not ns_uuid:
-        r = trpc_post('/trpc/frontend/frontend.namespaces.create', {'name': name})
+        payload = {'name': name}
+        if description:
+            payload['description'] = description
+        r = trpc_post('/trpc/frontend/frontend.namespaces.create', payload)
         if r.ok:
             try:
                 ns_uuid = r.json()['result']['data']['data']['uuid']
                 log(f"namespace created: {name}")
+            except Exception:
+                pass
+    else:
+        # Update description if provided
+        if description:
+            try:
+                trpc_post('/trpc/frontend/frontend.namespaces.update', {'uuid': ns_uuid,'name': name,'description': description})
             except Exception:
                 pass
     return ns_uuid
@@ -188,9 +198,19 @@ def ensure_namespace(name):
 for ns in namespaces:
     name = ns.get('name'); nssrvs = ns.get('servers') or []
     if not name: continue
-    nid = ensure_namespace(name)
-    if nid and nssrvs:
-        trpc_post('/trpc/frontend/frontend.namespaces.update', {'uuid': nid,'name': name,'servers': nssrvs})
+    desc = ns.get('description')
+    nid = ensure_namespace(name, desc)
+    # Map server names to UUIDs if available
+    srv_ids = []
+    for nm in nssrvs:
+        sid = srv_map.get(nm)
+        if sid:
+            srv_ids.append(sid)
+    if nid and srv_ids:
+        try:
+            trpc_post('/trpc/frontend/frontend.namespaces.update', {'uuid': nid,'name': name,'servers': srv_ids, **({'description': desc} if desc else {})})
+        except Exception:
+            pass
 
 def create_endpoint(name, nsref, transport='SSE', extra=None):
     lr = trpc_get('/trpc/frontend/frontend.namespaces.list?input=%7B%7D')

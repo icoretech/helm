@@ -168,6 +168,7 @@
             "required": ["name"],
             "properties": {
               "name": { "type": "string" },
+              "description": { "type": "string" },
               "servers": { "type": "array", "items": { "type": "string" } }
             }
           }
