@@ -195,6 +195,7 @@
             }
           }
         }
+        ,"apiKeySecretName": { "type": "string" }
       }
     }
     ,"ingress": {

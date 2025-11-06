@@ -14,6 +14,8 @@ FRONTEND = f"http://{SVC}:{FRONTEND_PORT}"
 BACKEND = f"http://{SVC}:12009"
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL','admin@example.com')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD','change-me')
+# Optional direct API key (preferred for production):
+API_KEY = os.environ.get('API_KEY')
 
 cfg = json.load(open('/cfg/provision.json','r')).get('provision',{})
 servers = cfg.get('servers', [])
@@ -47,6 +49,18 @@ except Exception:
     pass
 
 def signin(retries=8, delay=1.5):
+    # If API_KEY is provided, prefer it and skip sign-up/sign-in entirely.
+    if API_KEY:
+        try:
+            sess.headers['Authorization'] = f"Bearer {API_KEY}"
+            # Quick auth probe: list servers
+            lr = sess.get(f"{BACKEND}/trpc/frontend/frontend.mcpServers.list", headers={'Host': SVC}, params={'input':'{}'}, timeout=6)
+            if lr.status_code in (200, 401, 403):
+                # 200 means OK; 401/403 means key not authorized but still skip password flow
+                return True
+        except Exception:
+            # Proceed to password fallback if key probe fails
+            pass
     tried_signup = False
     for i in range(retries):
         if not tried_signup:
