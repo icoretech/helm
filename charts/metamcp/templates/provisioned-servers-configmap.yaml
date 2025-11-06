@@ -10,7 +10,7 @@ metadata:
   labels:
     {{- include "metamcp.labels" $root | nindent 4 }}
     app.kubernetes.io/component: server
-    mcp.icore.tech/server: {{ $name }}
+    mcp.icorete.ch/server: {{ $name }}
 data:
   {{- $fname := (default "config.json" $srv.config.filename) -}}
   {{ $fname }}: |
@@ -24,4 +24,3 @@ data:
 ---
 {{- end }}
 {{- end }}
-

@@ -10,13 +10,13 @@ metadata:
   labels:
     {{- include "metamcp.labels" $root | nindent 4 }}
     app.kubernetes.io/component: server
-    mcp.icore.tech/server: {{ $name }}
+    mcp.icorete.ch/server: {{ $name }}
 spec:
   selector:
     matchLabels:
       {{- include "metamcp.selectorLabels" $root | nindent 6 }}
       app.kubernetes.io/component: server
-      mcp.icore.tech/server: {{ $name }}
+      mcp.icorete.ch/server: {{ $name }}
   {{- if hasKey $srv.pdb "minAvailable" }}
   minAvailable: {{ $srv.pdb.minAvailable }}
   {{- else if hasKey $srv.pdb "maxUnavailable" }}
@@ -28,4 +28,3 @@ spec:
 ---
 {{- end }}
 {{- end }}
-

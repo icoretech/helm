@@ -10,13 +10,13 @@ metadata:
   labels:
     {{- include "metamcp.labels" $root | nindent 4 }}
     app.kubernetes.io/component: server
-    mcp.icore.tech/server: {{ $name }}
+    mcp.icorete.ch/server: {{ $name }}
 spec:
   podSelector:
     matchLabels:
       {{- include "metamcp.selectorLabels" $root | nindent 6 }}
       app.kubernetes.io/component: server
-      mcp.icore.tech/server: {{ $name }}
+      mcp.icorete.ch/server: {{ $name }}
   policyTypes: ["Ingress"]
   ingress:
     - {{- if $srv.networkPolicy.ingressOnlyFromMetaMCP | default true }}
@@ -32,4 +32,3 @@ spec:
 ---
 {{- end }}
 {{- end }}
-

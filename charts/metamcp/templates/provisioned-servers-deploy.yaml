@@ -11,20 +11,20 @@ metadata:
   labels:
     {{- include "metamcp.labels" $root | nindent 4 }}
     app.kubernetes.io/component: server
-    mcp.icore.tech/server: {{ $name }}
+    mcp.icorete.ch/server: {{ $name }}
 spec:
   replicas: {{ default 1 $srv.replicas }}
   selector:
     matchLabels:
       {{- include "metamcp.selectorLabels" $root | nindent 6 }}
       app.kubernetes.io/component: server
-      mcp.icore.tech/server: {{ $name }}
+      mcp.icorete.ch/server: {{ $name }}
   template:
     metadata:
       labels:
         {{- include "metamcp.selectorLabels" $root | nindent 8 }}
         app.kubernetes.io/component: server
-        mcp.icore.tech/server: {{ $name }}
+        mcp.icorete.ch/server: {{ $name }}
         {{- with $srv.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -247,7 +247,7 @@ metadata:
   labels:
     {{- include "metamcp.labels" $root | nindent 4 }}
     app.kubernetes.io/component: server
-    mcp.icore.tech/server: {{ $name }}
+    mcp.icorete.ch/server: {{ $name }}
   {{- if and (hasKey $srv "service") (hasKey $srv.service "annotations") }}
   annotations:
     {{- toYaml $srv.service.annotations | nindent 4 }}
@@ -258,7 +258,7 @@ spec:
   selector:
     {{- include "metamcp.selectorLabels" $root | nindent 4 }}
     app.kubernetes.io/component: server
-    mcp.icore.tech/server: {{ $name }}
+    mcp.icorete.ch/server: {{ $name }}
   ports:
     - name: http
       port: {{ $srv.port | default 3001 }}

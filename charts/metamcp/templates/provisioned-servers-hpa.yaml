@@ -10,7 +10,7 @@ metadata:
   labels:
     {{- include "metamcp.labels" $root | nindent 4 }}
     app.kubernetes.io/component: server
-    mcp.icore.tech/server: {{ $name }}
+    mcp.icorete.ch/server: {{ $name }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -47,4 +47,3 @@ spec:
 ---
 {{- end }}
 {{- end }}
-

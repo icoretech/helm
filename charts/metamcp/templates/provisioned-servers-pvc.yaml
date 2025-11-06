@@ -10,7 +10,7 @@ metadata:
   labels:
     {{- include "metamcp.labels" $root | nindent 4 }}
     app.kubernetes.io/component: server
-    mcp.icore.tech/server: {{ $name }}
+    mcp.icorete.ch/server: {{ $name }}
 spec:
   accessModes: {{- if $srv.cache.pvc.accessModes }} {{ toYaml $srv.cache.pvc.accessModes | nindent 2 }} {{- else }} ["ReadWriteOnce"] {{- end }}
   resources:
@@ -23,4 +23,3 @@ spec:
 ---
 {{- end }}
 {{- end }}
-

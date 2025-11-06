@@ -78,8 +78,8 @@ fi
 if [ "$PF_ENABLED" = "true" ]; then
   kill $PF >/dev/null 2>&1 || true
 fi
-echo "# Final logs"
-kubectl --context "$KCTX" -n "$NS" logs deploy/$REL-$REL --tail=200 || true
+echo "# Final logs"mcp.icorete.ch
+kubectl --context "$KCTX" -n "$NS" logs deploy/$REL-$REL --tail=200 || truemcp.icorete.ch
 kubectl --context "$KCTX" -n "$NS" logs job/$REL-$REL-provision --tail=200 || true
 kubectl --context "$KCTX" -n "$NS" logs job/$REL-$REL-user-bootstrap --tail=200 || true
 echo "# Server pod logs"
