@@ -30,6 +30,8 @@
       "type": "object",
       "properties": {
         "enabled": { "type": "boolean" },
+        "runOnUpgrade": { "type": "boolean", "default": true },
+        "updateExisting": { "type": "boolean", "default": true },
         "servers": {
           "type": "array",
           "items": {

@@ -106,6 +106,14 @@ auth:
 # Generalized provisioning (multiple servers, namespaces, endpoints)
 provision:
   enabled: false
+  # Control when the provisioning job runs
+  # - runOnUpgrade: if true, run on every Helm upgrade (default)
+  # - if false, run only on initial install (post-install hook only)
+  runOnUpgrade: true
+  # Control whether existing namespaces/endpoints are updated when they already exist.
+  # When false, the job will only create missing objects and leave existing ones untouched
+  # (useful for "initial provision then manage via UI").
+  updateExisting: true
   # Single source of truth for servers MetaMCP exposes. Each entry can be:
   # - STDIO (MetaMCP runs it)
   # - STREAMABLE_HTTP/SSE with either:

@@ -112,6 +112,42 @@ users:
     apiKeyName: cli
 ```
 
+### Reconciliation modes (Flux/Helm upgrades)
+
+By default the provisioning job runs after every Helm install and upgrade and will upsert Namespaces/Endpoints to match values. You can tune this behavior:
+
+- `provision.runOnUpgrade` (bool, default `true`)
+  - `true`: run provisioning on every Helm upgrade (continuous upsert)
+  - `false`: run only on initial install (post-install). Upgrades do not re-run provisioning
+
+- `provision.updateExisting` (bool, default `true`)
+  - `true`: update existing Namespaces (description + membership) and Endpoints when names already exist
+  - `false`: create-only; existing objects are left untouched (good for “seed once, then manage via UI”)
+
+Notes
+- Servers are always create-only (by name). The job does not modify or delete existing servers.
+- Deletions are not automatic. Removing items from values does not delete them in MetaMCP. If you need prune semantics, open an issue so we can add an opt‑in `prune` mode.
+
+Examples
+
+Continuous upsert (Git is the source of truth):
+
+```yaml
+provision:
+  enabled: true
+  runOnUpgrade: true
+  updateExisting: true
+```
+
+Seed once, keep UI changes later:
+
+```yaml
+provision:
+  enabled: true
+  runOnUpgrade: false
+  updateExisting: false
+```
+
 Provisioning authentication
 
 - The provisioning Job authenticates using the first entry in `users` (email/password).

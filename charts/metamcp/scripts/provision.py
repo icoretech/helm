@@ -15,6 +15,7 @@ FRONTEND = f"http://{SVC}:{FRONTEND_PORT}"
 BACKEND = f"http://{SVC}:12009"
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL','admin@example.com')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD','change-me')
+UPDATE_EXISTING = (os.environ.get('UPDATE_EXISTING','true').lower() == 'true')
 
 cfg = json.load(open('/cfg/provision.json','r')).get('provision',{})
 servers = cfg.get('servers', [])
@@ -260,11 +261,12 @@ for s in servers:
 
 def ensure_namespace(name, description=None):
     ns_uuid = None
+    existed = False
     lr = trpc_get('/trpc/frontend/frontend.namespaces.list?input=%7B%7D')
     if lr.ok:
         for ns in lr.json().get('result',{}).get('data',{}).get('data',[]):
             if ns.get('name') == name:
-                ns_uuid = ns.get('uuid'); break
+                ns_uuid = ns.get('uuid'); existed = True; break
     if not ns_uuid:
         payload = {'name': name}
         if description:
@@ -277,26 +279,27 @@ def ensure_namespace(name, description=None):
             except Exception:
                 pass
     else:
-        # Update description if provided
-        if description:
+        # Update description if provided and allowed
+        if description and UPDATE_EXISTING:
             try:
                 trpc_post('/trpc/frontend/frontend.namespaces.update', {'uuid': ns_uuid,'name': name,'description': description})
             except Exception:
                 pass
-    return ns_uuid
+    return ns_uuid, existed
 
 for ns in namespaces:
     name = ns.get('name'); nssrvs = ns.get('servers') or []
     if not name: continue
     desc = ns.get('description')
-    nid = ensure_namespace(name, desc)
+    nid, existed = ensure_namespace(name, desc)
     # Map server names to UUIDs if available
     srv_ids = []
     for nm in nssrvs:
         sid = srv_map.get(nm)
         if sid:
             srv_ids.append(sid)
-    if nid and srv_ids:
+    # Update namespace membership if allowed or if the namespace was just created
+    if nid and srv_ids and (UPDATE_EXISTING or not existed):
         try:
             payload = {'uuid': nid, 'name': name, 'mcpServerUuids': srv_ids}
             if desc:
@@ -305,7 +308,7 @@ for ns in namespaces:
         except Exception:
             pass
 
-def create_endpoint(name, nsref, transport='SSE', extra=None, description=None):
+def create_endpoint(name, nsref, transport='SSE', extra=None, description=None, update_existing=True):
     lr = trpc_get('/trpc/frontend/frontend.namespaces.list?input=%7B%7D')
     nid = None
     if lr.ok:
@@ -335,7 +338,7 @@ def create_endpoint(name, nsref, transport='SSE', extra=None, description=None):
                 flags[k] = extra[k]
     if description:
         flags['description'] = description
-    if e_uuid:
+    if e_uuid and update_existing:
         # update existing endpoint (use tRPC batch form as UI does)
         up = {'uuid': e_uuid, 'name': name, 'namespaceUuid': nid}
         up.update(flags)
@@ -353,7 +356,7 @@ for ep in endpoints:
     name = ep.get('name'); nsref = ep.get('namespace') or ep.get('namespaceUuid')
     if not (name and nsref): continue
     extra = {k: ep[k] for k in ('enableApiKeyAuth','enableOauth','useQueryParamAuth') if k in ep}
-    create_endpoint(name, nsref, ep.get('transport'), extra, ep.get('description'))
+    create_endpoint(name, nsref, ep.get('transport'), extra, ep.get('description'), UPDATE_EXISTING)
 
 # Post-fix auto-generated endpoint servers URLs when APP_URL pointed to 12008 at creation time.
 # Newer MetaMCP creates a server named '<namespace>-endpoint' per endpoint and derives its URL from APP_URL.

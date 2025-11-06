@@ -50,7 +50,7 @@ metadata:
     {{- include "metamcp.labels" . | nindent 4 }}
     app.kubernetes.io/component: provision
   annotations:
-    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook: post-install{{- if (default true .Values.provision.runOnUpgrade) }},post-upgrade{{- end }}
     helm.sh/hook-weight: "5"
     helm.sh/hook-delete-policy: before-hook-creation
 spec:
@@ -74,6 +74,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: UPDATE_EXISTING
+              value: {{ (default true .Values.provision.updateExisting) | ternary "true" "false" | quote }}
             - name: SVC
               value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.fullname" .) .Release.Namespace | quote }}
             - name: FRONTEND_PORT
