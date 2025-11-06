@@ -90,6 +90,7 @@ provision:
   endpoints:
     - name: lab
       namespace: lab
+      description: "Public lab endpoint"
       transport: SSE
 ```
 

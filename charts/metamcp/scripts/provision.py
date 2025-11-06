@@ -218,7 +218,7 @@ for ns in namespaces:
         except Exception:
             pass
 
-def create_endpoint(name, nsref, transport='SSE', extra=None):
+def create_endpoint(name, nsref, transport='SSE', extra=None, description=None):
     lr = trpc_get('/trpc/frontend/frontend.namespaces.list?input=%7B%7D')
     nid = None
     if lr.ok:
@@ -246,6 +246,8 @@ def create_endpoint(name, nsref, transport='SSE', extra=None):
         for k in ('enableApiKeyAuth','enableOauth','useQueryParamAuth'):
             if k in extra:
                 flags[k] = extra[k]
+    if description:
+        flags['description'] = description
     if e_uuid:
         # update existing endpoint
         up = {'uuid': e_uuid, 'name': name, 'namespaceUuid': nid}
@@ -264,7 +266,7 @@ for ep in endpoints:
     name = ep.get('name'); nsref = ep.get('namespace') or ep.get('namespaceUuid')
     if not (name and nsref): continue
     extra = {k: ep[k] for k in ('enableApiKeyAuth','enableOauth','useQueryParamAuth') if k in ep}
-    create_endpoint(name, nsref, ep.get('transport'), extra)
+    create_endpoint(name, nsref, ep.get('transport'), extra, ep.get('description'))
 
 # Post-fix auto-generated endpoint servers URLs when APP_URL pointed to 12008 at creation time.
 # Newer MetaMCP creates a server named '<namespace>-endpoint' per endpoint and derives its URL from APP_URL.

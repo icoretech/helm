@@ -181,6 +181,7 @@
             "properties": {
               "name": { "type": "string" },
               "namespace": { "type": "string" },
+              "description": { "type": "string" },
               "transport": { "type": "string", "enum": ["SSE", "STREAMABLE_HTTP"] },
               "enableApiKeyAuth": { "type": "boolean" },
               "enableOauth": { "type": "boolean" },
