@@ -98,9 +98,9 @@ provision:
       enableOauth: false
 ```
 
-## User seeding (optional)
+## User seeding (required when provisioning is enabled)
 
-The chart can create users at install/upgrade and optionally generate API keys (stored in Secrets named like `<release>-metamcp-apikey-<email-slug>`):
+Provisioning authenticates using the first entry in `users`. When `provision.enabled: true`, you must define at least one user (the schema enforces this). The chart can also generate an API key for that user and store it in a Secret named like `<release>-metamcp-apikey-<email-slug>`.
 
 ```yaml
 disablePublicSignup: true
@@ -151,8 +151,40 @@ provision:
 Provisioning authentication
 
 - The provisioning Job authenticates using the first entry in `users` (email/password).
-- If `users` is empty, it falls back to `admin@example.com` / `change-me` for quick‑start only.
-- In production, always set `users[0]` and consider `disablePublicSignup: true`.
+- In production you must set `users[0]`. The jobs mirror the signed session cookie to the in‑cluster host to perform admin tRPC calls.
+- API keys are for endpoint/client auth; they are not used for admin tRPC.
+
+### STDIO examples
+
+Inline env (awsdocs):
+
+```yaml
+provision:
+  enabled: true
+  servers:
+    - name: awsdocs
+      type: STDIO
+      command: "uvx"
+      args: ["awslabs.aws-documentation-mcp-server@latest"]
+      env:
+        FASTMCP_LOG_LEVEL: "ERROR"
+        AWS_DOCUMENTATION_PARTITION: "aws"
+```
+
+Secret-backed env (figma):
+
+```yaml
+provision:
+  enabled: true
+  servers:
+    - name: figma
+      type: STDIO
+      command: "npx"
+      args: ["-y", "figma-developer-mcp", "--stdio"]
+      envFrom:
+        - secretRef:
+            name: figma-mcp-env
+```
 
 ## Configuration reference
 
