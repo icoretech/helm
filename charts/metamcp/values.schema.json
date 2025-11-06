@@ -192,7 +192,8 @@
     ,"ingress": {
       "type": "object",
       "properties": {
-        "mapBackendPaths": { "type": "boolean" }
+        "mapBackendPaths": { "type": "boolean" },
+        "localePrefixes": { "type": "array", "items": { "type": "string" } }
       }
     }
     ,"gatewayAPI": {

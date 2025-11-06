@@ -52,6 +52,30 @@ spec:
                 name: {{ $fullName }}
                 port:
                   number: 12009
+          {{- /* Optional i18n locale prefixes (e.g., en) to route /en/{backend} to 12009 as well */}}
+          {{- range $i, $lp := (default (list) $.Values.ingress.localePrefixes) }}
+          - path: /{{ $lp }}/metamcp
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: 12009
+          - path: /{{ $lp }}/trpc
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: 12009
+          - path: /{{ $lp }}/api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: 12009
+          {{- end }}
           {{- end }}
     {{- end }}
   {{- if .Values.ingress.tls }}
