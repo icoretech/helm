@@ -98,6 +98,50 @@ def trpc_post_batch(path, body):
     # Wrap body as {"0": body} and use ?batch=1 to match UI routes
     return sess.post(f"{BACKEND}{path}?batch=1", headers={'Content-Type':'application/json','Host': SVC}, json={"0": body}, timeout=12)
 
+# K8s helpers (defined before usage)
+def k8s_get_secret_val(name: str, key: str):
+    try:
+        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
+        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+        ns = NS
+        url = f"https://kubernetes.default.svc/api/v1/namespaces/{ns}/secrets/{name}"
+        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
+        if r.status_code == 200:
+            data = r.json().get('data',{})
+            b = data.get(key)
+            if b:
+                return base64.b64decode(b).decode()
+    except Exception:
+        pass
+    return None
+
+def k8s_get_secret_data(name: str):
+    try:
+        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
+        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+        ns = NS
+        url = f"https://kubernetes.default.svc/api/v1/namespaces/{ns}/secrets/{name}"
+        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
+        if r.status_code == 200:
+            data = r.json().get('data',{})
+            return {k: base64.b64decode(v).decode() for k,v in data.items()}
+    except Exception:
+        pass
+    return {}
+
+def k8s_get_configmap_data(name: str):
+    try:
+        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
+        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+        ns = NS
+        url = f"https://kubernetes.default.svc/api/v1/namespaces/{ns}/configmaps/{name}"
+        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
+        if r.status_code == 200:
+            return r.json().get('data',{}) or {}
+    except Exception:
+        pass
+    return {}
+
 # Map existing servers
 srv_map = {}
 try:
@@ -172,6 +216,14 @@ for s in servers:
                     val = k8s_get_secret_val(ref['name'], ref.get('key') or var)
                     if val is not None:
                         env_map[var] = val
+        # Resolve envFrom (Secrets/ConfigMaps): pull all key=val pairs into env
+        for src in (s.get('envFrom') or []):
+            if not isinstance(src, dict):
+                continue
+            if 'secretRef' in src and isinstance(src['secretRef'], dict) and src['secretRef'].get('name'):
+                env_map.update(k8s_get_secret_data(src['secretRef']['name']))
+            if 'configMapRef' in src and isinstance(src['configMapRef'], dict) and src['configMapRef'].get('name'):
+                env_map.update(k8s_get_configmap_data(src['configMapRef']['name']))
         if env_map:
             body['env'] = env_map
     r = trpc_post('/trpc/frontend/frontend.mcpServers.create', body)
