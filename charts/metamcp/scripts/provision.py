@@ -72,20 +72,31 @@ def signin(retries=8, delay=1.5):
                     )
                 except Exception:
                     token = None
-                if not token:
-                    # try to read cookie set by server and mirror it under our in-cluster host
-                    for c in sess.cookies:
-                        if c.name in ('better-auth.session_token','__Secure-better-auth.session_token') and c.value:
-                            token = c.value
-                            break
-                if token:
+                # Try to capture the raw cookie value from Set-Cookie header (preferred for signed cookies)
+                raw_cookie = None
+                try:
+                    sch = r.headers.get('set-cookie') or r.headers.get('Set-Cookie')
+                    if sch:
+                        # pick either __Secure-better-auth.session_token or better-auth.session_token
+                        for nm in ('__Secure-better-auth.session_token','better-auth.session_token'):
+                            marker = nm + '='
+                            if marker in sch:
+                                seg = sch.split(marker,1)[1]
+                                raw_cookie = seg.split(';',1)[0]
+                                break
+                except Exception:
+                    raw_cookie = None
+                # Prefer raw signed cookie value; otherwise fall back to token from JSON
+                cookie_val = raw_cookie or token
+                if cookie_val:
                     # set both cookie names to maximize compatibility with secure-cookie deployments
                     for cname in ('better-auth.session_token','__Secure-better-auth.session_token'):
                         try:
-                            sess.cookies.set(cname, token, domain=host, path='/')
+                            sess.cookies.set(cname, cookie_val, domain=host, path='/')
                         except Exception:
-                            sess.cookies.set(cname, token)
-                    sess.headers['Authorization'] = f"Bearer {token}"
+                            sess.cookies.set(cname, cookie_val)
+                    if token:
+                        sess.headers['Authorization'] = f"Bearer {token}"
                 # Persist cookies to mozilla jar and reload next time
                 try:
                     mozjar.clear()

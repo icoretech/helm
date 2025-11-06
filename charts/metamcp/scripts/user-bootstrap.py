@@ -79,13 +79,34 @@ for u in users:
         if resp.status_code != 200:
             log(f"WARN: sign-in status {resp.status_code}: {resp.text[:160]}")
         else:
+            host = SVC.split(':')[0]
+            token = None
             try:
-                token = resp.json().get('token')
-                if token:
-                    host = SVC.split(':')[0]
-                    s.cookies.set('better-auth.session_token', token, domain=host, path='/')
+                j = resp.json()
+                token = j.get('token') or j.get('sessionToken') or (j.get('data') or {}).get('token') or (j.get('data') or {}).get('sessionToken')
             except Exception:
-                pass
+                token = None
+            raw_cookie = None
+            try:
+                sch = resp.headers.get('set-cookie') or resp.headers.get('Set-Cookie')
+                if sch:
+                    for nm in ('__Secure-better-auth.session_token','better-auth.session_token'):
+                        marker = nm + '='
+                        if marker in sch:
+                            seg = sch.split(marker,1)[1]
+                            raw_cookie = seg.split(';',1)[0]
+                            break
+            except Exception:
+                raw_cookie = None
+            cookie_val = raw_cookie or token
+            if cookie_val:
+                for cname in ('better-auth.session_token','__Secure-better-auth.session_token'):
+                    try:
+                        s.cookies.set(cname, cookie_val, domain=host, path='/')
+                    except Exception:
+                        s.cookies.set(cname, cookie_val)
+            if token:
+                s.headers['Authorization'] = f"Bearer {token}"
     except Exception as e:
         log(f"WARN: sign-in exception: {e}")
     sessions.append(s)
