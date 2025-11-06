@@ -147,11 +147,7 @@ provision:
       # Plain env (non-secret)
       env:
         LOG_LEVEL: debug
-      # Secret-backed env: the provision Job reads Secret/<name> key=<key> and sets VAR=value when creating the server
-      stdioSecretEnv:
-        FIGMA_API_KEY:
-          name: figma-mcp-env
-          key: FIGMA_API_KEY
-        FIGMA_PERSONAL_ACCESS_TOKEN:
-          name: figma-mcp-env
-          key: FIGMA_PERSONAL_ACCESS_TOKEN
+      # Secret-backed env for STDIO: use envFrom to pull all keys from a Secret/ConfigMap
+      envFrom:
+        - secretRef:
+            name: figma-mcp-env

@@ -18,8 +18,9 @@ data:
       {{- $hasDeploy := or (hasKey $s "node") (or (hasKey $s "python") (hasKey $s "image")) -}}
       {{- $port := (default 3001 $s.port) -}}
       {{- $svcBase := (printf "%s-%s.%s.svc.cluster.local:%d" $fullname $name $ns ($port | int)) -}}
-      {{- /* Build minimal server dict for the job */ -}}
+      {{- /* Build server dict for the job, including STDIO env sources */ -}}
       {{- $item := dict "name" $name "enabled" (default true $s.enabled) "type" $s.type "url" $s.url "bearerToken" $s.bearerToken "headers" ($s.headers | default (dict)) "command" ($s.command | default "") "args" ($s.args | default (list)) "env" ($s.env | default (dict)) -}}
+      {{- if (hasKey $s "envFrom") }}{{- $_ := set $item "envFrom" ($s.envFrom | default (list)) -}}{{- end -}}
       {{- if $hasDeploy }}{{- $_ := set $item "serviceBase" $svcBase -}}{{- end -}}
       {{- $outServers = append $outServers $item -}}
     {{- end -}}

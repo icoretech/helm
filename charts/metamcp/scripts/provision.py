@@ -59,15 +59,31 @@ def signin(retries=8, delay=1.5):
         r = sess.post(f"{BACKEND}/api/auth/sign-in/email", headers={'Content-Type':'application/json','Host': SVC}, json={'email': ADMIN_EMAIL,'password': ADMIN_PASSWORD}, timeout=6)
         if r.status_code == 200:
             try:
-                # Accept cookie from response plus token header fallback
+                # Accept token from JSON (multiple possible shapes) or fall back to session cookie
                 host = SVC.split(':')[0]
-                token = r.json().get('token')
+                token = None
+                try:
+                    j = r.json()
+                    token = (
+                        j.get('token')
+                        or j.get('sessionToken')
+                        or (j.get('data') or {}).get('token')
+                        or (j.get('data') or {}).get('sessionToken')
+                    )
+                except Exception:
+                    token = None
+                if not token:
+                    # try to read cookie set by server and mirror it under our in-cluster host
+                    for c in sess.cookies:
+                        if c.name == 'better-auth.session_token' and c.value:
+                            token = c.value
+                            break
                 if token:
                     try:
                         sess.cookies.set('better-auth.session_token', token, domain=host, path='/')
                     except Exception:
                         sess.cookies.set('better-auth.session_token', token)
-                sess.headers['Authorization'] = f"Bearer {token}"
+                    sess.headers['Authorization'] = f"Bearer {token}"
                 # Persist cookies to mozilla jar and reload next time
                 try:
                     mozjar.clear()
@@ -208,14 +224,7 @@ for s in servers:
         env_map = {}
         if s.get('env') and isinstance(s['env'], dict):
             env_map.update({k:str(v) for k,v in s['env'].items()})
-        # Resolve stdioSecretEnv: { VAR: { name: <secret>, key: <key> (defaults to VAR) } }
-        sec = s.get('stdioSecretEnv')
-        if sec and isinstance(sec, dict):
-            for var, ref in sec.items():
-                if isinstance(ref, dict) and ref.get('name'):
-                    val = k8s_get_secret_val(ref['name'], ref.get('key') or var)
-                    if val is not None:
-                        env_map[var] = val
+        # STDIO envFrom: resolve Secrets/ConfigMaps into env for MetaMCP-registered servers
         # Resolve envFrom (Secrets/ConfigMaps): pull all key=val pairs into env
         for src in (s.get('envFrom') or []):
             if not isinstance(src, dict):
@@ -359,18 +368,4 @@ try:
             trpc_post('/trpc/frontend/frontend.mcpServers.update', payload)
 except Exception:
     pass
-def k8s_get_secret_val(name: str, key: str):
-    try:
-        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
-        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
-        ns = NS
-        url = f"https://kubernetes.default.svc/api/v1/namespaces/{ns}/secrets/{name}"
-        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
-        if r.status_code == 200:
-            data = r.json().get('data',{})
-            b = data.get(key)
-            if b:
-                return base64.b64decode(b).decode()
-    except Exception:
-        pass
-    return None
+ 

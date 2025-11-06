@@ -48,17 +48,6 @@
               "extraEnv": { "type": "array", "items": { "type": "object" } },
               "envFrom": { "type": "array", "items": { "type": "object" } },
               "secretEnv": { "type": "object", "additionalProperties": { "type": "string" } }
-              ,"stdioSecretEnv": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "object",
-                  "properties": {
-                    "name": { "type": "string" },
-                    "key": { "type": "string" }
-                  },
-                  "required": ["name"]
-                }
-              }
               ,"port": { "type": ["integer","null"], "minimum": 1 }
               ,"resources": { "type": "object" }
               ,"securityContext": { "type": "object" }
