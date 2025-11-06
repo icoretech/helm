@@ -364,7 +364,7 @@ for ns in namespaces:
         except Exception:
             pass
 
-def create_endpoint(name, nsref, transport=None, extra=None, description=None, update_existing=True):
+def create_endpoint(name, nsref, extra=None, description=None, update_existing=True):
     lr = trpc_get('/trpc/frontend/frontend.namespaces.list?input=%7B%7D')
     nid = None
     if lr.ok:
@@ -372,14 +372,6 @@ def create_endpoint(name, nsref, transport=None, extra=None, description=None, u
             if ns.get('uuid') == nsref or ns.get('name') == nsref:
                 nid = ns.get('uuid'); break
     if not nid: return
-    # normalize transport if provided (MetaMCP serves both; transport optional)
-    tr = None
-    if transport:
-        t = (transport or '').upper()
-        if t in ('SSE','STREAMABLE'):
-            tr = 'SSE' if t=='SSE' else 'STREAMABLE_HTTP'
-        elif t in ('STREAMABLE_HTTP',):
-            tr = t
     # find existing endpoint by name
     el = trpc_get('/trpc/frontend/frontend.endpoints.list?input=%7B%7D')
     e_uuid = None
@@ -408,17 +400,15 @@ def create_endpoint(name, nsref, transport=None, extra=None, description=None, u
     else:
         # create new endpoint
         body = {'name': name,'namespaceUuid': nid}
-        if tr:
-            body['transport'] = tr
         body.update(flags)
         r = trpc_post('/trpc/frontend/frontend.endpoints.create', body)
-        if r.ok: log(f"endpoint created: {name} ({tr})")
+        if r.ok: log(f"endpoint created: {name}")
 
 for ep in endpoints:
     name = ep.get('name'); nsref = ep.get('namespace') or ep.get('namespaceUuid')
     if not (name and nsref): continue
     extra = {k: ep[k] for k in ('enableApiKeyAuth','enableOauth','useQueryParamAuth') if k in ep}
-    create_endpoint(name, nsref, ep.get('transport'), extra, ep.get('description'), UPDATE_EXISTING)
+    create_endpoint(name, nsref, extra, ep.get('description'), UPDATE_EXISTING)
 
 # Post-fix auto-generated endpoint servers URLs when APP_URL pointed to 12008 at creation time.
 # Newer MetaMCP creates a server named '<namespace>-endpoint' per endpoint and derives its URL from APP_URL.

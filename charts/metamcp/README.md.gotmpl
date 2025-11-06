@@ -42,7 +42,7 @@ Declare everything under `provision.*`:
     - deploy: provide one of `node`/`python`/`image` and optionally `port` (defaults to `3001`);
       the chart creates a Deployment/Service and auto‑derives the URL for registration.
 - Namespaces: group servers by name.
-- Endpoints: expose a namespace via `transport: SSE | STREAMABLE_HTTP`. Note: `STDIO` is a server run mode, not an endpoint transport.
+- Endpoints: expose a namespace. MetaMCP serves both SSE and Streamable HTTP for each endpoint; no transport field is required.
 
 Example
 

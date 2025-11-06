@@ -144,11 +144,10 @@ provision:
   # - name: lab
   #   servers: ["stdio-everything","http-everything"]
 
-  # endpoints: list of { name, namespace, transport, enableApiKeyAuth, enableOauth, useQueryParamAuth }
+  # endpoints: list of { name, namespace, enableApiKeyAuth, enableOauth, useQueryParamAuth }
   endpoints: []
   # - name: lab
   #   namespace: lab
-  #   transport: SSE   # or STREAMABLE_HTTP
   #   enableApiKeyAuth: true
   #   enableOauth: false
   #   useQueryParamAuth: false

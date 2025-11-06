@@ -41,4 +41,3 @@ provision:
   endpoints:
     - name: lab
       namespace: lab
-      transport: SSE
