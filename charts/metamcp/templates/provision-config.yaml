@@ -32,6 +32,15 @@ data:
 ---
 {{- $prov := .Values.provision -}}
 {{- if and (kindIs "map" $prov) ($prov.enabled | default false) -}}
+{{- /* Derive admin creds outside YAML to avoid YAML parse issues inside env: */ -}}
+{{- $users := (default (list) .Values.users) -}}
+{{- $adminEmail := "admin@example.com" -}}
+{{- $adminPassword := "change-me" -}}
+{{- if gt (len $users) 0 -}}
+  {{- $u0 := (index $users 0) -}}
+  {{- if and (kindIs "map" $u0) (hasKey $u0 "email") ($u0.email) }}{{- $adminEmail = $u0.email -}}{{- end -}}
+  {{- if and (kindIs "map" $u0) (hasKey $u0 "password") ($u0.password) }}{{- $adminPassword = $u0.password -}}{{- end -}}
+{{- end -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -69,9 +78,9 @@ spec:
             - name: FRONTEND_PORT
               value: {{ .Values.service.port | toString | quote }}
             - name: ADMIN_EMAIL
-              value: "admin@example.com"
+              value: {{ $adminEmail | quote }}
             - name: ADMIN_PASSWORD
-              value: "change-me"
+              value: {{ $adminPassword | quote }}
           volumeMounts:
             - name: cfg
               mountPath: /cfg

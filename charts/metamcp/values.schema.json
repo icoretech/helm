@@ -157,15 +157,7 @@
               }
             },
             "allOf": [
-              { "if": { "properties": { "type": { "const": "STDIO" } } }, "then": { "required": ["command"] } },
-              { "if": { "properties": { "type": { "enum": ["SSE", "STREAMABLE_HTTP"] } } },
-                "then": {
-                  "anyOf": [
-                    { "required": ["url"] },
-                    { "required": ["port"], "properties": { "port": {"type":"integer"} } }
-                  ]
-                }
-              }
+              { "if": { "properties": { "type": { "const": "STDIO" } } }, "then": { "required": ["command"] } }
             ]
           }
         },
