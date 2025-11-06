@@ -157,7 +157,9 @@
               }
             },
             "allOf": [
-              { "if": { "properties": { "type": { "const": "STDIO" } } }, "then": { "required": ["command"] } }
+              { "if": { "properties": { "type": { "const": "STDIO" } } }, "then": { "required": ["command"] } },
+              { "if": { "properties": { "type": { "const": "STDIO" } } }, "then": { "not": { "required": ["cache"] } } },
+              { "if": { "properties": { "type": { "const": "STDIO" } } }, "then": { "not": { "anyOf": [ { "required": ["envFrom"] }, { "required": ["secretEnv"] } ] } } }
             ]
           }
         },
