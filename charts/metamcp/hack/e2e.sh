@@ -5,6 +5,11 @@ REL=${REL:-metamcp}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 PF_ENABLED=${E2E_PF:-false}
 KCTX=${KUBE_CONTEXT:-docker-desktop}
+# Fallback to current context if the requested one doesn't exist (helps local runs and CI portability)
+if ! kubectl config get-contexts -o name | grep -qx "$KCTX" 2>/dev/null; then
+  echo "# Requested context '$KCTX' not found; falling back to current context" >&2
+  KCTX=$(kubectl config current-context)
+fi
 TIMEOUT=${TIMEOUT:-5m}
 
 echo "# Using context: $KCTX"
