@@ -239,3 +239,30 @@ for ep in endpoints:
     if not (name and nsref): continue
     extra = {k: ep[k] for k in ('enableApiKeyAuth','enableOauth','useQueryParamAuth') if k in ep}
     create_endpoint(name, nsref, ep.get('transport'), extra)
+
+# Post-fix auto-generated endpoint servers URLs when APP_URL pointed to 12008 at creation time.
+# Newer MetaMCP creates a server named '<namespace>-endpoint' per endpoint and derives its URL from APP_URL.
+# If APP_URL used the frontend port (12008), the server URL points to the wrong port.
+# We normalize such servers to backend port 12009 so connections succeed in-cluster.
+try:
+    def list_servers():
+        r = trpc_get('/trpc/frontend/frontend.mcpServers.list?input=%7B%7D')
+        return r.json().get('result',{}).get('data',{}).get('data',[]) if r.ok else []
+    svcs = list_servers()
+    # Build namespace->server endpoint name mapping ("<ns>-endpoint")
+    ns_names = [ns.get('name') for ns in namespaces if ns.get('name')]
+    desired = []
+    for ns in ns_names:
+        sname = f"{ns}-endpoint"
+        for s in svcs:
+            if s.get('name') == sname and s.get('type') == 'STREAMABLE_HTTP':
+                desired.append((s, ns))
+    for s, ns in desired:
+        url = s.get('url') or ''
+        if ':12008/metamcp/' in url:
+            # rewrite to backend port
+            fixed = url.replace(':12008/metamcp/', ':12009/metamcp/')
+            payload = {'uuid': s['uuid'], 'name': s['name'], 'type': s['type'], 'url': fixed}
+            trpc_post('/trpc/frontend/frontend.mcpServers.update', payload)
+except Exception:
+    pass
