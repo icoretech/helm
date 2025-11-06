@@ -53,13 +53,16 @@ def signin(retries=8, delay=1.5):
     if API_KEY:
         try:
             sess.headers['Authorization'] = f"Bearer {API_KEY}"
-            # Quick auth probe: list servers
+            # Quick auth probe: list servers; require 200 to accept API key
             lr = sess.get(f"{BACKEND}/trpc/frontend/frontend.mcpServers.list", headers={'Host': SVC}, params={'input':'{}'}, timeout=6)
-            if lr.status_code in (200, 401, 403):
-                # 200 means OK; 401/403 means key not authorized but still skip password flow
+            if lr.status_code == 200:
                 return True
         except Exception:
-            # Proceed to password fallback if key probe fails
+            pass
+        # API key not accepted for management endpoints; drop it and fall back
+        try:
+            del sess.headers['Authorization']
+        except Exception:
             pass
     tried_signup = False
     for i in range(retries):
