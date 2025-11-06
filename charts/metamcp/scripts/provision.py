@@ -263,41 +263,38 @@ for s in servers:
             try:
                 current = srv_info.get(name, {})
                 patch = {'uuid': current.get('uuid'), 'name': name, 'type': st}
-                changed = False
-                if desired_url and (current.get('url') or '') != desired_url:
-                    patch['url'] = desired_url; changed = True
-                if 'bearerToken' in body and (current.get('bearerToken') or '') != body.get('bearerToken'):
-                    patch['bearerToken'] = body['bearerToken']; changed = True
+                # Always include required field for HTTP/SSE: url
+                if desired_url:
+                    patch['url'] = desired_url
+                # Optional fields
+                if 'bearerToken' in body:
+                    patch['bearerToken'] = body['bearerToken']
                 if 'headers' in body:
-                    # best-effort compare
-                    cur_headers = current.get('headers') or {}
-                    if cur_headers != body['headers']:
-                        patch['headers'] = body['headers']; changed = True
-                if changed:
-                    r = trpc_post('/trpc/frontend/frontend.mcpServers.update', patch)
-                    if r.ok:
-                        log(f"server updated: {name}")
-                    else:
-                        log(f"WARN server update {name} -> {r.status_code}: {r.text[:160]}")
+                    patch['headers'] = body['headers']
+                r = trpc_post('/trpc/frontend/frontend.mcpServers.update', patch)
+                if r.ok:
+                    log(f"server updated: {name}")
+                else:
+                    log(f"WARN server update {name} -> {r.status_code}: {r.text[:160]}")
             except Exception:
                 pass
         elif UPDATE_EXISTING and st == 'STDIO':
             try:
                 current = srv_info.get(name, {})
                 patch = {'uuid': current.get('uuid'), 'name': name, 'type': st}
-                changed = False
-                if desired_cmd is not None and (current.get('command') or '') != desired_cmd:
-                    patch['command'] = desired_cmd; changed = True
-                if desired_args is not None and (current.get('args') or []) != desired_args:
-                    patch['args'] = desired_args; changed = True
-                if desired_env is not None and (current.get('env') or {}) != desired_env:
-                    patch['env'] = desired_env; changed = True
-                if changed:
-                    r = trpc_post('/trpc/frontend/frontend.mcpServers.update', patch)
-                    if r.ok:
-                        log(f"server updated: {name}")
-                    else:
-                        log(f"WARN server update {name} -> {r.status_code}: {r.text[:160]}")
+                # Always include required field for STDIO: command
+                if desired_cmd is not None:
+                    patch['command'] = desired_cmd
+                # Include args/env when provided
+                if desired_args is not None:
+                    patch['args'] = desired_args
+                if desired_env is not None:
+                    patch['env'] = desired_env
+                r = trpc_post('/trpc/frontend/frontend.mcpServers.update', patch)
+                if r.ok:
+                    log(f"server updated: {name}")
+                else:
+                    log(f"WARN server update {name} -> {r.status_code}: {r.text[:160]}")
             except Exception:
                 pass
         continue
