@@ -1,4 +1,4 @@
-name: mcp-server e2e
+name: metamcp e2e
 
 on:
   pull_request:
@@ -23,7 +23,10 @@ jobs:
         with:
           version: v0.24.0
           kubectl_version: v1.30.0
-      - name: Run e2e
+      - name: Run metamcp e2e
+        env:
+          KUBE_CONTEXT: kind-kind
+          E2E_PF: "false"
         run: |
-          chmod +x hack/e2e/e2e.sh
-          ./hack/e2e/e2e.sh
+          chmod +x charts/metamcp/hack/e2e.sh
+          charts/metamcp/hack/e2e.sh
