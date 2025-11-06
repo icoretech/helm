@@ -25,7 +25,8 @@ jobs:
           kubectl_version: v1.30.0
       - name: Run metamcp e2e
         env:
-          KUBE_CONTEXT: kind-kind
+          # helm/kind-action sets context to "kind-chart-testing" by default
+          KUBE_CONTEXT: kind-chart-testing
           E2E_PF: "false"
         run: |
           chmod +x charts/metamcp/hack/e2e.sh
