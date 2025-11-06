@@ -2726,6 +2726,31 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: latest
+    created: "2025-11-06T00:54:14.456899514Z"
+    description: MetaMCP aggregator Helm chart for Kubernetes
+    digest: 4a0194c7639fabbe472a3e8e719b815d009b0651f49af5998f5dbc6446701977
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/metamcp/logo.png
+    keywords:
+    - mcp
+    - gateway
+    - aggregator
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: metamcp
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/metamcp
+    - https://github.com/metatool-ai/metamcp
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/metamcp-0.1.4/metamcp-0.1.4.tgz
+    version: 0.1.4
+  - annotations:
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: latest
     created: "2025-11-06T00:52:10.542819034Z"
     description: MetaMCP aggregator Helm chart for Kubernetes
     digest: 7db00616edabd8bcc3fe942747810de56b2c51b3962d693ee25cd288dc0f520f
@@ -4114,4 +4139,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/unla-0.9.9/unla-0.9.9.tgz
     version: 0.9.9
-generated: "2025-11-06T00:52:10.543120538Z"
+generated: "2025-11-06T00:54:14.45712024Z"
