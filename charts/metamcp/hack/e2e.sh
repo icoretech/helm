@@ -5,12 +5,13 @@ REL=${REL:-metamcp}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 PF_ENABLED=${E2E_PF:-false}
 KCTX=${KUBE_CONTEXT:-docker-desktop}
+TIMEOUT=${TIMEOUT:-5m}
 
 echo "# Using context: $KCTX"
 echo "# Cleaning namespace $NS"
 kubectl --context "$KCTX" delete ns "$NS" --ignore-not-found --wait=true >/dev/null 2>&1 || true
 echo "# Installing $REL in $NS"
-helm upgrade --install "$REL" "$ROOT" -n "$NS" --kube-context "$KCTX" --create-namespace -f "$ROOT/examples/e2e.yaml" --wait --timeout 60s \
+helm upgrade --install "$REL" "$ROOT" -n "$NS" --kube-context "$KCTX" --create-namespace -f "$ROOT/examples/e2e.yaml" --wait --timeout "$TIMEOUT" \
   --set auth.betterAuthSecret=dev-secret
 
 echo "# Pods"

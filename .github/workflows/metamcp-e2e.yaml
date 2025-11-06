@@ -27,6 +27,7 @@ jobs:
         env:
           # helm/kind-action sets context to "kind-chart-testing" by default
           KUBE_CONTEXT: kind-chart-testing
+          TIMEOUT: 6m
           E2E_PF: "false"
         run: |
           chmod +x charts/metamcp/hack/e2e.sh
