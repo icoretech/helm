@@ -249,10 +249,10 @@ def create_endpoint(name, nsref, transport='SSE', extra=None, description=None):
     if description:
         flags['description'] = description
     if e_uuid:
-        # update existing endpoint
+        # update existing endpoint (use tRPC batch form as UI does)
         up = {'uuid': e_uuid, 'name': name, 'namespaceUuid': nid}
         up.update(flags)
-        r = trpc_post('/trpc/frontend/frontend.endpoints.update', up)
+        r = trpc_post_batch('/trpc/frontend/frontend.endpoints.update', up)
         if r.ok:
             log(f"endpoint updated: {name}")
     else:

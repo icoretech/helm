@@ -92,6 +92,10 @@ provision:
       namespace: lab
       description: "Public lab endpoint"
       transport: SSE
+      # Optional auth controls (match UI):
+      enableApiKeyAuth: true
+      useQueryParamAuth: false
+      enableOauth: false
 ```
 
 ## User seeding (optional)
