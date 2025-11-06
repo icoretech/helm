@@ -60,24 +60,6 @@ spec:
           image: python:3.12-alpine
           imagePullPolicy: IfNotPresent
           env:
-            {{- /* Optional API key via Secret: explicit provision.apiKeySecretName, or infer from first user with createApiKey */}}
-            {{- $users := (default (list) .Values.users) -}}
-            {{- $apiKeySecretName := (default "" .Values.provision.apiKeySecretName) -}}
-            {{- if and (eq $apiKeySecretName "") (gt (len $users) 0) -}}
-              {{- range $i, $u := $users -}}
-                {{- if and (kindIs "map" $u) (hasKey $u "createApiKey") ($u.createApiKey | default false) (hasKey $u "email") ($u.email) -}}
-                  {{- $slug := ( $u.email | replace "@" "-at-" | replace "." "-" | lower ) -}}
-                  {{- $apiKeySecretName = printf "%s-apikey-%s" (include "metamcp.fullname" $) $slug -}}
-                {{- end -}}
-              {{- end -}}
-            {{- end -}}
-            {{- if $apiKeySecretName }}
-            - name: API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $apiKeySecretName | quote }}
-                  key: apiKey
-            {{- end }}
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
