@@ -1,16 +1,28 @@
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "metamcp.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
+{{- $ann := (default (dict) .Values.ingress.annotations) -}}
+{{- $rewriteTrpc := (default true .Values.ingress.rewriteTrpcShortPath) -}}
+{{- $isNginx := eq (default "" .Values.ingress.className) "nginx" -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $fullName }}
   labels:
     {{- include "metamcp.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
   annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- if and $isNginx $rewriteTrpc (not (hasKey $ann "nginx.ingress.kubernetes.io/configuration-snippet")) }}
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      # Rewrite tRPC short form /trpc/frontend.<proc> to /trpc/frontend/frontend.<proc>
+      rewrite ^/trpc/(frontend\..*) /trpc/frontend/$1 break;
+      {{- range $i, $lp := (default (list) $.Values.ingress.localePrefixes) }}
+      rewrite ^/{{ $lp }}/trpc/(frontend\..*) /{{ $lp }}/trpc/frontend/$1 break;
+      {{- end }}
+    {{- end }}
+    {{- if and $isNginx $rewriteTrpc (not (hasKey $ann "nginx.ingress.kubernetes.io/use-regex")) }}
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    {{- end }}
+    {{- toYaml $ann | nindent 4 }}
 spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
@@ -31,21 +43,21 @@ spec:
           {{- end }}
           {{- if (default true $.Values.ingress.mapBackendPaths) }}
           # Map backend routes to port 12009 by default for out-of-the-box access
-          - path: /metamcp
+          - path: /metamcp/
             pathType: Prefix
             backend:
               service:
                 name: {{ $fullName }}
                 port:
                   number: 12009
-          - path: /trpc
+          - path: /trpc/
             pathType: Prefix
             backend:
               service:
                 name: {{ $fullName }}
                 port:
                   number: 12009
-          - path: /api
+          - path: /api/
             pathType: Prefix
             backend:
               service:
@@ -54,21 +66,21 @@ spec:
                   number: 12009
           {{- /* Optional i18n locale prefixes (e.g., en) to route /en/{backend} to 12009 as well */}}
           {{- range $i, $lp := (default (list) $.Values.ingress.localePrefixes) }}
-          - path: /{{ $lp }}/metamcp
+          - path: /{{ $lp }}/metamcp/
             pathType: Prefix
             backend:
               service:
                 name: {{ $fullName }}
                 port:
                   number: 12009
-          - path: /{{ $lp }}/trpc
+          - path: /{{ $lp }}/trpc/
             pathType: Prefix
             backend:
               service:
                 name: {{ $fullName }}
                 port:
                   number: 12009
-          - path: /{{ $lp }}/api
+          - path: /{{ $lp }}/api/
             pathType: Prefix
             backend:
               service:

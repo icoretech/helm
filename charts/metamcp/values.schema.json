@@ -193,7 +193,8 @@
       "type": "object",
       "properties": {
         "mapBackendPaths": { "type": "boolean" },
-        "localePrefixes": { "type": "array", "items": { "type": "string" } }
+        "localePrefixes": { "type": "array", "items": { "type": "string" } },
+        "rewriteTrpcShortPath": { "type": "boolean" }
       }
     }
     ,"gatewayAPI": {
