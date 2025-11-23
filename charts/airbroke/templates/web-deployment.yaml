@@ -99,7 +99,7 @@ spec:
                 name: {{ template "app.web-env.name" . }}
             - secretRef:
                 name: {{ template "app.web-env-migrations.name" . }}
-          args: ['npx', 'prisma', 'migrate', 'deploy']
+          args: ['npx', 'prisma@{{ .Values.web.prismaVersion }}', 'migrate', 'deploy']
       {{- end }}
       {{- if .Values.web.cachePersistentVolume.enabled }}
       volumes:
