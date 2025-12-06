@@ -60,6 +60,14 @@ service:
   nodePort:
   # -- Internal traffic policy for the Service (Cluster or Local).
   internalTrafficPolicy: Cluster
+  # -- Session Affinity for Kubernetes service, can be "None" or "ClientIP"
+  # -- If "ClientIP", consecutive client requests will be directed to the same Pod
+  sessionAffinity: None
+  # -- sessionAffinityConfig Additional settings for the sessionAffinity
+  # sessionAffinityConfig:
+  #   clientIP:
+  #     timeoutSeconds: 180
+  sessionAffinityConfig: {}
 
 # -- Additional labels to add to each PgBouncer pod.
 podLabels: {}
