@@ -21,3 +21,9 @@ spec:
       name: psql
   selector:
     {{- include "pgbouncer.selectorLabels" . | nindent 4 }}
+  {{- if .Values.service.sessionAffinity }}
+  sessionAffinity: {{ .Values.service.sessionAffinity }}
+  {{- end }}
+  {{- if .Values.service.sessionAffinityConfig }}
+  sessionAffinityConfig: {{ toYaml .Values.service.sessionAffinityConfig | nindent 4 }}
+  {{- end }}
