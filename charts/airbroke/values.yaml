@@ -7,10 +7,10 @@ database:
   enable_migration: true
 
 web:
-  prismaVersion: "6"
+  prismaVersion: "7"
   imagePullPolicy: IfNotPresent
   imagePullSecrets: "" # must be present in namespace
-  image: ghcr.io/icoretech/airbroke:1.1.80
+  image: ghcr.io/icoretech/airbroke:1.1.81
   terminationGracePeriodSeconds: 0
   replicaCount: 1
   runtimeClassName:
