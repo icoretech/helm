@@ -91,6 +91,7 @@ provision:
     - name: lab
       namespace: lab
       description: "Public lab endpoint"
+      transport: SSE
       # Optional auth controls (match UI):
       enableApiKeyAuth: true
       useQueryParamAuth: false
@@ -209,7 +210,7 @@ provision:
 | gatewayAPI.mapBackendPaths | bool | `true` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/metatool-ai/metamcp"` |  |
-| image.tag | string | `"latest"` |  |
+| image.tag | string | `"2.4.22"` |  |
 | imagePullSecrets | list | `[]` |  |
 | ingress.annotations | object | `{}` |  |
 | ingress.className | string | `""` |  |
@@ -235,7 +236,9 @@ provision:
 | provision.enabled | bool | `false` |  |
 | provision.endpoints | list | `[]` |  |
 | provision.namespaces | list | `[]` |  |
+| provision.runOnUpgrade | bool | `true` |  |
 | provision.servers | list | `[]` |  |
+| provision.updateExisting | bool | `true` |  |
 | replicaCount | int | `1` |  |
 | resources | object | `{}` |  |
 | securityContext | object | `{}` |  |
@@ -272,10 +275,7 @@ provision:
       # Plain env (non-secret)
       env:
         LOG_LEVEL: debug
-      # Secret-backed env for STDIO: use envFrom
-      # The provision Job reads Secret/figma-mcp-env and injects all key/values
-      # into the MetaMCP server config (not into a Pod), so the STDIO process
-      # sees them when MetaMCP launches it.
+      # Secret-backed env for STDIO: use envFrom to pull all keys from a Secret/ConfigMap
       envFrom:
         - secretRef:
             name: figma-mcp-env

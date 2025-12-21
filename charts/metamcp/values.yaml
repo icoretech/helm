@@ -7,7 +7,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/metatool-ai/metamcp
   pullPolicy: IfNotPresent
-  tag: latest
+  tag: 2.4.22
 
 imagePullSecrets: []
 nameOverride: ""
