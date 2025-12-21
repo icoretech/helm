@@ -2563,6 +2563,31 @@ entries:
   - annotations:
       artifacthub.io/license: MIT
     apiVersion: v2
+    appVersion: 2.4.22
+    created: "2025-12-21T14:32:42.577268134Z"
+    description: MetaMCP aggregator Helm chart for Kubernetes
+    digest: 6543544cc17903b39050ac278cd073ac5dc71d49ad0e8e4c5cf6b69f2da0a488
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/metamcp/logo.png
+    keywords:
+    - mcp
+    - gateway
+    - aggregator
+    maintainers:
+    - email: claudio@icorete.ch
+      name: Claudio Poli
+      url: https://github.com/masterkain
+    name: metamcp
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/metamcp
+    - https://github.com/metatool-ai/metamcp
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/metamcp-0.2.1/metamcp-0.2.1.tgz
+    version: 0.2.1
+  - annotations:
+      artifacthub.io/license: MIT
+    apiVersion: v2
     appVersion: latest
     created: "2025-11-06T04:58:24.949074953Z"
     description: MetaMCP aggregator Helm chart for Kubernetes
@@ -4543,4 +4568,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2025-12-15T11:15:56.135393728Z"
+generated: "2025-12-21T14:32:42.577592784Z"
