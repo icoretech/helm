@@ -47,7 +47,9 @@ spec:
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "metamcp.fullname" . }}
       {{- end }}
-      {{- /* always use internal postgres */}}
+      {{- $hasDBURL := and (kindIs "map" .Values.env) (hasKey .Values.env "DATABASE_URL") }}
+      {{- if not $hasDBURL }}
+      {{- /* only use init container when using internal postgres */}}
       initContainers:
         - name: wait-db
           image: {{ .Values.postgres.image }}
@@ -59,6 +61,7 @@ spec:
                 secretKeyRef:
                   name: {{ include "metamcp.postgresFullname" . }}-secret
                   key: password
+      {{- end }}
       containers:
         - name: metamcp
           image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag | quote }}
@@ -86,9 +89,9 @@ spec:
                   key: BETTER_AUTH_SECRET
             {{- end }}
             {{- if not $hasDBURL }}
+            {{- /* internal postgres environment variables */}}
             - name: DATABASE_URL
               value: {{ printf "postgresql://%s:%s@%s.%s.svc.cluster.local:5432/%s?sslmode=disable" (.Values.postgres.auth.username | toString) (.Values.postgres.auth.password | toString) (include "metamcp.postgresFullname" .) .Release.Namespace (.Values.postgres.auth.database | toString) | quote }}
-            {{- end }}
             - name: POSTGRES_HOST
               value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.postgresFullname" .) .Release.Namespace | quote }}
             - name: PGHOST
@@ -111,10 +114,11 @@ spec:
                 secretKeyRef:
                   name: {{ include "metamcp.postgresFullname" . }}-secret
                   key: password
+            {{- end }}
+            {{- /* end internal postgres envs */}}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- /* end internal postgres envs */}}
           livenessProbe:
             httpGet:
               path: /health
