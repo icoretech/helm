@@ -151,6 +151,15 @@ web:
   #   - name: AIRBROKE_OPENAI_API_KEY
   #     value: "sk-xxxxxxx"
 
+  # optional list of envFrom refs to mount env vars from existing Secrets/ConfigMaps
+  # this is useful to keep secrets out of Helm values and avoid chart-managed Secret updates
+  # extraEnvFrom:
+  #   - secretRef:
+  #       name: my-app-env
+  #   - configMapRef:
+  #       name: my-app-config
+  extraEnvFrom: []
+
   ## Pod Disruption Budget
   ## https://kubernetes.io/docs/tasks/run-application/configure-pdb/
   ##

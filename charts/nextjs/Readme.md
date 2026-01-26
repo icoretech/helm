@@ -80,4 +80,5 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | `web.tolerations` | Tolerations for pod assignment | `[]` |
 | `web.affinity` | Affinity settings for pod assignment | `{}` |
 | `web.extraEnvs` | Additional environment variables | `[]` |
+| `web.extraEnvFrom` | Additional `envFrom` refs (Secrets/ConfigMaps) | `[]` |
 | `web.podDisruptionBudget.enabled` | Enable PDB to ensure availability during disruptions. | `false` |
