@@ -69,6 +69,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | web.cachePersistentVolume.size | string | `"1Gi"` |  |
 | web.cachePersistentVolume.storageClass | string | `""` |  |
 | web.cachePersistentVolume.volumeMode | string | `""` |  |
+| web.extraEnvFrom | list | `[]` |  |
 | web.extraEnvs | list | `[]` |  |
 | web.hpa.cpu | string | `nil` |  |
 | web.hpa.enabled | bool | `false` |  |
@@ -92,6 +93,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | web.livenessProbe.successThreshold | int | `1` |  |
 | web.livenessProbe.timeoutSeconds | int | `5` |  |
 | web.nodeSelector | object | `{}` |  |
+| web.prismaVersion | string | `"7"` |  |
 | web.readinessProbe.enabled | bool | `true` |  |
 | web.readinessProbe.failureThreshold | int | `2` |  |
 | web.readinessProbe.httpGet.endpoint | string | `"/api/hc?source=readinessProbe"` |  |
@@ -114,6 +116,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | web.updateStrategy.type | string | `"RollingUpdate"` |  |
 
 You should specify additional `AIRBROKE_` environment variables using the `extraEnvs` parameter.
+If you want to inject sensitive values from existing Kubernetes Secrets/ConfigMaps (recommended), use `extraEnvFrom`.
 
 ### Pgbouncer
 
@@ -143,7 +146,7 @@ spec:
   chart:
     spec:
       chart: airbroke
-      version: ">= 1.2.4"
+      version: ">= 1.1.3"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -160,7 +163,7 @@ spec:
       url: 'postgresql://xxxx:xxxx@pgbouncer.default.svc.cluster.local:5432/airbroke_production?connection_limit=100&pool_timeout=10&application_name=airbroke&schema=public'
       migrations_url: 'postgresql://xxxx:xxxx@postgres-postgresql.postgres.svc.cluster.local:5432/airbroke_production?schema=public'
     web:
-      image: ghcr.io/icoretech/airbroke:1.1.81 # {"$imagepolicy": "flux-system:airbroke"}
+      image: ghcr.io/icoretech/airbroke:1.1.22 # {"$imagepolicy": "flux-system:airbroke"}
       replicaCount: 2
       cachePersistentVolume:
         enabled: true
@@ -192,6 +195,9 @@ spec:
           value: "https://xxxxxx"
         - name: AIRBROKE_OPENAI_API_KEY
           value: "sk-xxxxxxx"
+      extraEnvFrom:
+        - secretRef:
+            name: airbroke-web-external-secrets
       ingress:
         enabled: true
         ingressClassName: nginx

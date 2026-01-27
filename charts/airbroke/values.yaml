@@ -85,6 +85,14 @@ web:
   affinity: {}
 
   extraEnvs: []
+  # extraEnvFrom adds additional envFrom sources to the web container and the migrations initContainer.
+  # Example:
+  # extraEnvFrom:
+  #   - secretRef:
+  #       name: my-app-secrets
+  #   - configMapRef:
+  #       name: my-app-config
+  extraEnvFrom: []
   # extraEnvs:
   #   - name: AIRBROKE_GITHUB_ID
   #     value: "xxxx"

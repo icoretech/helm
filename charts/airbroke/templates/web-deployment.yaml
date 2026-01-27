@@ -41,6 +41,9 @@ spec:
               name: {{ template "app.web-env.name" . }}
           - secretRef:
               name: {{ template "app.web-env.name" . }}
+          {{- if .Values.web.extraEnvFrom }}
+          {{- toYaml .Values.web.extraEnvFrom | nindent 10 }}
+          {{- end }}
         ports:
           - name: http
             containerPort: {{ .Values.web.service.port }}
@@ -99,6 +102,9 @@ spec:
                 name: {{ template "app.web-env.name" . }}
             - secretRef:
                 name: {{ template "app.web-env-migrations.name" . }}
+            {{- if .Values.web.extraEnvFrom }}
+            {{- toYaml .Values.web.extraEnvFrom | nindent 12 }}
+            {{- end }}
           args: ['npx', 'prisma@{{ .Values.web.prismaVersion }}', 'migrate', 'deploy']
       {{- end }}
       {{- if .Values.web.cachePersistentVolume.enabled }}
