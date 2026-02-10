@@ -44,9 +44,10 @@ Declare everything under `provision.*`:
   - `type: STDIO` → MetaMCP spawns the process inside its container using `command` + `args` (+ optional `env`). Ensure the MetaMCP image contains the required runtime (e.g., Node/PNPM/NPM or Python/uv).
   - `type: STREAMABLE_HTTP` or `SSE`:
     - remote: provide `url` (no Pod is created here) + optional `bearerToken`/`headers`.
-    - deploy: provide `port` and one of `node`/`python`/`image`; the chart creates a Deployment/Service and auto‑derives the URL for registration.
+    - deploy: provide one of `node`/`python`/`image` and optionally `port` (defaults to `3001`);
+      the chart creates a Deployment/Service and auto‑derives the URL for registration.
 - Namespaces: group servers by name.
-- Endpoints: expose a namespace via `transport: SSE | STREAMABLE_HTTP`. Note: `STDIO` is a server run mode, not an endpoint transport.
+- Endpoints: expose a namespace. MetaMCP serves both SSE and Streamable HTTP for each endpoint; no transport field is required.
 
 Example
 
@@ -88,17 +89,23 @@ provision:
 
   namespaces:
     - name: lab
+      description: "Sandbox tools"
       servers: ["stdio-everything","http-everything","sse-everything"]
 
   endpoints:
     - name: lab
       namespace: lab
+      description: "Public lab endpoint"
       transport: SSE
+      # Optional auth controls (match UI):
+      enableApiKeyAuth: true
+      useQueryParamAuth: false
+      enableOauth: false
 ```
 
-## User seeding (optional)
+## User seeding (required when provisioning is enabled)
 
-The chart can create users at install/upgrade and optionally generate API keys (stored in Secrets named like `<release>-metamcp-apikey-<email-slug>`):
+Provisioning authenticates using the first entry in `users`. When `provision.enabled: true`, you must define at least one user (the schema enforces this). The chart can also generate an API key for that user and store it in a Secret named like `<release>-metamcp-apikey-<email-slug>`.
 
 ```yaml
 disablePublicSignup: true
@@ -108,6 +115,80 @@ users:
     name: Admin
     createApiKey: true
     apiKeyName: cli
+```
+
+### Reconciliation modes (Flux/Helm upgrades)
+
+By default the provisioning job runs after every Helm install and upgrade and will upsert Namespaces/Endpoints to match values. You can tune this behavior:
+
+- `provision.runOnUpgrade` (bool, default `true`)
+  - `true`: run provisioning on every Helm upgrade (continuous upsert)
+  - `false`: run only on initial install (post-install). Upgrades do not re-run provisioning
+
+- `provision.updateExisting` (bool, default `true`)
+  - `true`: update existing Namespaces (description + membership) and Endpoints when names already exist
+  - `false`: create-only; existing objects are left untouched (good for “seed once, then manage via UI”)
+
+Notes
+- Servers are always create-only (by name). The job does not modify or delete existing servers.
+- Deletions are not automatic. Removing items from values does not delete them in MetaMCP. If you need prune semantics, open an issue so we can add an opt‑in `prune` mode.
+
+Examples
+
+Continuous upsert (Git is the source of truth):
+
+```yaml
+provision:
+  enabled: true
+  runOnUpgrade: true
+  updateExisting: true
+```
+
+Seed once, keep UI changes later:
+
+```yaml
+provision:
+  enabled: true
+  runOnUpgrade: false
+  updateExisting: false
+```
+
+Provisioning authentication
+
+- The provisioning Job authenticates using the first entry in `users` (email/password).
+- In production you must set `users[0]`. The jobs mirror the signed session cookie to the in‑cluster host to perform admin tRPC calls.
+- API keys are for endpoint/client auth; they are not used for admin tRPC.
+
+### STDIO examples
+
+Inline env (awsdocs):
+
+```yaml
+provision:
+  enabled: true
+  servers:
+    - name: awsdocs
+      type: STDIO
+      command: "uvx"
+      args: ["awslabs.aws-documentation-mcp-server@latest"]
+      env:
+        FASTMCP_LOG_LEVEL: "ERROR"
+        AWS_DOCUMENTATION_PARTITION: "aws"
+```
+
+Secret-backed env (figma):
+
+```yaml
+provision:
+  enabled: true
+  servers:
+    - name: figma
+      type: STDIO
+      command: "npx"
+      args: ["-y", "figma-developer-mcp", "--stdio"]
+      envFrom:
+        - secretRef:
+            name: figma-mcp-env
 ```
 
 ## Configuration reference
@@ -133,7 +214,7 @@ users:
 | gatewayAPI.mapBackendPaths | bool | `true` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/metatool-ai/metamcp"` |  |
-| image.tag | string | `"latest"` |  |
+| image.tag | string | `"2.4.22"` |  |
 | imagePullSecrets | list | `[]` |  |
 | ingress.annotations | object | `{}` |  |
 | ingress.className | string | `""` |  |
@@ -159,7 +240,9 @@ users:
 | provision.enabled | bool | `false` |  |
 | provision.endpoints | list | `[]` |  |
 | provision.namespaces | list | `[]` |  |
+| provision.runOnUpgrade | bool | `true` |  |
 | provision.servers | list | `[]` |  |
+| provision.updateExisting | bool | `true` |  |
 | replicaCount | int | `1` |  |
 | resources | object | `{}` |  |
 | securityContext | object | `{}` |  |
@@ -183,3 +266,19 @@ users:
 - Minimal e2e (in-cluster URLs, no Ingress): `examples/e2e.yaml`
 - Cache PVC per server (requires default StorageClass): `examples/provision-pvc.yaml`
 - Advanced options (resources, HPA, probes, volumes, init containers): `examples/provision-advanced.yaml`
+# STDIO server with env and Secret-backed env
+
+provision:
+  enabled: true
+  servers:
+    - name: figma
+      type: STDIO
+      command: "npx"
+      args: ["-y", "figma-developer-mcp", "--stdio"]
+      # Plain env (non-secret)
+      env:
+        LOG_LEVEL: debug
+      # Secret-backed env for STDIO: use envFrom to pull all keys from a Secret/ConfigMap
+      envFrom:
+        - secretRef:
+            name: figma-mcp-env
