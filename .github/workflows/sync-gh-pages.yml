@@ -6,6 +6,7 @@ on:
     paths:
       - README.md
       - artifacthub-repo.yml
+      - signing/**
       - charts/**/logo.*
   workflow_dispatch:
 
@@ -42,6 +43,9 @@ jobs:
 
           cp -v README.md ghp/README.md
           cp -v artifacthub-repo.yml ghp/artifacthub-repo.yml
+          if [ -f signing/pgp-public-key.asc ]; then
+            cp -v signing/pgp-public-key.asc ghp/pgp-public-key.asc
+          fi
           # We intentionally do NOT create .nojekyll because the site uses Jekyll to render index.md
 
           # Publish per-chart docs and logos for Pages
@@ -76,8 +80,10 @@ jobs:
 
           pushd ghp >/dev/null
           if [[ -n "$(git status --porcelain)" ]]; then
-            git add README.md artifacthub-repo.yml charts || true
+            git add README.md artifacthub-repo.yml pgp-public-key.asc charts || true
             git commit -m "docs: sync README & artifacthub metadata from main"
+            git fetch origin gh-pages
+            git rebase origin/gh-pages
             git push origin gh-pages
           else
             echo "No changes to sync."

@@ -28,6 +28,42 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
+      - name: Prepare chart signing key (Helm provenance)
+        id: signing
+        shell: bash
+        env:
+          GPG_KEYRING_BASE64: "${{ secrets.GPG_KEYRING_BASE64 }}"
+          GPG_SIGNING_KEY: "${{ secrets.GPG_SIGNING_KEY }}"
+        run: |
+          set -euo pipefail
+          if [[ -z "${GPG_KEYRING_BASE64:-}" || -z "${GPG_SIGNING_KEY:-}" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Chart signing key not configured; will refuse to release chart version bumps." >&2
+            exit 0
+          fi
+
+          mkdir -p .cr-gpg
+          echo "$GPG_KEYRING_BASE64" | base64 -d > .cr-gpg/secring.gpg
+          chmod 600 .cr-gpg/secring.gpg
+
+          {
+            echo "CR_SIGN=true"
+            echo "CR_KEY=$GPG_SIGNING_KEY"
+            echo "CR_KEYRING=$PWD/.cr-gpg/secring.gpg"
+          } >> "$GITHUB_ENV"
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: Refuse unsigned chart releases
+        if: ${{ steps.signing.outputs.enabled != 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -Eq '^charts/[^/]+/Chart.yaml$'; then
+            echo "Chart.yaml changed in this push, but signing is not configured. Aborting release." >&2
+            exit 1
+          fi
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1
         with:
@@ -45,13 +81,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push Charts to GHCR
+        shell: bash
         run: |
           if [ -d ".cr-release-packages" ]; then
-            for pkg in .cr-release-packages/*; do
-              if [ -z "${pkg:-}" ]; then
-                break
-              fi
-
+            shopt -s nullglob
+            for pkg in .cr-release-packages/*.tgz; do
               helm push "${pkg}" oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts
             done
           else

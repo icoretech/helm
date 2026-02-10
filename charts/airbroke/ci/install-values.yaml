@@ -1,0 +1,13 @@
+database:
+  # Only used for rendering/install tests; override with real DB URLs in production.
+  url: "postgres://airbroke:airbroke@postgres.example.local:5432/airbroke?sslmode=disable"
+  migrations_url: "postgres://airbroke:airbroke@postgres.example.local:5432/airbroke?sslmode=disable"
+  enable_migration: false
+
+web:
+  # Use a harmless image for ct install; users should override in real deployments.
+  image: nginx:latest
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false

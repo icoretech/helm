@@ -2,14 +2,14 @@ nameOverride: ""
 fullnameOverride: ""
 
 database:
-  url: "" # postgres://airbroke:airbroke@airbroke-pgbouncer/airbroke_production?connection_limit=100&pool_timeout=10&application_name=airbroke
-  migrations_url: "" # postgres://airbroke:airbroke@pg/airbroke_production
+  url: ""  # postgres://airbroke:airbroke@airbroke-pgbouncer/airbroke_production?connection_limit=100&pool_timeout=10&application_name=airbroke
+  migrations_url: ""  # postgres://airbroke:airbroke@pg/airbroke_production
   enable_migration: true
 
 web:
   prismaVersion: "7"
   imagePullPolicy: IfNotPresent
-  imagePullSecrets: "" # must be present in namespace
+  imagePullSecrets: ""  # must be present in namespace
   image: ghcr.io/icoretech/airbroke:1.1.81
   terminationGracePeriodSeconds: 0
   replicaCount: 1
@@ -28,15 +28,15 @@ web:
   # not sure about the usefulness of this - we are trying to solve some caching issues with next.js
   # so this should be considered experimental.
   cachePersistentVolume:
-    enabled: false # If set to true, a PersistentVolumeClaim (PVC) will be created for caching
-    storageClass: "" # The storage class to use for the PVC. If not set, the default StorageClass will be used
-    existingClaim: "" # If set, this existing PVC will be used instead of creating a new one
+    enabled: false  # If set to true, a PersistentVolumeClaim (PVC) will be created for caching
+    storageClass: ""  # The storage class to use for the PVC. If not set, the default StorageClass will be used
+    existingClaim: ""  # If set, this existing PVC will be used instead of creating a new one
     accessModes:
-      - ReadWriteOnce # The access modes for the PVC. Can be ReadWriteOnce, ReadOnlyMany, or ReadWriteMany. If cachePersistentVolume is enabled and replicaCount is more than 1, this should be set to ReadWriteMany
-    annotations: {} # Annotations to add to the PVC
-    size: 1Gi # The requested storage size for the PVC
-    volumeMode: "" # The volume mode for the PVC. Can be either "Filesystem" (default) or "Block"
-    mountPath: /app/.next/cache # The path to mount the volume in the container
+      - ReadWriteOnce  # The access modes for the PVC. Can be ReadWriteOnce, ReadOnlyMany, or ReadWriteMany. If cachePersistentVolume is enabled and replicaCount is more than 1, this should be set to ReadWriteMany
+    annotations: {}  # Annotations to add to the PVC
+    size: 1Gi  # The requested storage size for the PVC
+    volumeMode: ""  # The volume mode for the PVC. Can be either "Filesystem" (default) or "Block"
+    mountPath: /app/.next/cache  # The path to mount the volume in the container
 
   hpa:
     enabled: false

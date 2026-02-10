@@ -1,0 +1,3 @@
+auth:
+  # Only used for ct install; override in real deployments.
+  betterAuthSecret: "change-me"

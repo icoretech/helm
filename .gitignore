@@ -13,3 +13,9 @@ node_modules/
 .serena/
 
 AGENTS.md
+
+# Helm chart signing (do not commit private material)
+/.tmp-gpg/
+/signing/secring.gpg
+/signing/secring.gpg.base64
+/signing/fingerprint.txt

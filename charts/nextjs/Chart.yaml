@@ -2,7 +2,7 @@ apiVersion: v2
 name: nextjs
 description: Generic Helm chart for Nextjs apps on Kubernetes
 type: application
-version: 1.1.16
+version: 1.1.17
 appVersion: '1.0.0'
 icon: https://icoretech.github.io/helm/charts/nextjs/logo.png
 keywords:
@@ -16,3 +16,6 @@ sources:
   - https://github.com/icoretech/helm
 annotations:
   artifacthub.io/license: 'MIT'
+  artifacthub.io/signKey: |
+    fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+    url: https://icoretech.github.io/helm/pgp-public-key.asc
