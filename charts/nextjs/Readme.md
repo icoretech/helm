@@ -1,6 +1,6 @@
 # nextjs
 
-![Version: 1.1.13](https://img.shields.io/badge/Version-1.1.13-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.1.14](https://img.shields.io/badge/Version-1.1.14-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 Generic Helm chart for Nextjs apps on Kubernetes
 
@@ -10,7 +10,7 @@ Generic Helm chart for Nextjs apps on Kubernetes
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| Claudio Poli | <claudio@icorete.ch> | <https://github.com/masterkain> |
+| masterkain | <claudio@icorete.ch> | <https://github.com/masterkain> |
 
 ## Source Code
 
@@ -39,6 +39,7 @@ Generic Helm chart for Nextjs apps on Kubernetes
 | web.dataVolume.size | string | `"1Gi"` |  |
 | web.dataVolume.storageClass | string | `""` |  |
 | web.dataVolume.volumeMode | string | `""` |  |
+| web.env | object | `{}` |  |
 | web.extraContainers | list | `[]` |  |
 | web.extraEnvFrom | list | `[]` |  |
 | web.extraEnvs | list | `[]` |  |
@@ -81,6 +82,7 @@ Generic Helm chart for Nextjs apps on Kubernetes
 | web.replicaCount | int | `1` |  |
 | web.resources | object | `{}` |  |
 | web.runtimeClassName | string | `nil` |  |
+| web.secretEnv | object | `{}` |  |
 | web.service.annotations | object | `{}` |  |
 | web.service.enabled | bool | `true` |  |
 | web.service.nodePort | string | `nil` |  |

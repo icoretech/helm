@@ -5,5 +5,12 @@ metadata:
   labels:
     {{- include "app.labels" . | nindent 4 }}
 data:
-  AWS_SDK_CONFIG_OPT_OUT: "true"
-  NEXT_TELEMETRY_DISABLED: "1"
+  {{- $defaults := dict "AWS_SDK_CONFIG_OPT_OUT" "true" "NEXT_TELEMETRY_DISABLED" "1" -}}
+  {{- $userEnv := dict -}}
+  {{- if kindIs "map" .Values.web.env -}}
+  {{- $userEnv = .Values.web.env -}}
+  {{- end -}}
+  {{- $env := merge (deepCopy $defaults) $userEnv -}}
+  {{- range $k, $v := $env }}
+  {{ $k }}: {{ $v | toString | quote }}
+  {{- end }}
