@@ -3777,6 +3777,32 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 1.25.1
+    created: "2026-02-10T08:36:22.114752241Z"
+    description: A Helm chart for deploying PgBouncer, a PostgreSQL connection pooler,
+      on Kubernetes
+    digest: 2f808fe5a3811fc007c61de76b48880092f152992135532f3a1cae83f759cf36
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/pgbouncer/logo.png
+    keywords:
+    - pgbouncer
+    - postgresql
+    - kubernetes
+    kubeVersion: '>= 1.31.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: pgbouncer
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/pgbouncer
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/pgbouncer-4.1.1/pgbouncer-4.1.1.tgz
+    version: 4.1.1
+  - annotations:
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 1.25.1
     created: "2025-12-11T03:25:13.324936573Z"
     description: A Helm chart for deploying PgBouncer, a PostgreSQL connection pooler,
       on Kubernetes
@@ -4787,4 +4813,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2026-02-10T08:18:05.477815806Z"
+generated: "2026-02-10T08:36:22.115149252Z"
