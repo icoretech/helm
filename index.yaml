@@ -11,6 +11,51 @@ entries:
           url: https://i.imgur.com/hcwnz84.png
         - title: Toolbox
           url: https://i.imgur.com/b2NBh2i.png
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.1.81
+    created: "2026-02-10T09:32:10.04640145Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 3.1.2
+    description: Airbroke Helm chart for Kubernetes
+    digest: 2eb7074ddac11091e728f8d25d71c4eddf34630de662abab1369d4827c182d20
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.3.3/airbroke-1.3.3.tgz
+    version: 1.3.3
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
     apiVersion: v2
     appVersion: 1.1.81
     created: "2026-02-10T00:44:24.807258035Z"
@@ -1627,6 +1672,36 @@ entries:
         maintained by iCoreTech. No further support is planned; avoid new deployments
         and plan migrations.
       artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 0.0.1
+    created: "2026-02-10T09:32:10.297030031Z"
+    deprecated: true
+    description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
+    digest: feb69c8ff516fe19b8d96ae226a1427cec5bce9d46c5ab679facf83ad0392d90
+    home: https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    keywords:
+    - docker
+    - openai
+    - chatgpt
+    - chatgpt-plugin
+    name: chatgpt-retrieval-plugin
+    sources:
+    - https://github.com/icoretech/chatgpt-retrieval-plugin-docker
+    - https://github.com/icoretech/helm/tree/main/charts/chatgpt-retrieval-plugin
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/chatgpt-retrieval-plugin-0.0.21/chatgpt-retrieval-plugin-0.0.21.tgz
+    version: 0.0.21
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/deprecated: "true"
+      artifacthub.io/deprecationMessage: This Helm chart is deprecated and no longer
+        maintained by iCoreTech. No further support is planned; avoid new deployments
+        and plan migrations.
+      artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.0.1
     created: "2025-10-15T12:27:28.067416297Z"
@@ -1839,6 +1914,47 @@ entries:
     - https://github.com/icoretech/helm/releases/download/chatgpt-retrieval-plugin-0.0.1/chatgpt-retrieval-plugin-0.0.1.tgz
     version: 0.0.1
   inngest-server:
+  - annotations:
+      artifacthub.io/category: streaming-messaging
+      artifacthub.io/deprecated: "true"
+      artifacthub.io/deprecationMessage: This Helm chart is deprecated because an
+        official Inngest Helm chart is available at https://github.com/inngest/inngest-helm.
+        Please use the official chart for new deployments and plan migrations from
+        this one.
+      artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v1.6.2
+    created: "2026-02-10T09:32:10.567854366Z"
+    deprecated: true
+    description: Inngest Server Helm chart for Kubernetes
+    digest: 0fb9b81b5931d62fc1cdb0df128d68d60a2fcca47564fa511cdcef3f39c2a59d
+    home: https://github.com/inngest/inngest
+    icon: https://icoretech.github.io/helm/charts/inngest-server/logo.png
+    keywords:
+    - inngest
+    - serverless
+    - event-driven
+    - workflow
+    - function-orchestration
+    - async
+    - queue
+    - event-processing
+    - background-jobs
+    - microservices
+    - faas
+    - triggers
+    - helm-chart
+    name: inngest-server
+    sources:
+    - https://github.com/inngest/inngest
+    - https://github.com/icoretech/helm/tree/main/charts/inngest-server
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/inngest-server-1.1.4/inngest-server-1.1.4.tgz
+    version: 1.1.4
   - annotations:
       artifacthub.io/category: streaming-messaging
       artifacthub.io/deprecated: "true"
@@ -2646,6 +2762,34 @@ entries:
   metamcp:
   - annotations:
       artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 2.4.22
+    created: "2026-02-10T09:32:10.80624679Z"
+    description: MetaMCP aggregator Helm chart for Kubernetes
+    digest: 28e3a6195cf12eb3d586ae879f92f487ed45f9c4998ebf66704c69d1636d510a
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/metamcp/logo.png
+    keywords:
+    - mcp
+    - gateway
+    - aggregator
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: metamcp
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/metamcp
+    - https://github.com/metatool-ai/metamcp
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/metamcp-0.2.3/metamcp-0.2.3.tgz
+    version: 0.2.3
+  - annotations:
+      artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 2.4.22
     created: "2026-02-10T07:52:52.334903609Z"
@@ -3342,6 +3486,31 @@ entries:
   nextjs:
   - annotations:
       artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-02-10T09:32:11.034242562Z"
+    description: Generic Helm chart for Nextjs apps on Kubernetes
+    digest: 11ff06405594298027ad905d97aba98f91aaaaa079d84d61be13877ed408aa84
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/nextjs/logo.png
+    keywords:
+    - nextjs
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: nextjs
+    sources:
+    - https://github.com/icoretech/helm
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/nextjs-1.1.17/nextjs-1.1.17.tgz
+    version: 1.1.17
+  - annotations:
+      artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 1.0.0
     created: "2026-02-10T08:18:05.47745882Z"
@@ -3773,6 +3942,35 @@ entries:
     - https://github.com/icoretech/helm/releases/download/nextjs-1.0.0/nextjs-1.0.0.tgz
     version: 1.0.0
   pgbouncer:
+  - annotations:
+      artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.25.1
+    created: "2026-02-10T09:32:11.299983575Z"
+    description: A Helm chart for deploying PgBouncer, a PostgreSQL connection pooler,
+      on Kubernetes
+    digest: 67c04aa4c03d46091eb67de965362d7a91547209278266a794519f80fdd4decd
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/pgbouncer/logo.png
+    keywords:
+    - pgbouncer
+    - postgresql
+    - kubernetes
+    kubeVersion: '>= 1.31.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: pgbouncer
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/pgbouncer
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/pgbouncer-4.1.2/pgbouncer-4.1.2.tgz
+    version: 4.1.2
   - annotations:
       artifacthub.io/license: MIT
     apiVersion: v2
@@ -4813,4 +5011,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2026-02-10T08:36:22.115149252Z"
+generated: "2026-02-10T09:32:11.300758219Z"
