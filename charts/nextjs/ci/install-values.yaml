@@ -1,0 +1,4 @@
+# Values used by chart-testing (ct install) to ensure the chart can be installed.
+# The chart requires web.image; we use a harmless public image.
+web:
+  image: nginx:latest
