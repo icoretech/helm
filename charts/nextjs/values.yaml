@@ -4,7 +4,8 @@ fullnameOverride: ''
 web:
   imagePullPolicy: IfNotPresent
   imagePullSecrets: ''  # must be present in namespace
-  image: ''
+  # image -- Container image for the app. Override this for your Next.js image.
+  image: nginx:latest
   terminationGracePeriodSeconds: 0
   replicaCount: 1
   runtimeClassName:
