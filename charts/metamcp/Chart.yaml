@@ -10,7 +10,7 @@ keywords:
   - gateway
   - aggregator
 maintainers:
-  - name: Claudio Poli
+  - name: masterkain
     email: claudio@icorete.ch
     url: https://github.com/masterkain
 home: https://github.com/icoretech/helm
