@@ -1,6 +1,6 @@
 # nextjs
 
-![Version: 1.1.15](https://img.shields.io/badge/Version-1.1.15-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.1.16](https://img.shields.io/badge/Version-1.1.16-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 Generic Helm chart for Nextjs apps on Kubernetes
 
@@ -48,7 +48,7 @@ Generic Helm chart for Nextjs apps on Kubernetes
 | web.hpa.maxReplicas | int | `10` |  |
 | web.hpa.memory | string | `nil` |  |
 | web.hpa.requests | string | `nil` |  |
-| web.image | string | `""` |  |
+| web.image | string | `"nginx:latest"` |  |
 | web.imagePullPolicy | string | `"IfNotPresent"` |  |
 | web.imagePullSecrets | string | `""` |  |
 | web.ingress.annotations | object | `{}` |  |
