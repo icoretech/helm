@@ -3,7 +3,7 @@ fullnameOverride: ''
 
 web:
   imagePullPolicy: IfNotPresent
-  imagePullSecrets: '' # must be present in namespace
+  imagePullSecrets: ''  # must be present in namespace
   image: ''
   terminationGracePeriodSeconds: 0
   replicaCount: 1
@@ -62,26 +62,26 @@ web:
   # not sure about the usefulness of this - we are trying to solve some caching issues with next.js
   # so this should be considered experimental.
   cachePersistentVolume:
-    enabled: false # If set to true, a PersistentVolumeClaim (PVC) will be created for caching
-    storageClass: '' # The storage class to use for the PVC. If not set, the default StorageClass will be used
-    existingClaim: '' # If set, this existing PVC will be used instead of creating a new one
+    enabled: false  # If set to true, a PersistentVolumeClaim (PVC) will be created for caching
+    storageClass: ''  # The storage class to use for the PVC. If not set, the default StorageClass will be used
+    existingClaim: ''  # If set, this existing PVC will be used instead of creating a new one
     accessModes:
-      - ReadWriteOnce # The access modes for the PVC. Can be ReadWriteOnce, ReadOnlyMany, or ReadWriteMany. If cachePersistentVolume is enabled and replicaCount is more than 1, this should be set to ReadWriteMany
-    annotations: {} # Annotations to add to the PVC
-    size: 1Gi # The requested storage size for the PVC
-    volumeMode: '' # The volume mode for the PVC. Can be either "Filesystem" (default) or "Block"
-    mountPath: /app/.next/cache # The path to mount the volume in the container
+      - ReadWriteOnce  # The access modes for the PVC. Can be ReadWriteOnce, ReadOnlyMany, or ReadWriteMany. If cachePersistentVolume is enabled and replicaCount is more than 1, this should be set to ReadWriteMany
+    annotations: {}  # Annotations to add to the PVC
+    size: 1Gi  # The requested storage size for the PVC
+    volumeMode: ''  # The volume mode for the PVC. Can be either "Filesystem" (default) or "Block"
+    mountPath: /app/.next/cache  # The path to mount the volume in the container
 
   dataVolume:
-    enabled: false # If set to true, a PersistentVolumeClaim (PVC) will be created
-    storageClass: '' # The storage class to use for the PVC. If not set, the default StorageClass will be used
-    existingClaim: '' # If set, this existing PVC will be used instead of creating a new one
+    enabled: false  # If set to true, a PersistentVolumeClaim (PVC) will be created
+    storageClass: ''  # The storage class to use for the PVC. If not set, the default StorageClass will be used
+    existingClaim: ''  # If set, this existing PVC will be used instead of creating a new one
     accessModes:
-      - ReadWriteOnce # The access modes for the PVC. Can be ReadWriteOnce, ReadOnlyMany, or ReadWriteMany. If dataVolume is enabled and replicaCount is more than 1, this should be set to ReadWriteMany
-    annotations: {} # Annotations to add to the PVC
-    size: 1Gi # The requested storage size for the PVC
-    volumeMode: '' # The volume mode for the PVC. Can be either "Filesystem" (default) or "Block"
-    mountPath: /app/data # The path to mount the volume in the container
+      - ReadWriteOnce  # The access modes for the PVC. Can be ReadWriteOnce, ReadOnlyMany, or ReadWriteMany. If dataVolume is enabled and replicaCount is more than 1, this should be set to ReadWriteMany
+    annotations: {}  # Annotations to add to the PVC
+    size: 1Gi  # The requested storage size for the PVC
+    volumeMode: ''  # The volume mode for the PVC. Can be either "Filesystem" (default) or "Block"
+    mountPath: /app/data  # The path to mount the volume in the container
 
   hpa:
     enabled: false
@@ -139,6 +139,18 @@ web:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+
+  # env -- Non-secret env vars stored in the chart-managed ConfigMap.
+  # Merged on top of the default envs (AWS_SDK_CONFIG_OPT_OUT, NEXT_TELEMETRY_DISABLED).
+  # web.env:
+  #   NEXT_PUBLIC_API_BASE: https://api.example.com
+  env: {}
+
+  # secretEnv -- Secret env vars stored in the chart-managed Secret.
+  # Keys are normalized to uppercase and '-' is replaced with '_' (same behavior as extraEnvs).
+  # web.secretEnv:
+  #   NEXTAUTH_SECRET: xxxx
+  secretEnv: {}
 
   extraEnvs: []
   # extraEnvs:
