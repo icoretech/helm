@@ -244,6 +244,14 @@ pgbouncerExporter:
   imagePullSecrets: []
   # -- Whether to create a PodMonitor for scraping metrics (Prometheus Operator).
   podMonitor: false
+  auth:
+    # -- If set, the exporter will read credentials from this Secret instead of config.existingAdminSecret.
+    # This allows using a separate, lower-privilege stats user. Leave empty to preserve current behavior.
+    existingSecret: ""
+    # -- Secret key for the exporter username (only used when auth.existingSecret is set).
+    userKey: adminUser
+    # -- Secret key for the exporter password (only used when auth.existingSecret is set).
+    passwordKey: adminPassword
   host: 127.0.0.1
   port: 5432
   database: pgbouncer

@@ -1,4 +1,7 @@
 {{- if .Values.podDisruptionBudget.enabled }}
+{{- if and .Values.podDisruptionBudget.maxUnavailable .Values.podDisruptionBudget.minAvailable }}
+{{- fail "podDisruptionBudget.maxUnavailable and podDisruptionBudget.minAvailable are mutually exclusive" }}
+{{- end }}
 apiVersion: {{ template "podDisruptionBudget.apiVersion" . }}
 kind: PodDisruptionBudget
 metadata:

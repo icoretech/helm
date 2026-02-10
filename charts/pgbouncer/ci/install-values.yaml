@@ -1,0 +1,4 @@
+# Values used by chart-testing (ct install) to ensure the chart can be installed.
+# The chart requires an admin password when creating the admin Secret.
+config:
+  adminPassword: changeme

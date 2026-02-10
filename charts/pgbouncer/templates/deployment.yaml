@@ -1,4 +1,9 @@
 {{- if eq .Values.kind "Deployment" }}
+{{- $exporterAuthSecret := .Values.pgbouncerExporter.auth.existingSecret | default "" -}}
+{{- $adminSecretName := .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) -}}
+{{- $exporterSecretName := ternary $exporterAuthSecret $adminSecretName (ne $exporterAuthSecret "") -}}
+{{- $exporterUserKey := ternary (.Values.pgbouncerExporter.auth.userKey | default "adminUser") (.Values.config.adminUserKey | default "adminUser") (ne $exporterAuthSecret "") -}}
+{{- $exporterPasswordKey := ternary (.Values.pgbouncerExporter.auth.passwordKey | default "adminPassword") (.Values.config.adminPasswordKey | default "adminPassword") (ne $exporterAuthSecret "") -}}
 apiVersion: {{ template "deployment.apiVersion" . }}
 kind: Deployment
 metadata:
@@ -150,23 +155,23 @@ spec:
         - name: PGBOUNCER_USER
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) }}
-              key: {{ .Values.config.adminUserKey | default "adminUser" }}
+              name: {{ $exporterSecretName }}
+              key: {{ $exporterUserKey }}
         - name: PGBOUNCER_PASS
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) }}
-              key: {{ .Values.config.adminPasswordKey | default "adminPassword" }}
+              name: {{ $exporterSecretName }}
+              key: {{ $exporterPasswordKey }}
         - name: PGUSER
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) }}
-              key: {{ .Values.config.adminUserKey | default "adminUser" }}
+              name: {{ $exporterSecretName }}
+              key: {{ $exporterUserKey }}
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.config.existingAdminSecret | default (printf "%s-secret" (include "pgbouncer.fullname" .)) }}
-              key: {{ .Values.config.adminPasswordKey | default "adminPassword" }}
+              name: {{ $exporterSecretName }}
+              key: {{ $exporterPasswordKey }}
         {{- if .Values.pgbouncerExporter.resources }}
         resources: {{ toYaml .Values.pgbouncerExporter.resources | trimSuffix "\n" | nindent 10 }}
         {{- end }}

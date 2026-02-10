@@ -2,7 +2,7 @@ apiVersion: v2
 name: pgbouncer
 description: A Helm chart for deploying PgBouncer, a PostgreSQL connection pooler, on Kubernetes
 type: application
-version: 4.1.0
+version: 4.1.1
 appVersion: 1.25.1
 kubeVersion: ">= 1.31.0-0"
 icon: https://icoretech.github.io/helm/charts/pgbouncer/logo.png
@@ -11,7 +11,7 @@ keywords:
   - postgresql
   - kubernetes
 maintainers:
-  - name: Claudio Poli
+  - name: masterkain
     email: claudio@icorete.ch
     url: https://github.com/masterkain
 home: https://github.com/icoretech/helm

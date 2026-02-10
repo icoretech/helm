@@ -55,13 +55,16 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy: Always, IfNotPresent, or Never |
 | image.registry | string | `""` | Container image registry |
 | image.repository | string | `"ghcr.io/icoretech/pgbouncer-docker"` | Container image repository |
-| image.tag | string | `"1.24.1"` | Container image tag |
+| image.tag | string | `"1.25.1"` | Container image tag |
 | imagePullSecrets | list | `[]` | Array of imagePullSecrets to use for pulling private images. |
 | kind | string | `"Deployment"` | Resource type for PgBouncer (Deployment, DaemonSet). Defaults to Deployment. |
 | lifecycle | object | `{}` | See Kubernetes docs on lifecycle hooks. |
 | minReadySeconds | int | `0` | Minimum number of seconds for which a newly created pod should be ready without crashing, before being considered available. |
 | nameOverride | string | `""` | Overrides the chart name for resources. If set, takes precedence over the chart's name. |
 | nodeSelector | object | `{}` | Node labels for pod assignment. |
+| pgbouncerExporter.auth.existingSecret | string | `""` | If set, the exporter will read credentials from this Secret instead of config.existingAdminSecret. This allows using a separate, lower-privilege stats user. Leave empty to preserve current behavior. |
+| pgbouncerExporter.auth.passwordKey | string | `"adminPassword"` | Secret key for the exporter password (only used when auth.existingSecret is set). |
+| pgbouncerExporter.auth.userKey | string | `"adminUser"` | Secret key for the exporter username (only used when auth.existingSecret is set). |
 | pgbouncerExporter.connect_timeout | int | `10` |  |
 | pgbouncerExporter.database | string | `"pgbouncer"` |  |
 | pgbouncerExporter.enabled | bool | `false` | Enable or disable the PgBouncer exporter sidecar container. |
@@ -93,6 +96,8 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | service.internalTrafficPolicy | string | `"Cluster"` | Internal traffic policy for the Service (Cluster or Local). |
 | service.nodePort | string | `nil` | Set service nodePort, can be null |
 | service.port | int | `5432` | The service port for PgBouncer. |
+| service.sessionAffinity | string | `"None"` | If "ClientIP", consecutive client requests will be directed to the same Pod |
+| service.sessionAffinityConfig | object | `{}` | sessionAffinityConfig Additional settings for the sessionAffinity sessionAffinityConfig:   clientIP:     timeoutSeconds: 180 |
 | service.type | string | `"ClusterIP"` | Service type (e.g. ClusterIP, NodePort, LoadBalancer). |
 | serviceAccount.annotations | object | `{}` | Annotations for the created ServiceAccount. |
 | serviceAccount.name | string | `""` | Creates a new ServiceAccount if this is empty. |
