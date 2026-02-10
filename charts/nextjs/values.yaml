@@ -8,6 +8,10 @@ web:
   terminationGracePeriodSeconds: 0
   replicaCount: 1
   runtimeClassName:
+  # podAnnotations -- Additional annotations to add to the web Pod template (e.g., `secret.reloader.stakater.com/auto: "true"`).
+  podAnnotations: {}
+  # podLabels -- Additional labels to add to the web Pod template.
+  podLabels: {}
 
   updateStrategy:
     type: RollingUpdate
