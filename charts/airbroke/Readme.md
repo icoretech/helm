@@ -93,6 +93,8 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | web.livenessProbe.successThreshold | int | `1` |  |
 | web.livenessProbe.timeoutSeconds | int | `5` |  |
 | web.nodeSelector | object | `{}` |  |
+| web.podAnnotations | object | `{}` |  |
+| web.podLabels | object | `{}` |  |
 | web.prismaVersion | string | `"7"` |  |
 | web.readinessProbe.enabled | bool | `true` |  |
 | web.readinessProbe.failureThreshold | int | `2` |  |
