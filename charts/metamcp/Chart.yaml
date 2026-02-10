@@ -2,7 +2,7 @@ apiVersion: v2
 name: metamcp
 description: MetaMCP aggregator Helm chart for Kubernetes
 type: application
-version: 0.2.2
+version: 0.2.3
 appVersion: "2.4.22"
 icon: https://icoretech.github.io/helm/charts/metamcp/logo.png
 keywords:
@@ -19,3 +19,6 @@ sources:
   - https://github.com/metatool-ai/metamcp
 annotations:
   artifacthub.io/license: "MIT"
+  artifacthub.io/signKey: |
+    fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+    url: https://icoretech.github.io/helm/pgp-public-key.asc

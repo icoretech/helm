@@ -3,7 +3,7 @@ fullnameOverride: ""
 
 web:
   imagePullPolicy: IfNotPresent
-  imagePullSecrets: "" # must be present in namespace
+  imagePullSecrets: ""  # must be present in namespace
   image: ghcr.io/icoretech/chatgpt-retrieval-plugin-docker:postgres-9969191-1685433326
   terminationGracePeriodSeconds: 0
   replicaCount: 1
@@ -65,7 +65,7 @@ web:
     annotations: {}
 
   livenessProbe:
-    enabled: false # there are no health checks atm
+    enabled: false  # there are no health checks atm
     httpGet:
       httpHeaders: []
     initialDelaySeconds: 0
@@ -74,7 +74,7 @@ web:
     failureThreshold: 2
     successThreshold: 1
   readinessProbe:
-    enabled: false # there are no health checks atm
+    enabled: false  # there are no health checks atm
     httpGet:
       httpHeaders: []
     initialDelaySeconds: 0
@@ -98,4 +98,4 @@ web:
   #     value: "xxxxx"
   extraEnvFromSecret: []
   # extraEnvFromSecret:
-  #   - custom-secret    
+  #   - custom-secret

@@ -2,7 +2,7 @@ apiVersion: v2
 name: chatgpt-retrieval-plugin
 description: ChatGPT Retrieval Plugin Helm chart for Kubernetes
 type: application
-version: 0.0.20
+version: 0.0.21
 appVersion: "0.0.1"
 deprecated: true
 keywords:
@@ -10,16 +10,15 @@ keywords:
   - openai
   - chatgpt
   - chatgpt-plugin
-maintainers:
-  - name: Claudio Poli
-    email: claudio@icorete.ch
-    url: https://github.com/masterkain
 home: https://github.com/icoretech/chatgpt-retrieval-plugin-docker
 sources:
   - https://github.com/icoretech/chatgpt-retrieval-plugin-docker
   - https://github.com/icoretech/helm/tree/main/charts/chatgpt-retrieval-plugin
 annotations:
   artifacthub.io/license: "MIT"
+  artifacthub.io/signKey: |
+    fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+    url: https://icoretech.github.io/helm/pgp-public-key.asc
   artifacthub.io/category: ai-machine-learning
   artifacthub.io/deprecated: "true"
   artifacthub.io/deprecationMessage: "This Helm chart is deprecated and no longer maintained by iCoreTech. No further support is planned; avoid new deployments and plan migrations."
