@@ -21,9 +21,15 @@ spec:
     metadata:
       labels:
         {{- include "app.web.selectorLabels" . | nindent 8 }}
+        {{- with .Values.web.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       annotations:
         checksum/env-cm: {{ include (print $.Template.BasePath "/web-env-cm.yaml") . | sha256sum }}
         checksum/env-secret: {{ include (print $.Template.BasePath "/web-env-secret.yaml") . | sha256sum }}
+        {{- with .Values.web.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- if .Values.web.runtimeClassName }}
       runtimeClassName: {{ .Values.web.runtimeClassName }}
