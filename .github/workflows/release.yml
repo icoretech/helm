@@ -43,13 +43,26 @@ jobs:
           fi
 
           mkdir -p .cr-gpg
-          echo "$GPG_KEYRING_BASE64" | base64 -d > .cr-gpg/secring.gpg
-          chmod 600 .cr-gpg/secring.gpg
+          echo "$GPG_KEYRING_BASE64" | base64 -d > .cr-gpg/private.key
+          chmod 600 .cr-gpg/private.key
+
+          # Import signing key into a dedicated GPG homedir so helm/cr can find the private key.
+          GNUPGHOME="$PWD/.gnupg"
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+          gpg --batch --homedir "$GNUPGHOME" --import .cr-gpg/private.key
+
+          # Helm expects a GPG keyring file in legacy .gpg format (not pubring.kbx).
+          gpg --batch --homedir "$GNUPGHOME" --yes \
+            --output "$PWD/.cr-gpg/pubring.gpg" \
+            --export "$GPG_SIGNING_KEY"
+          chmod 600 .cr-gpg/pubring.gpg
 
           {
             echo "CR_SIGN=true"
             echo "CR_KEY=$GPG_SIGNING_KEY"
-            echo "CR_KEYRING=$PWD/.cr-gpg/secring.gpg"
+            echo "CR_KEYRING=$PWD/.cr-gpg/pubring.gpg"
+            echo "GNUPGHOME=$GNUPGHOME"
           } >> "$GITHUB_ENV"
 
           echo "enabled=true" >> "$GITHUB_OUTPUT"

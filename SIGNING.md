@@ -11,7 +11,7 @@ This repository signs Helm chart packages (`.tgz`) with Helm provenance (`.prov`
 
 ## GitHub Actions Secrets
 The release workflow expects these repo secrets:
-- `GPG_KEYRING_BASE64`: base64 of a GPG secret keyring file (`secring.gpg`) containing the signing key.
+- `GPG_KEYRING_BASE64`: base64 of an exported GPG private key file (for example from `gpg --export-secret-keys`).
 - `GPG_SIGNING_KEY`: the signing key identifier (recommended: full fingerprint).
 
 If chart versions are bumped in a push to `main` and signing secrets are missing, the release workflow will fail intentionally to avoid publishing unsigned chart versions.
@@ -27,4 +27,3 @@ helm pull icoretech/<chart> --version <version> --prov
 curl -fsSL https://icoretech.github.io/helm/pgp-public-key.asc | gpg --import
 helm verify <chart>-<version>.tgz
 ```
-
