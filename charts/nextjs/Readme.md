@@ -1,84 +1,96 @@
-# Generic Helm chart for Nextjs apps on Kubernetes
+# nextjs
 
-This Helm chart deploys Nextjs apps without dependencies.
+![Version: 1.1.13](https://img.shields.io/badge/Version-1.1.13-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
-## Installing the Chart
+Generic Helm chart for Nextjs apps on Kubernetes
 
-To install the chart with the release name `my-nextjsapp`:
+**Homepage:** <https://github.com/icoretech/helm>
 
-```bash
-# OCI
-helm install my-nextjsapp oci://ghcr.io/icoretech/charts/nextjs \
-  --set web.image=yourusername/yourimage:tag \
-  --set web.extraEnvs[0].name=MYVAR1,web.extraEnvs[0].value=value1 \
-  --set web.extraEnvs[1].name=MYVAR2,web.extraEnvs[1].value=value2
+## Maintainers
 
-```
+| Name | Email | Url |
+| ---- | ------ | --- |
+| Claudio Poli | <claudio@icorete.ch> | <https://github.com/masterkain> |
 
-```bash
-helm repo add icoretech https://icoretech.github.io/helm
-helm install my-nextjsapp icoretech/nextjs \
-  --set web.image=yourusername/yourimage:tag \
-  --set web.extraEnvs[0].name=MYVAR1,web.extraEnvs[0].value=value1 \
-  --set web.extraEnvs[1].name=MYVAR2,web.extraEnvs[1].value=value2
-```
+## Source Code
 
-## Configuration
+* <https://github.com/icoretech/helm>
 
-The following table lists the configurable parameters of the Airbroke chart and their default values.
+## Values
 
-| Parameter | Description | Default |
-| --------- | ----------- | ------- |
-| `nameOverride` | String to partially override app.fullname | `""` |
-| `fullnameOverride` | String to fully override app.fullname | `""` |
-| `web.image` | Docker image for the web application | `""` |
-| `web.imagePullPolicy` | Image pull policy | `IfNotPresent` |
-| `web.imagePullSecrets` | Image pull secrets, must be present in namespace | `""` |
-| `web.terminationGracePeriodSeconds` | Grace period for shutdown | `0` |
-| `web.replicaCount` | Number of replicas to run | `1` |
-| `web.runtimeClassName` | Select the container runtime configuration | `` |
-| `web.updateStrategy` | Update strategy to use | `{type: RollingUpdate, rollingUpdate: {maxUnavailable: 0, maxSurge: 1}}` |
-| `web.cachePersistentVolume.enabled` | Enables a PersistentVolumeClaim for caching | `false` |
-| `web.cachePersistentVolume.storageClass` | The storage class to use for the PVC | `""` |
-| `web.cachePersistentVolume.existingClaim` | An existing PVC to use for the cache | `""` |
-| `web.cachePersistentVolume.accessModes` | The access modes for the PVC | `["ReadWriteOnce"]` |
-| `web.cachePersistentVolume.annotations` | Annotations to add to the PVC | `{}` |
-| `web.cachePersistentVolume.size` | The size of the PVC | `1Gi` |
-| `web.cachePersistentVolume.volumeMode` | The volume mode for the PVC | `""` |
-| `web.cachePersistentVolume.mountPath` | The path to mount the volume in the container | `/app/.next/cache` |
-| `web.hpa.enabled` | Enables the Horizontal Pod Autoscaler | `false` |
-| `web.hpa.maxReplicas` | Maximum number of replicas for HPA | `10` |
-| `web.hpa.cpu` | Average CPU usage per pod for HPA | |
-| `web.hpa.memory` | Average memory usage per pod for HPA | |
-| `web.hpa.requests` | Average HTTP requests per second per pod for HPA | |
-| `web.ingress.enabled` | Enables Ingress | `false` |
-| `web.ingress.ingressClassName` | Ingress class name | `nginx` |
-| `web.ingress.annotations` | Annotations for Ingress | `{}` |
-| `web.ingress.hosts` | Hosts for Ingress | `[]` |
-| `web.ingress.tls` | TLS configuration for Ingress | `[]` |
-| `web.service.enabled` | Enables service | `true` |
-| `web.service.type` | Type of service | `ClusterIP` |
-| `web.service.port` | Service port | `3000` |
-| `web.livenessProbe.enabled` | Enables liveness probe | `false` |
-| `web.livenessProbe.httpGet.endpoint` | Endpoint for liveness probe | `/api/hc?source=livenessProbe` |
-| `web.livenessProbe.httpGet.httpHeaders` | HTTP headers for liveness probe | `[]` |
-| `web.livenessProbe.initialDelaySeconds` | Initial delay for liveness probe | `0` |
-| `web.livenessProbe.periodSeconds` | Period seconds for liveness probe | `10` |
-| `web.livenessProbe.timeoutSeconds` | Timeout seconds for liveness probe | `5` |
-| `web.livenessProbe.failureThreshold` | Failure threshold for liveness probe | `2` |
-| `web.livenessProbe.successThreshold` | Success threshold for liveness probe | `1` |
-| `web.readinessProbe.enabled` | Enables readiness probe | `false` |
-| `web.readinessProbe.httpGet.endpoint` | Endpoint for readiness probe | `/api/hc?source=readinessProbe` |
-| `web.readinessProbe.httpGet.httpHeaders` | HTTP headers for readiness probe | `[]` |
-| `web.readinessProbe.initialDelaySeconds` | Initial delay for readiness probe | `0` |
-| `web.readinessProbe.periodSeconds` | Period seconds for readiness probe | `10` |
-| `web.readinessProbe.timeoutSeconds` | Timeout seconds for readiness probe | `5` |
-| `web.readinessProbe.failureThreshold` | Failure threshold for readiness probe | `2` |
-| `web.readinessProbe.successThreshold` | Success threshold for readiness probe | `1` |
-| `web.resources` | CPU/Memory resource requests/limits | `{}` |
-| `web.nodeSelector` | Node labels for pod assignment | `{}` |
-| `web.tolerations` | Tolerations for pod assignment | `[]` |
-| `web.affinity` | Affinity settings for pod assignment | `{}` |
-| `web.extraEnvs` | Additional environment variables | `[]` |
-| `web.extraEnvFrom` | Additional `envFrom` refs (Secrets/ConfigMaps) | `[]` |
-| `web.podDisruptionBudget.enabled` | Enable PDB to ensure availability during disruptions. | `false` |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| fullnameOverride | string | `""` |  |
+| nameOverride | string | `""` |  |
+| web.affinity | object | `{}` |  |
+| web.cachePersistentVolume.accessModes[0] | string | `"ReadWriteOnce"` |  |
+| web.cachePersistentVolume.annotations | object | `{}` |  |
+| web.cachePersistentVolume.enabled | bool | `false` |  |
+| web.cachePersistentVolume.existingClaim | string | `""` |  |
+| web.cachePersistentVolume.mountPath | string | `"/app/.next/cache"` |  |
+| web.cachePersistentVolume.size | string | `"1Gi"` |  |
+| web.cachePersistentVolume.storageClass | string | `""` |  |
+| web.cachePersistentVolume.volumeMode | string | `""` |  |
+| web.dataVolume.accessModes[0] | string | `"ReadWriteOnce"` |  |
+| web.dataVolume.annotations | object | `{}` |  |
+| web.dataVolume.enabled | bool | `false` |  |
+| web.dataVolume.existingClaim | string | `""` |  |
+| web.dataVolume.mountPath | string | `"/app/data"` |  |
+| web.dataVolume.size | string | `"1Gi"` |  |
+| web.dataVolume.storageClass | string | `""` |  |
+| web.dataVolume.volumeMode | string | `""` |  |
+| web.extraContainers | list | `[]` |  |
+| web.extraEnvFrom | list | `[]` |  |
+| web.extraEnvs | list | `[]` |  |
+| web.hpa.cpu | string | `nil` |  |
+| web.hpa.enabled | bool | `false` |  |
+| web.hpa.maxReplicas | int | `10` |  |
+| web.hpa.memory | string | `nil` |  |
+| web.hpa.requests | string | `nil` |  |
+| web.image | string | `""` |  |
+| web.imagePullPolicy | string | `"IfNotPresent"` |  |
+| web.imagePullSecrets | string | `""` |  |
+| web.ingress.annotations | object | `{}` |  |
+| web.ingress.enabled | bool | `false` |  |
+| web.ingress.hosts | list | `[]` |  |
+| web.ingress.ingressClassName | string | `"nginx"` |  |
+| web.ingress.tls | list | `[]` |  |
+| web.initContainers | list | `[]` |  |
+| web.livenessProbe.enabled | bool | `false` |  |
+| web.livenessProbe.failureThreshold | int | `2` |  |
+| web.livenessProbe.httpGet.endpoint | string | `"/api/hc?source=livenessProbe"` |  |
+| web.livenessProbe.httpGet.httpHeaders | list | `[]` |  |
+| web.livenessProbe.initialDelaySeconds | int | `0` |  |
+| web.livenessProbe.periodSeconds | int | `10` |  |
+| web.livenessProbe.successThreshold | int | `1` |  |
+| web.livenessProbe.timeoutSeconds | int | `5` |  |
+| web.nodeSelector | object | `{}` |  |
+| web.podAnnotations | object | `{}` |  |
+| web.podDisruptionBudget.enabled | bool | `false` |  |
+| web.podDisruptionBudget.maxUnavailable | string | `nil` |  |
+| web.podDisruptionBudget.minAvailable | string | `nil` |  |
+| web.podLabels | object | `{}` |  |
+| web.readinessProbe.enabled | bool | `false` |  |
+| web.readinessProbe.failureThreshold | int | `2` |  |
+| web.readinessProbe.httpGet.endpoint | string | `"/api/hc?source=readinessProbe"` |  |
+| web.readinessProbe.httpGet.httpHeaders | list | `[]` |  |
+| web.readinessProbe.initialDelaySeconds | int | `0` |  |
+| web.readinessProbe.periodSeconds | int | `10` |  |
+| web.readinessProbe.successThreshold | int | `1` |  |
+| web.readinessProbe.timeoutSeconds | int | `5` |  |
+| web.replicaCount | int | `1` |  |
+| web.resources | object | `{}` |  |
+| web.runtimeClassName | string | `nil` |  |
+| web.service.annotations | object | `{}` |  |
+| web.service.enabled | bool | `true` |  |
+| web.service.nodePort | string | `nil` |  |
+| web.service.port | int | `3000` |  |
+| web.service.type | string | `"ClusterIP"` |  |
+| web.terminationGracePeriodSeconds | int | `0` |  |
+| web.tolerations | list | `[]` |  |
+| web.updateStrategy.rollingUpdate.maxSurge | int | `1` |  |
+| web.updateStrategy.rollingUpdate.maxUnavailable | int | `0` |  |
+| web.updateStrategy.type | string | `"RollingUpdate"` |  |
+
+----------------------------------------------
+Autogenerated from chart metadata using [helm-docs v1.14.2](https://github.com/norwoodj/helm-docs/releases/v1.14.2)
