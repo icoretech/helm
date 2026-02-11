@@ -47,6 +47,10 @@ spec:
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "metamcp.fullname" . }}
       {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- $hasDBURL := and (kindIs "map" .Values.env) (hasKey .Values.env "DATABASE_URL") }}
       {{- if not $hasDBURL }}
       {{- /* only use init container when using internal postgres */}}

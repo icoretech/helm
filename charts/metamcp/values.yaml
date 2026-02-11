@@ -9,6 +9,10 @@ image:
   pullPolicy: IfNotPresent
   tag: 2.4.22
 
+# -- imagePullSecrets allows pulling the MetaMCP image from private registries.
+# Example:
+# imagePullSecrets:
+#   - name: regcred
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
