@@ -53,8 +53,8 @@ spec:
               readOnly: true
       volumes:
         - name: cfg
-          configMap:
-            name: {{ include "metamcp.fullname" . }}-user-bootstrap
+          secret:
+            secretName: {{ include "metamcp.fullname" . }}-user-bootstrap-cfg
             items:
               - key: config.json
                 path: config.json

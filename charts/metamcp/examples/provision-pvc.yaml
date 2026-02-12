@@ -6,8 +6,11 @@ auth:
 
 users:
   - email: admin@example.com
-    password: change-me
     name: Admin
+    passwordFrom:
+      secretKeyRef:
+        name: metamcp-admin-credentials
+        key: password
 
 provision:
   enabled: true

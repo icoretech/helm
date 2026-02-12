@@ -6,8 +6,11 @@ auth:
 
 users:
   - email: admin@example.com
-    password: change-me
     name: Admin
+    passwordFrom:
+      secretKeyRef:
+        name: metamcp-admin-credentials
+        key: password
 
 provision:
   enabled: true
@@ -25,7 +28,7 @@ provision:
         requests: { cpu: "100m", memory: "128Mi" }
         limits:   { cpu: "500m", memory: "512Mi" }
       readinessProbe:
-        httpGet: { path: "/mcp", port: "http" }
+        tcpSocket: { port: "http" }
         initialDelaySeconds: 2
         periodSeconds: 5
       livenessProbe:
@@ -100,7 +103,7 @@ provision:
         initialDelaySeconds: 2
         periodSeconds: 5
       livenessProbe:
-        httpGet: { path: "/sse", port: "http" }
+        tcpSocket: { port: "http" }
         initialDelaySeconds: 10
         periodSeconds: 10
       pdb:

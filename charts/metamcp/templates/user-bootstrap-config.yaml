@@ -8,9 +8,6 @@ metadata:
     {{- include "metamcp.labels" . | nindent 4 }}
     app.kubernetes.io/component: user-bootstrap
 data:
-  config.json: |
-    {{- $cfg := dict "users" $users "disablePublicSignup" (.Values.disablePublicSignup | default false) -}}
-    {{- toJson $cfg | nindent 4 }}
   user-bootstrap.py: |
 {{ (.Files.Get "scripts/user-bootstrap.py") | indent 4 }}
 {{- end }}

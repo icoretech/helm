@@ -54,8 +54,11 @@ env:
 
 users:
   - email: admin@example.com
-    password: change-me
     name: Admin
+    passwordFrom:
+      secretKeyRef:
+        name: metamcp-admin-credentials
+        key: password
 
 provision:
   enabled: true
@@ -100,14 +103,23 @@ provision:
 
 ## User seeding (required when provisioning is enabled)
 
-Provisioning authenticates using the first entry in `users`. When `provision.enabled: true`, you must define at least one user (the schema enforces this). The chart can also generate an API key for that user and store it in a Secret named like `<release>-metamcp-apikey-<email-slug>`.
+Provisioning authenticates using the first user in the bootstrap config.
+
+When `provision.enabled: true`, you must provide either:
+- `users[].password` (dev-only), or
+- `users[].passwordFrom.secretKeyRef` (recommended).
+
+The chart can also generate an API key for that user and store it in a Secret named like `<release>-metamcp-apikey-<email-slug>`.
 
 ```yaml
 disablePublicSignup: true
 users:
   - email: admin@example.com
-    password: change-me
     name: Admin
+    passwordFrom:
+      secretKeyRef:
+        name: metamcp-admin-credentials
+        key: password
     createApiKey: true
     apiKeyName: cli
 ```

@@ -167,10 +167,20 @@ disablePublicSignup: false
 # - role (string: user|admin) – reserved for future if MetaMCP exposes it
 # - createApiKey (bool) – when true, create an API key for the user
 # - apiKeyName (string) – optional name for the API key
+#
+# For production, avoid storing plaintext passwords in Helm values (HelmRelease/Flux).
+# Prefer `users[].passwordFrom.secretKeyRef` so passwords are sourced from a Kubernetes Secret.
 users: []
 # - email: admin@example.com
-#   password: change-me
+#   # password: change-me
 #   name: Admin
 #   role: user
 #   createApiKey: true
 #   apiKeyName: cli
+#
+# - email: admin@example.com
+#   name: Admin
+#   passwordFrom:
+#     secretKeyRef:
+#       name: metamcp-admin-credentials
+#       key: password

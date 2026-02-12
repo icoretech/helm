@@ -4,8 +4,11 @@ auth:
 env: {}
 users:
   - email: admin@example.com
-    password: change-me
     name: Admin
+    passwordFrom:
+      secretKeyRef:
+        name: metamcp-admin-credentials
+        key: password
 disablePublicSignup: true
 
 provision:

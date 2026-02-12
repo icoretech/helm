@@ -35,14 +35,32 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["email", "password", "name"],
+        "required": ["email", "name"],
         "properties": {
           "email": { "type": "string" },
           "password": { "type": "string" },
+          "passwordFrom": {
+            "type": "object",
+            "properties": {
+              "secretKeyRef": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "minLength": 1 },
+                  "key": { "type": "string", "minLength": 1 }
+                },
+                "required": ["name", "key"]
+              }
+            },
+            "required": ["secretKeyRef"]
+          },
           "name": { "type": "string" },
           "createApiKey": { "type": "boolean" },
           "apiKeyName": { "type": "string" }
-        }
+        },
+        "anyOf": [
+          { "required": ["password"] },
+          { "required": ["passwordFrom"] }
+        ]
       }
     },
     "provision": {
