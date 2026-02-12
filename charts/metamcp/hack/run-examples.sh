@@ -3,6 +3,7 @@ set -euo pipefail
 
 KCTX=${KUBE_CONTEXT:-docker-desktop}
 NS=${NS:-metamcp}
+TIMEOUT=${TIMEOUT:-8m}
 
 run() { echo "+ $*"; "$@"; }
 
@@ -12,6 +13,7 @@ run kubectl --context "$KCTX" create ns "$NS"
 echo "# Precreate demo config/secret for advanced example"
 kubectl --context "$KCTX" -n "$NS" create configmap http-everything-config --from-literal=demo=ok --dry-run=client -o yaml | kubectl --context "$KCTX" -n "$NS" apply -f -
 kubectl --context "$KCTX" -n "$NS" create secret generic http-everything-env --from-literal=TOKEN=dev --dry-run=client -o yaml | kubectl --context "$KCTX" -n "$NS" apply -f -
+kubectl --context "$KCTX" -n "$NS" create secret generic metamcp-admin-credentials --from-literal=password=change-me --dry-run=client -o yaml | kubectl --context "$KCTX" -n "$NS" apply -f -
 cat <<YAML | kubectl --context "$KCTX" -n "$NS" apply -f -
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -33,7 +35,7 @@ install_example() {
     --namespace "$NS" --create-namespace \
     --kube-context "$KCTX" \
     -f "$ROOT/examples/$name" \
-    --wait --timeout 50s
+    --wait --timeout "$TIMEOUT"
   echo "# Pods"
   run kubectl --context "$KCTX" -n "$NS" get pods -o wide
   echo "# Jobs logs (if any)"

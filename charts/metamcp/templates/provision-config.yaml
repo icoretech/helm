@@ -93,7 +93,7 @@ spec:
             name: {{ include "metamcp.fullname" . }}-provision
         - name: users
           secret:
-            name: {{ include "metamcp.fullname" . }}-user-bootstrap-cfg
+            secretName: {{ include "metamcp.fullname" . }}-user-bootstrap-cfg
             items:
               - key: config.json
                 path: config.json

@@ -3,6 +3,7 @@
 {{- $root := $ -}}
 {{- $name := ($srv.name | default (printf "srv-%d" $i)) | trunc 40 | trimSuffix "-" -}}
 {{- if and (hasKey $srv "config") ($srv.config.enabled | default false) (hasKey $srv.config "contents") }}
+{{- $fname := (default "config.json" $srv.config.filename) -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -12,7 +13,6 @@ metadata:
     app.kubernetes.io/component: server
     mcp.icorete.ch/server: {{ $name }}
 data:
-  {{- $fname := (default "config.json" $srv.config.filename) -}}
   {{ $fname }}: |
     {{- /* Preserve indentation of multi-line content */ -}}
     {{- if kindIs "string" $srv.config.contents }}
