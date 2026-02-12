@@ -52,17 +52,13 @@ auth:
 env:
   APP_URL: http://metamcp-metamcp.<namespace>.svc.cluster.local:12008
 
-# Recommended for production: store bootstrap users in a Secret (e.g., created by ExternalSecret)
-userBootstrap:
-  existingSecret:
-    name: metamcp-users
-    key: config.json
-
-# Dev-only alternative (keeps back-compat): define users directly in values
-# users:
-#   - email: admin@example.com
-#     password: change-me
-#     name: Admin
+users:
+  - email: admin@example.com
+    name: Admin
+    passwordFrom:
+      secretKeyRef:
+        name: metamcp-admin-credentials
+        key: password
 
 provision:
   enabled: true
@@ -110,8 +106,8 @@ provision:
 Provisioning authenticates using the first user in the bootstrap config.
 
 When `provision.enabled: true`, you must provide either:
-- `users` (dev-friendly, back-compatible), or
-- `userBootstrap.existingSecret` (recommended) pointing to a Secret containing `config.json`.
+- `users[].password` (dev-only), or
+- `users[].passwordFrom.secretKeyRef` (recommended).
 
 The chart can also generate an API key for that user and store it in a Secret named like `<release>-metamcp-apikey-<email-slug>`.
 
@@ -119,19 +115,13 @@ The chart can also generate an API key for that user and store it in a Secret na
 disablePublicSignup: true
 users:
   - email: admin@example.com
-    password: change-me
     name: Admin
+    passwordFrom:
+      secretKeyRef:
+        name: metamcp-admin-credentials
+        key: password
     createApiKey: true
     apiKeyName: cli
-```
-
-Secret-based bootstrap (recommended):
-
-```yaml
-userBootstrap:
-  existingSecret:
-    name: metamcp-users
-    key: config.json
 ```
 
 ### Reconciliation modes (Flux/Helm upgrades)

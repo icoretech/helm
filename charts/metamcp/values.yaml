@@ -168,20 +168,19 @@ disablePublicSignup: false
 # - createApiKey (bool) – when true, create an API key for the user
 # - apiKeyName (string) – optional name for the API key
 #
-# For production, prefer `userBootstrap.existingSecret` so credentials are not stored
-# in Helm values (HelmRelease/Flux) and are not rendered into a ConfigMap.
+# For production, avoid storing plaintext passwords in Helm values (HelmRelease/Flux).
+# Prefer `users[].passwordFrom.secretKeyRef` so passwords are sourced from a Kubernetes Secret.
 users: []
 # - email: admin@example.com
-#   password: change-me
+#   # password: change-me
 #   name: Admin
 #   role: user
 #   createApiKey: true
 #   apiKeyName: cli
-
-# Optional: provide the bootstrap config via an existing Secret instead of values.users.
-# The Secret must contain a key (default: config.json) whose contents are JSON like:
-# {"users":[{"email":"...","password":"...","name":"..."}],"disablePublicSignup":false}
-userBootstrap:
-  existingSecret:
-    name: ""
-    key: config.json
+#
+# - email: admin@example.com
+#   name: Admin
+#   passwordFrom:
+#     secretKeyRef:
+#       name: metamcp-admin-credentials
+#       key: password

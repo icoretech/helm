@@ -18,6 +18,46 @@ ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD','change-me')
 UPDATE_EXISTING = (os.environ.get('UPDATE_EXISTING','true').lower() == 'true')
 BOOTSTRAP_CFG_PATH = os.environ.get('BOOTSTRAP_CFG_PATH', '/users/config.json')
 
+def k8s_get_secret_val(name: str, key: str):
+    try:
+        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
+        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+        url = f"https://kubernetes.default.svc/api/v1/namespaces/{NS}/secrets/{name}"
+        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
+        if r.status_code == 200:
+            data = r.json().get('data',{})
+            b = data.get(key)
+            if b:
+                return base64.b64decode(b).decode()
+    except Exception:
+        pass
+    return None
+
+def k8s_get_secret_data(name: str):
+    try:
+        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
+        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+        url = f"https://kubernetes.default.svc/api/v1/namespaces/{NS}/secrets/{name}"
+        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
+        if r.status_code == 200:
+            data = r.json().get('data',{})
+            return {k: base64.b64decode(v).decode() for k,v in data.items()}
+    except Exception:
+        pass
+    return {}
+
+def k8s_get_configmap_data(name: str):
+    try:
+        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
+        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+        url = f"https://kubernetes.default.svc/api/v1/namespaces/{NS}/configmaps/{name}"
+        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
+        if r.status_code == 200:
+            return r.json().get('data',{}) or {}
+    except Exception:
+        pass
+    return {}
+
 # Prefer credentials from a mounted file (Secret) to avoid placing passwords in env vars.
 try:
     if BOOTSTRAP_CFG_PATH and os.path.exists(BOOTSTRAP_CFG_PATH):
@@ -25,7 +65,12 @@ try:
         u0 = (j.get('users') or [{}])[0] or {}
         if isinstance(u0, dict):
             ADMIN_EMAIL = u0.get('email') or ADMIN_EMAIL
-            ADMIN_PASSWORD = u0.get('password') or ADMIN_PASSWORD
+            pw = u0.get('password')
+            if not pw and isinstance(u0.get('passwordFrom'), dict):
+                sk = (u0.get('passwordFrom') or {}).get('secretKeyRef') or {}
+                if isinstance(sk, dict) and sk.get('name') and sk.get('key'):
+                    pw = k8s_get_secret_val(sk['name'], sk['key'])
+            ADMIN_PASSWORD = pw or ADMIN_PASSWORD
 except Exception:
     pass
 
@@ -139,50 +184,6 @@ def trpc_get(path):
 def trpc_post_batch(path, body):
     # Wrap body as {"0": body} and use ?batch=1 to match UI routes
     return sess.post(f"{BACKEND}{path}?batch=1", headers={'Content-Type':'application/json','Host': SVC}, json={"0": body}, timeout=12)
-
-# K8s helpers (defined before usage)
-def k8s_get_secret_val(name: str, key: str):
-    try:
-        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
-        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
-        ns = NS
-        url = f"https://kubernetes.default.svc/api/v1/namespaces/{ns}/secrets/{name}"
-        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
-        if r.status_code == 200:
-            data = r.json().get('data',{})
-            b = data.get(key)
-            if b:
-                return base64.b64decode(b).decode()
-    except Exception:
-        pass
-    return None
-
-def k8s_get_secret_data(name: str):
-    try:
-        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
-        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
-        ns = NS
-        url = f"https://kubernetes.default.svc/api/v1/namespaces/{ns}/secrets/{name}"
-        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
-        if r.status_code == 200:
-            data = r.json().get('data',{})
-            return {k: base64.b64decode(v).decode() for k,v in data.items()}
-    except Exception:
-        pass
-    return {}
-
-def k8s_get_configmap_data(name: str):
-    try:
-        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
-        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
-        ns = NS
-        url = f"https://kubernetes.default.svc/api/v1/namespaces/{ns}/configmaps/{name}"
-        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
-        if r.status_code == 200:
-            return r.json().get('data',{}) or {}
-    except Exception:
-        pass
-    return {}
 
 # Map existing servers (name -> uuid and full info)
 srv_map = {}

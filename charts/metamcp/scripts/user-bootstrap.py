@@ -34,6 +34,21 @@ def slug_email(email: str) -> str:
 def b64(s: str) -> str:
     return base64.b64encode(s.encode()).decode()
 
+def k8s_get_secret_val(name: str, key: str):
+    try:
+        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
+        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+        url = f"https://kubernetes.default.svc/api/v1/namespaces/{NS}/secrets/{name}"
+        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
+        if r.status_code == 200:
+            data = r.json().get('data',{})
+            b = data.get(key)
+            if b:
+                return base64.b64decode(b).decode()
+    except Exception:
+        pass
+    return None
+
 def k8s_upsert_secret(name: str, email: str, api_key: str):
     token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
     cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
@@ -61,6 +76,10 @@ def k8s_upsert_secret(name: str, email: str, api_key: str):
 sessions = []
 for u in users:
     email = u.get('email'); password = u.get('password'); name = u.get('name')
+    if not password and isinstance(u.get('passwordFrom'), dict):
+        sk = (u.get('passwordFrom') or {}).get('secretKeyRef') or {}
+        if isinstance(sk, dict) and sk.get('name') and sk.get('key'):
+            password = k8s_get_secret_val(sk['name'], sk['key'])
     create_key = bool(u.get('createApiKey')); api_key_name = u.get('apiKeyName') or 'default'
     if not email or not password or not name:
         log(f"SKIP: incomplete user spec {u}")
