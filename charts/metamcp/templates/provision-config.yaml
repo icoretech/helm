@@ -33,15 +33,9 @@ data:
 ---
 {{- $prov := .Values.provision -}}
 {{- if and (kindIs "map" $prov) ($prov.enabled | default false) -}}
-{{- /* Derive admin creds outside YAML to avoid YAML parse issues inside env: */ -}}
-{{- $users := (default (list) .Values.users) -}}
-{{- $adminEmail := "admin@example.com" -}}
-{{- $adminPassword := "change-me" -}}
-{{- if gt (len $users) 0 -}}
-  {{- $u0 := (index $users 0) -}}
-  {{- if and (kindIs "map" $u0) (hasKey $u0 "email") ($u0.email) }}{{- $adminEmail = $u0.email -}}{{- end -}}
-  {{- if and (kindIs "map" $u0) (hasKey $u0 "password") ($u0.password) }}{{- $adminPassword = $u0.password -}}{{- end -}}
-{{- end -}}
+{{- $users := .Values.users | default (list) -}}
+{{- $existingName := (((.Values.userBootstrap | default dict).existingSecret | default dict).name | default "") -}}
+{{- $existingKey := (((.Values.userBootstrap | default dict).existingSecret | default dict).key | default "config.json") -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -80,13 +74,14 @@ spec:
               value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.fullname" .) .Release.Namespace | quote }}
             - name: FRONTEND_PORT
               value: {{ .Values.service.port | toString | quote }}
-            - name: ADMIN_EMAIL
-              value: {{ $adminEmail | quote }}
-            - name: ADMIN_PASSWORD
-              value: {{ $adminPassword | quote }}
+            - name: BOOTSTRAP_CFG_PATH
+              value: "/users/config.json"
           volumeMounts:
             - name: cfg
               mountPath: /cfg
+              readOnly: true
+            - name: users
+              mountPath: /users
               readOnly: true
           command: ["/bin/sh","-lc"]
           args:
@@ -98,4 +93,10 @@ spec:
         - name: cfg
           configMap:
             name: {{ include "metamcp.fullname" . }}-provision
+        - name: users
+          secret:
+            name: {{ if $existingName }}{{ $existingName }}{{ else }}{{ include "metamcp.fullname" . }}-user-bootstrap-cfg{{ end }}
+            items:
+              - key: {{ if $existingName }}{{ $existingKey }}{{ else }}config.json{{ end }}
+                path: config.json
 {{- end }}

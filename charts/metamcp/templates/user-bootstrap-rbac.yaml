@@ -1,5 +1,6 @@
 {{- $users := .Values.users | default (list) -}}
-{{- if gt (len $users) 0 }}
+{{- $existing := (((.Values.userBootstrap | default dict).existingSecret | default dict).name | default "") -}}
+{{- if or (gt (len $users) 0) $existing }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:

@@ -1,5 +1,6 @@
 {{- $users := .Values.users | default (list) -}}
-{{- if gt (len $users) 0 }}
+{{- $existing := (((.Values.userBootstrap | default dict).existingSecret | default dict).name | default "") -}}
+{{- if or (gt (len $users) 0) $existing }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -8,9 +9,6 @@ metadata:
     {{- include "metamcp.labels" . | nindent 4 }}
     app.kubernetes.io/component: user-bootstrap
 data:
-  config.json: |
-    {{- $cfg := dict "users" $users "disablePublicSignup" (.Values.disablePublicSignup | default false) -}}
-    {{- toJson $cfg | nindent 4 }}
   user-bootstrap.py: |
 {{ (.Files.Get "scripts/user-bootstrap.py") | indent 4 }}
 {{- end }}

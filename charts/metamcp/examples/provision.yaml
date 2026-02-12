@@ -3,6 +3,13 @@ auth:
   betterAuthSecret: dev-secret
 env:
   APP_URL: http://localhost:12008
+
+# Production recommendation: store bootstrap users in a Secret and reference it here.
+# userBootstrap:
+#   existingSecret:
+#     name: metamcp-users
+#     key: config.json
+
 users:
   - email: admin@example.com
     password: change-me

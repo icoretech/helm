@@ -16,6 +16,18 @@ BACKEND = f"http://{SVC}:12009"
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL','admin@example.com')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD','change-me')
 UPDATE_EXISTING = (os.environ.get('UPDATE_EXISTING','true').lower() == 'true')
+BOOTSTRAP_CFG_PATH = os.environ.get('BOOTSTRAP_CFG_PATH', '/users/config.json')
+
+# Prefer credentials from a mounted file (Secret) to avoid placing passwords in env vars.
+try:
+    if BOOTSTRAP_CFG_PATH and os.path.exists(BOOTSTRAP_CFG_PATH):
+        j = json.load(open(BOOTSTRAP_CFG_PATH, 'r'))
+        u0 = (j.get('users') or [{}])[0] or {}
+        if isinstance(u0, dict):
+            ADMIN_EMAIL = u0.get('email') or ADMIN_EMAIL
+            ADMIN_PASSWORD = u0.get('password') or ADMIN_PASSWORD
+except Exception:
+    pass
 
 cfg = json.load(open('/cfg/provision.json','r')).get('provision',{})
 servers = cfg.get('servers', [])

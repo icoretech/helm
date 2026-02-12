@@ -1,5 +1,7 @@
 {{- $users := .Values.users | default (list) -}}
-{{- if gt (len $users) 0 }}
+{{- $existingName := (((.Values.userBootstrap | default dict).existingSecret | default dict).name | default "") -}}
+{{- $existingKey := (((.Values.userBootstrap | default dict).existingSecret | default dict).key | default "config.json") -}}
+{{- if or (gt (len $users) 0) $existingName }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -53,10 +55,10 @@ spec:
               readOnly: true
       volumes:
         - name: cfg
-          configMap:
-            name: {{ include "metamcp.fullname" . }}-user-bootstrap
+          secret:
+            name: {{ if $existingName }}{{ $existingName }}{{ else }}{{ include "metamcp.fullname" . }}-user-bootstrap-cfg{{ end }}
             items:
-              - key: config.json
+              - key: {{ if $existingName }}{{ $existingKey }}{{ else }}config.json{{ end }}
                 path: config.json
         - name: script
           configMap:

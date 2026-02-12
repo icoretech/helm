@@ -167,6 +167,9 @@ disablePublicSignup: false
 # - role (string: user|admin) – reserved for future if MetaMCP exposes it
 # - createApiKey (bool) – when true, create an API key for the user
 # - apiKeyName (string) – optional name for the API key
+#
+# For production, prefer `userBootstrap.existingSecret` so credentials are not stored
+# in Helm values (HelmRelease/Flux) and are not rendered into a ConfigMap.
 users: []
 # - email: admin@example.com
 #   password: change-me
@@ -174,3 +177,11 @@ users: []
 #   role: user
 #   createApiKey: true
 #   apiKeyName: cli
+
+# Optional: provide the bootstrap config via an existing Secret instead of values.users.
+# The Secret must contain a key (default: config.json) whose contents are JSON like:
+# {"users":[{"email":"...","password":"...","name":"..."}],"disablePublicSignup":false}
+userBootstrap:
+  existingSecret:
+    name: ""
+    key: config.json
