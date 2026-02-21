@@ -16,6 +16,51 @@ entries:
         url: https://icoretech.github.io/helm/pgp-public-key.asc
     apiVersion: v2
     appVersion: 1.1.81
+    created: "2026-02-21T07:04:21.847692685Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 3.1.2
+    description: Airbroke Helm chart for Kubernetes
+    digest: c07ba92fd2330463fed5f799eee6d68ef8be7b85d2e7ef56967611ff08fad508
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.3.4/airbroke-1.3.4.tgz
+    version: 1.3.4
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.1.81
     created: "2026-02-10T09:32:10.04640145Z"
     dependencies:
     - condition: pgbouncer.enabled
@@ -5067,4 +5112,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2026-02-12T12:32:24.371093386Z"
+generated: "2026-02-21T07:04:21.848832009Z"
