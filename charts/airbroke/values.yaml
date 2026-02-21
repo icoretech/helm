@@ -110,6 +110,8 @@ web:
   #     value: "https://xxxxxx"
   #   - name: AIRBROKE_OPENAI_API_KEY
   #     value: "sk-xxxxxxx"
+  #   - name: AIRBROKE_MCP_API_KEY
+  #     value: "replace-with-a-strong-random-token"
 
 pgbouncer:
   enabled: false

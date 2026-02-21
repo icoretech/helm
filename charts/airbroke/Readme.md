@@ -119,6 +119,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 
 You should specify additional `AIRBROKE_` environment variables using the `extraEnvs` parameter.
 If you want to inject sensitive values from existing Kubernetes Secrets/ConfigMaps (recommended), use `extraEnvFrom`.
+For MCP API access by LLM/agent clients, set `AIRBROKE_MCP_API_KEY` (preferably via `extraEnvFrom` Secret reference).
 
 ### Pgbouncer
 
@@ -197,6 +198,8 @@ spec:
           value: "https://xxxxxx"
         - name: AIRBROKE_OPENAI_API_KEY
           value: "sk-xxxxxxx"
+        - name: AIRBROKE_MCP_API_KEY
+          value: "replace-with-a-strong-random-token"
       extraEnvFrom:
         - secretRef:
             name: airbroke-web-external-secrets
