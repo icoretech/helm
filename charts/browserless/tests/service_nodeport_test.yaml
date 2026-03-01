@@ -1,0 +1,26 @@
+suite: service nodeport
+templates:
+  - service.yaml
+tests:
+  - it: defaults to ClusterIP without nodePort
+    set:
+      config.token: changeme
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - notExists:
+          path: spec.ports[0].nodePort
+
+  - it: NodePort renders explicit nodePort
+    set:
+      config.token: changeme
+      service.type: NodePort
+      service.nodePort: 30054
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+      - equal:
+          path: spec.ports[0].nodePort
+          value: 30054

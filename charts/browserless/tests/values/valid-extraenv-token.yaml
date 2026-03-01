@@ -1,0 +1,6 @@
+config:
+  token: null
+  tokenSecretRef: null
+extraEnv:
+  - name: TOKEN
+    value: from-extra-env

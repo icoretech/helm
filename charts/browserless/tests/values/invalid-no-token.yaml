@@ -1,0 +1,4 @@
+config:
+  token: ""
+  tokenSecretRef: null
+extraEnv: []

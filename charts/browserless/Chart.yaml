@@ -1,0 +1,34 @@
+apiVersion: v2
+name: browserless
+description: Browserless v2 browser automation service for Kubernetes
+type: application
+version: 0.1.1
+appVersion: "v2.42.0"
+kubeVersion: ">= 1.24.0-0"
+icon: https://icoretech.github.io/helm/charts/browserless/logo.svg
+keywords:
+  - browserless
+  - chromium
+  - chrome
+  - firefox
+  - playwright
+  - puppeteer
+maintainers:
+  - name: masterkain
+    email: claudio@icorete.ch
+    url: https://github.com/masterkain
+home: https://github.com/icoretech/helm
+sources:
+  - https://github.com/icoretech/helm/tree/main/charts/browserless
+  - https://github.com/browserless/browserless
+annotations:
+  artifacthub.io/license: "MIT"
+  artifacthub.io/signKey: |
+    fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+    url: https://icoretech.github.io/helm/pgp-public-key.asc
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial iCoreTech browserless chart with Browserless v2 defaults, token enforcement, and multi-browser image presets
+  artifacthub.io/images: |
+    - name: browserless-chromium
+      image: ghcr.io/browserless/chromium:v2.42.0

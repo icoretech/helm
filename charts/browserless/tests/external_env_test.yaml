@@ -1,0 +1,24 @@
+suite: external env mapping
+templates:
+  - deployment.yaml
+tests:
+  - it: maps config.external to EXTERNAL env var
+    set:
+      config.token: changeme
+      config.external: https://browserless.example.com
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="EXTERNAL")].value
+          value: https://browserless.example.com
+
+  - it: does not render deprecated PROXY_* env vars
+    set:
+      config.token: changeme
+      config.external: https://browserless.example.com
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="PROXY_HOST")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="PROXY_PORT")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="PROXY_SSL")]

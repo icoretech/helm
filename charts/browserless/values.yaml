@@ -1,0 +1,205 @@
+# Default values for browserless.
+
+# -- Number of replicas.
+replicaCount: 1
+
+image:
+  # -- Browser preset used when image.repository is empty.
+  # -- Supported presets: chromium, chrome, firefox, multi.
+  browser: chromium
+
+  # -- Image repository override. When empty, defaults to ghcr.io/browserless/<browser>.
+  repository: ""
+
+  # -- Image pull policy.
+  pullPolicy: IfNotPresent
+
+  # -- Image tag override. Defaults to Chart appVersion.
+  tag: ""
+
+# -- List of image pull secrets.
+imagePullSecrets: []
+
+# -- Override chart name.
+nameOverride: ""
+
+# -- Override fully-qualified release name.
+fullnameOverride: ""
+
+# -- Additional volumes.
+volumes: []
+
+# -- Additional volume mounts.
+volumeMounts: []
+
+# -- Extra envFrom entries.
+envFrom: []
+
+# -- Additional environment variables.
+extraEnv: []
+
+# -- Browserless configuration mapped to environment variables.
+config:
+  # -- Bind host.
+  host: 0.0.0.0
+
+  # -- Bind port.
+  port: 3000
+
+  # -- Authentication token for Browserless v2.
+  # -- Change this in production.
+  token: change-me
+
+  # -- Secret reference for token (preferred for production).
+  # -- Example:
+  # -- tokenSecretRef:
+  # --   name: browserless-token
+  # --   key: token
+  tokenSecretRef: null
+
+  # -- Debug selector (e.g. "-*" to reduce logs).
+  debug: "-*"
+
+  # -- Max session timeout in milliseconds.
+  timeout: 600000
+
+  # -- Max concurrent sessions.
+  concurrent: 4
+
+  # -- Max queued sessions.
+  queued: 10
+
+  # -- Callback URL for Browserless runtime errors.
+  errorAlertUrl: null
+
+  # -- Overload protection CPU threshold percentage.
+  maxCpuPercent: null
+
+  # -- Overload protection memory threshold percentage.
+  maxMemoryPercent: null
+
+  # -- Allow file:// protocol.
+  allowFileProtocol: null
+
+  # -- Allow GET requests.
+  allowGet: null
+
+  # -- Enable CORS.
+  enableCors: null
+
+  # -- CORS allowed methods.
+  corsAllowMethods: null
+
+  # -- CORS allowed origins.
+  corsAllowOrigin: null
+
+  # -- CORS max age (seconds).
+  corsMaxAge: null
+
+  # -- Metrics JSON path.
+  metricsJsonPath: null
+
+  # -- Data directory path.
+  dataDir: null
+
+  # -- Download directory path.
+  downloadDir: null
+
+  # -- External/public URL used by Browserless when running behind a proxy or load-balancer.
+  # -- Example: https://browserless.example.com
+  external: null
+
+serviceAccount:
+  # -- Create a service account.
+  create: true
+
+  # -- Service account annotations.
+  annotations: {}
+
+  # -- Service account name.
+  name: ""
+
+# -- Pod annotations.
+podAnnotations: {}
+
+# -- Pod labels.
+podLabels: {}
+
+# -- Pod security context.
+podSecurityContext: {}
+
+# -- Container security context.
+securityContext: {}
+
+service:
+  # -- Service annotations.
+  annotations: {}
+
+  # -- Service type.
+  type: ClusterIP
+
+  # -- Optional LoadBalancer IP.
+  loadBalancerIP:
+
+  # -- Optional CIDRs allowed via LoadBalancer.
+  loadBalancerSourceRanges: []
+
+  # -- Service port.
+  port: 80
+
+  # -- Optional nodePort.
+  nodePort:
+
+  # -- External traffic policy.
+  externalTrafficPolicy:
+
+# -- Container resources.
+resources: {}
+
+autoscaling:
+  # -- Enable HPA.
+  enabled: false
+
+  # -- Minimum replicas.
+  minReplicas: 1
+
+  # -- Maximum replicas.
+  maxReplicas: 20
+
+  # -- Target CPU utilization percentage.
+  targetCPUUtilizationPercentage: 80
+
+  # -- Target memory utilization percentage.
+  targetMemoryUtilizationPercentage: null
+
+# -- Node selector.
+nodeSelector: {}
+
+# -- Tolerations.
+tolerations: []
+
+# -- Affinity.
+affinity: {}
+
+# -- Liveness probe.
+livenessProbe:
+  tcpSocket:
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 1
+  successThreshold: 1
+  failureThreshold: 3
+
+# -- Readiness probe.
+readinessProbe:
+  exec:
+    command:
+      - /bin/sh
+      - -ec
+      - wget -qO- "http://127.0.0.1:${PORT:-3000}/pressure?token=${TOKEN}" >/dev/null
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 1
+  successThreshold: 1
+  failureThreshold: 3

@@ -1,0 +1,94 @@
+# Browserless Helm Chart
+
+Deploy [Browserless](https://www.browserless.io/) on Kubernetes with Browserless v2 defaults, token authentication enforcement, and image presets for multiple browsers.
+
+## Features
+
+- Browserless v2-focused defaults (`CONCURRENT`, `QUEUED`, `TIMEOUT`, etc.)
+- Token authentication required (`config.token`, `config.tokenSecretRef`, or `extraEnv` with `TOKEN`)
+- Multi-browser image presets via `image.browser` (`chromium`, `chrome`, `firefox`, `multi`)
+- Optional image repository override for custom/private registries
+- Configurable readiness/liveness probes, HPA, service type, and scheduling knobs
+
+## Prerequisites
+
+- Kubernetes 1.24+
+- Helm 3.10+
+
+## Install
+
+```bash
+helm repo add icoretech https://icoretech.github.io/helm
+helm repo update
+helm upgrade --install browserless icoretech/browserless \
+  -n browserless --create-namespace \
+  --set config.token="replace-me"
+```
+
+OCI:
+
+```bash
+helm upgrade --install browserless oci://ghcr.io/icoretech/charts/browserless \
+  -n browserless --create-namespace \
+  --set config.token="replace-me"
+```
+
+## Token via Secret (recommended)
+
+```yaml
+config:
+  token: null
+  tokenSecretRef:
+    name: browserless-auth
+    key: token
+```
+
+## Browser presets
+
+```yaml
+image:
+  browser: firefox
+  # repository: ghcr.io/browserless/firefox # optional explicit override
+  # tag: v2.42.0                           # optional override
+```
+
+## Flux Example
+
+```yaml
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: icoretech
+  namespace: flux-system
+spec:
+  type: oci
+  interval: 30m
+  url: oci://ghcr.io/icoretech/charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: browserless
+  namespace: browserless
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: browserless
+      version: ">=0.1.1"
+      sourceRef:
+        kind: HelmRepository
+        name: icoretech
+        namespace: flux-system
+  values:
+    image:
+      browser: chromium
+    config:
+      tokenSecretRef:
+        name: browserless-auth
+        key: token
+```
+
+## Configuration reference
+
+{{ template "chart.valuesSection" . }}

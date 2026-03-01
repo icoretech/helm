@@ -1,0 +1,3 @@
+# Values used by chart-testing (ct install) to ensure the chart can be installed.
+config:
+  token: changeme

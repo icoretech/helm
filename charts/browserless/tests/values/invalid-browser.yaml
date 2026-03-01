@@ -1,0 +1,4 @@
+config:
+  token: changeme
+image:
+  browser: safari

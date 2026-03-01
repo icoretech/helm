@@ -1,0 +1,182 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "replicaCount": { "type": "integer", "minimum": 1 },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "browser": {
+          "type": "string",
+          "enum": ["chromium", "chrome", "firefox", "multi"]
+        },
+        "repository": { "type": "string" },
+        "pullPolicy": {
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"]
+        },
+        "tag": { "type": "string" }
+      }
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "nameOverride": { "type": "string" },
+    "fullnameOverride": { "type": "string" },
+    "volumes": { "type": "array", "items": { "type": "object" } },
+    "volumeMounts": { "type": "array", "items": { "type": "object" } },
+    "envFrom": { "type": "array", "items": { "type": "object" } },
+    "extraEnv": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "value": { "type": ["string", "number", "boolean"] },
+          "valueFrom": { "type": "object" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "host": { "type": "string", "minLength": 1 },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "token": { "type": ["string", "null"] },
+        "tokenSecretRef": {
+          "type": ["object", "null"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "key": { "type": "string", "minLength": 1 }
+          },
+          "required": ["name", "key"],
+          "additionalProperties": false
+        },
+        "debug": { "type": ["string", "null"] },
+        "timeout": { "type": ["integer", "null"], "minimum": 0 },
+        "concurrent": { "type": ["integer", "null"], "minimum": 1 },
+        "queued": { "type": ["integer", "null"], "minimum": 0 },
+        "errorAlertUrl": { "type": ["string", "null"] },
+        "maxCpuPercent": { "type": ["integer", "null"], "minimum": 1, "maximum": 100 },
+        "maxMemoryPercent": { "type": ["integer", "null"], "minimum": 1, "maximum": 100 },
+        "allowFileProtocol": { "type": ["boolean", "null"] },
+        "allowGet": { "type": ["boolean", "null"] },
+        "enableCors": { "type": ["boolean", "null"] },
+        "corsAllowMethods": { "type": ["string", "null"] },
+        "corsAllowOrigin": { "type": ["string", "null"] },
+        "corsMaxAge": { "type": ["integer", "null"], "minimum": 0 },
+        "metricsJsonPath": { "type": ["string", "null"] },
+        "dataDir": { "type": ["string", "null"] },
+        "downloadDir": { "type": ["string", "null"] },
+        "external": { "type": ["string", "null"] }
+      }
+    },
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "create": { "type": "boolean" },
+        "annotations": { "type": "object" },
+        "name": { "type": "string" }
+      }
+    },
+    "podAnnotations": {
+      "type": "object",
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "podLabels": {
+      "type": "object",
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "podSecurityContext": { "type": "object" },
+    "securityContext": { "type": "object" },
+    "service": {
+      "type": "object",
+      "properties": {
+        "annotations": { "type": "object" },
+        "type": {
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer", "ExternalName"]
+        },
+        "loadBalancerIP": { "type": ["string", "null"] },
+        "loadBalancerSourceRanges": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "nodePort": { "type": ["integer", "null"], "minimum": 30000, "maximum": 32767 },
+        "externalTrafficPolicy": {
+          "type": ["string", "null"],
+          "enum": ["Cluster", "Local", null]
+        }
+      }
+    },
+    "resources": { "type": "object" },
+    "autoscaling": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "minReplicas": { "type": "integer", "minimum": 1 },
+        "maxReplicas": { "type": "integer", "minimum": 1 },
+        "targetCPUUtilizationPercentage": { "type": ["integer", "null"], "minimum": 1, "maximum": 100 },
+        "targetMemoryUtilizationPercentage": { "type": ["integer", "null"], "minimum": 1, "maximum": 100 }
+      }
+    },
+    "nodeSelector": { "type": "object" },
+    "tolerations": { "type": "array", "items": { "type": "object" } },
+    "affinity": { "type": "object" },
+    "livenessProbe": { "type": "object" },
+    "readinessProbe": { "type": "object" }
+  },
+  "allOf": [
+    {
+      "anyOf": [
+        {
+          "properties": {
+            "config": {
+              "type": "object",
+              "properties": {
+                "token": { "type": "string", "minLength": 1 }
+              },
+              "required": ["token"]
+            }
+          }
+        },
+        {
+          "properties": {
+            "config": {
+              "type": "object",
+              "properties": {
+                "tokenSecretRef": {
+                  "type": "object",
+                  "required": ["name", "key"]
+                }
+              },
+              "required": ["tokenSecretRef"]
+            }
+          }
+        },
+        {
+          "properties": {
+            "extraEnv": {
+              "type": "array",
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "name": { "const": "TOKEN" }
+                },
+                "required": ["name"]
+              }
+            }
+          },
+          "required": ["extraEnv"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+config:
+  token: changeme
+service:
+  type: NodePort
+  nodePort: 29999

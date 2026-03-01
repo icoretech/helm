@@ -1,0 +1,218 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "browserless.fullname" . }}
+  labels:
+    {{- include "browserless.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "browserless.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- with .Values.podLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- include "browserless.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "browserless.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- $browser := .Values.image.browser | default "chromium" }}
+          {{- $repository := .Values.image.repository | default (printf "ghcr.io/browserless/%s" $browser) }}
+          image: "{{ $repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- $configDefaults := dict "host" "0.0.0.0" "port" 3000 "timeout" 600000 "concurrent" 4 "queued" 10 }}
+          {{- $configInput := .Values.config | default dict }}
+          {{- $config := merge (deepCopy $configDefaults) $configInput }}
+          {{- $extraEnvList := .Values.extraEnv | default (list) }}
+          {{- $tokenState := dict "provided" false }}
+          {{- if and (hasKey $config "token") (ne (printf "%v" (index $config "token")) "") }}
+            {{- $_ := set $tokenState "provided" true }}
+          {{- end }}
+          {{- if and (hasKey $config "tokenSecretRef") (index $config "tokenSecretRef") }}
+            {{- $secret := index $config "tokenSecretRef" }}
+            {{- if and (hasKey $secret "name") (ne (printf "%v" (index $secret "name")) "") (hasKey $secret "key") (ne (printf "%v" (index $secret "key")) "") }}
+              {{- $_ := set $tokenState "provided" true }}
+            {{- end }}
+          {{- end }}
+          {{- range $extraEnvList }}
+            {{- if eq (default "" .name) "TOKEN" }}
+              {{- $_ := set $tokenState "provided" true }}
+            {{- end }}
+          {{- end }}
+          {{- $_ := required "browserless: config.token, config.tokenSecretRef, or extraEnv TOKEN must be set" (index $tokenState "provided") }}
+          {{- $configEnv := dict }}
+          env:
+            - name: HOST
+              value: {{ printf "%v" (index $config "host") | quote }}
+            {{- $_ := set $configEnv "HOST" true }}
+            - name: PORT
+              value: {{ printf "%v" (index $config "port") | quote }}
+            {{- $_ := set $configEnv "PORT" true }}
+            {{- if and (hasKey $config "tokenSecretRef") (index $config "tokenSecretRef") }}
+              {{- $secret := index $config "tokenSecretRef" }}
+            - name: TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "browserless: config.tokenSecretRef.name is required" (index $secret "name") | quote }}
+                  key: {{ required "browserless: config.tokenSecretRef.key is required" (index $secret "key") | quote }}
+            {{- $_ := set $configEnv "TOKEN" true }}
+            {{- else if and (hasKey $config "token") (ne (printf "%v" (index $config "token")) "") }}
+            - name: TOKEN
+              value: {{ printf "%v" (index $config "token") | quote }}
+            {{- $_ := set $configEnv "TOKEN" true }}
+            {{- end }}
+            {{- if and (hasKey $config "debug") (ne (index $config "debug") nil) (ne (printf "%v" (index $config "debug")) "") }}
+            - name: DEBUG
+              value: {{ printf "%v" (index $config "debug") | quote }}
+            {{- $_ := set $configEnv "DEBUG" true }}
+            {{- end }}
+            {{- if and (hasKey $config "timeout") (ne (index $config "timeout") nil) }}
+            - name: TIMEOUT
+              value: {{ printf "%v" (index $config "timeout") | quote }}
+            {{- $_ := set $configEnv "TIMEOUT" true }}
+            {{- end }}
+            {{- if and (hasKey $config "concurrent") (ne (index $config "concurrent") nil) }}
+            - name: CONCURRENT
+              value: {{ printf "%v" (index $config "concurrent") | quote }}
+            {{- $_ := set $configEnv "CONCURRENT" true }}
+            {{- end }}
+            {{- if and (hasKey $config "queued") (ne (index $config "queued") nil) }}
+            - name: QUEUED
+              value: {{ printf "%v" (index $config "queued") | quote }}
+            {{- $_ := set $configEnv "QUEUED" true }}
+            {{- end }}
+            {{- with (index $config "errorAlertUrl") }}
+            - name: ERROR_ALERT_URL
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "ERROR_ALERT_URL" true }}
+            {{- end }}
+            {{- with (index $config "maxCpuPercent") }}
+            - name: MAX_CPU_PERCENT
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "MAX_CPU_PERCENT" true }}
+            {{- end }}
+            {{- with (index $config "maxMemoryPercent") }}
+            - name: MAX_MEMORY_PERCENT
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "MAX_MEMORY_PERCENT" true }}
+            {{- end }}
+            {{- with (index $config "allowFileProtocol") }}
+            - name: ALLOW_FILE_PROTOCOL
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "ALLOW_FILE_PROTOCOL" true }}
+            {{- end }}
+            {{- with (index $config "allowGet") }}
+            - name: ALLOW_GET
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "ALLOW_GET" true }}
+            {{- end }}
+            {{- with (index $config "enableCors") }}
+            - name: CORS
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "CORS" true }}
+            {{- end }}
+            {{- with (index $config "corsAllowMethods") }}
+            - name: CORS_ALLOW_METHODS
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "CORS_ALLOW_METHODS" true }}
+            {{- end }}
+            {{- with (index $config "corsAllowOrigin") }}
+            - name: CORS_ALLOW_ORIGIN
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "CORS_ALLOW_ORIGIN" true }}
+            {{- end }}
+            {{- with (index $config "corsMaxAge") }}
+            - name: CORS_MAX_AGE
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "CORS_MAX_AGE" true }}
+            {{- end }}
+            {{- with (index $config "metricsJsonPath") }}
+            - name: METRICS_JSON_PATH
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "METRICS_JSON_PATH" true }}
+            {{- end }}
+            {{- with (index $config "dataDir") }}
+            - name: DATA_DIR
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "DATA_DIR" true }}
+            {{- end }}
+            {{- with (index $config "downloadDir") }}
+            - name: DOWNLOAD_DIR
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "DOWNLOAD_DIR" true }}
+            {{- end }}
+            {{- with (index $config "external") }}
+            - name: EXTERNAL
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "EXTERNAL" true }}
+            {{- end }}
+            {{- range $extraEnvList }}
+            {{- $name := default "" .name }}
+            {{- if and (ne $name "") (not (hasKey $configEnv $name)) }}
+            - name: {{ $name | quote }}
+              {{- if hasKey . "value" }}
+              value: {{ .value | quote }}
+              {{- end }}
+              {{- if hasKey . "valueFrom" }}
+              valueFrom:
+                {{- toYaml .valueFrom | nindent 16 }}
+              {{- end }}
+            {{- $_ := set $configEnv $name true }}
+            {{- end }}
+            {{- end }}
+          {{- with .Values.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ index $config "port" }}
+              protocol: TCP
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

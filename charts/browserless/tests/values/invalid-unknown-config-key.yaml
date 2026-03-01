@@ -1,0 +1,3 @@
+config:
+  token: changeme
+  proxyHost: old-proxy-host

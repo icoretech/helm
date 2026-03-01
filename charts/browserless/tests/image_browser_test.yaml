@@ -1,0 +1,33 @@
+suite: image browser presets
+templates:
+  - deployment.yaml
+tests:
+  - it: defaults to chromium preset repository
+    set:
+      config.token: changeme
+      image.tag: v9.9.9
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/browserless/chromium:v9.9.9
+
+  - it: uses multi preset repository
+    set:
+      config.token: changeme
+      image.browser: multi
+      image.tag: v1.2.3
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/browserless/multi:v1.2.3
+
+  - it: repository override wins over preset
+    set:
+      config.token: changeme
+      image.browser: multi
+      image.repository: registry.example.com/custom/browserless
+      image.tag: v1.0.0
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/custom/browserless:v1.0.0
