@@ -59,8 +59,11 @@ env:
 
 users:
   - email: admin@example.com
-    password: change-me
     name: Admin
+    passwordFrom:
+      secretKeyRef:
+        name: metamcp-admin-credentials
+        key: password
 
 provision:
   enabled: true
@@ -105,14 +108,23 @@ provision:
 
 ## User seeding (required when provisioning is enabled)
 
-Provisioning authenticates using the first entry in `users`. When `provision.enabled: true`, you must define at least one user (the schema enforces this). The chart can also generate an API key for that user and store it in a Secret named like `<release>-metamcp-apikey-<email-slug>`.
+Provisioning authenticates using the first user in the bootstrap config.
+
+When `provision.enabled: true`, you must provide either:
+- `users[].password` (dev-only), or
+- `users[].passwordFrom.secretKeyRef` (recommended).
+
+The chart can also generate an API key for that user and store it in a Secret named like `<release>-metamcp-apikey-<email-slug>`.
 
 ```yaml
 disablePublicSignup: true
 users:
   - email: admin@example.com
-    password: change-me
     name: Admin
+    passwordFrom:
+      secretKeyRef:
+        name: metamcp-admin-credentials
+        key: password
     createApiKey: true
     apiKeyName: cli
 ```
@@ -215,7 +227,7 @@ provision:
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/metatool-ai/metamcp"` |  |
 | image.tag | string | `"2.4.22"` |  |
-| imagePullSecrets | list | `[]` |  |
+| imagePullSecrets | list | `[]` | imagePullSecrets allows pulling the MetaMCP image from private registries. Example: imagePullSecrets:   - name: regcred |
 | ingress.annotations | object | `{}` |  |
 | ingress.className | string | `""` |  |
 | ingress.enabled | bool | `false` |  |
@@ -261,24 +273,3 @@ provision:
 - Internal Postgres only; external DBs supported by overriding `env.DATABASE_URL`.
 - Endpoint transports validated to `SSE` or `STREAMABLE_HTTP`.
 - Secrets/configmaps are checksum‑annotated to trigger rollouts when they change.
-## Examples
-
-- Minimal e2e (in-cluster URLs, no Ingress): `examples/e2e.yaml`
-- Cache PVC per server (requires default StorageClass): `examples/provision-pvc.yaml`
-- Advanced options (resources, HPA, probes, volumes, init containers): `examples/provision-advanced.yaml`
-# STDIO server with env and Secret-backed env
-
-provision:
-  enabled: true
-  servers:
-    - name: figma
-      type: STDIO
-      command: "npx"
-      args: ["-y", "figma-developer-mcp", "--stdio"]
-      # Plain env (non-secret)
-      env:
-        LOG_LEVEL: debug
-      # Secret-backed env for STDIO: use envFrom to pull all keys from a Secret/ConfigMap
-      envFrom:
-        - secretRef:
-            name: figma-mcp-env
