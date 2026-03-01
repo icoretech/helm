@@ -1709,6 +1709,45 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/airbroke-1.0.25/airbroke-1.0.25.tgz
     version: 1.0.25
+  browserless:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: added
+          description: Initial iCoreTech browserless chart with Browserless v2 defaults, token enforcement, and multi-browser image presets
+      artifacthub.io/images: |
+        - name: browserless-chromium
+          image: ghcr.io/browserless/chromium:v2.42.0
+      artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v2.42.0
+    created: "2026-03-01T23:41:28.795502738Z"
+    description: Browserless v2 browser automation service for Kubernetes
+    digest: 139fa838b6d9c245fc766980ffecfca4a24b6a78b5aef5d1cbcfd343563fe812
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/browserless/logo.svg
+    keywords:
+    - browserless
+    - chromium
+    - chrome
+    - firefox
+    - playwright
+    - puppeteer
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: browserless
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/browserless
+    - https://github.com/browserless/browserless
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/browserless-0.1.1/browserless-0.1.1.tgz
+    version: 0.1.1
   chatgpt-retrieval-plugin:
   - annotations:
       artifacthub.io/category: ai-machine-learning
@@ -5112,4 +5151,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2026-02-21T07:04:21.848832009Z"
+generated: "2026-03-01T23:41:28.795908966Z"
