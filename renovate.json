@@ -2,8 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "labels": ["dependencies", "renovate"],
-  "prConcurrentLimit": 1,
-  "branchConcurrentLimit": 1,
+  "prConcurrentLimit": 10,
+  "branchConcurrentLimit": 10,
   "customManagers": [
     {
       "customType": "regex",
@@ -54,6 +54,8 @@
     {
       "matchManagers": ["custom.regex", "helm-values", "helmv3"],
       "matchFileNames": ["charts/**"],
+      "prConcurrentLimit": 1,
+      "branchConcurrentLimit": 1,
       "recreateWhen": "always",
       "bumpVersions": [
         {
