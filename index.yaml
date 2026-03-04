@@ -5179,4 +5179,47 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/pgbouncer-1.8.1/pgbouncer-1.8.1.tgz
     version: 1.8.1
-generated: "2026-03-01T23:49:58.187277655Z"
+  tolgee:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: added
+          description: Initial Tolgee chart with optional bundled PostgreSQL dependency, external DB mode, ingress, and Gateway API HTTPRoute support
+      artifacthub.io/images: |
+        - name: tolgee
+          image: tolgee/tolgee:v3.164.0
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v3.164.0
+    created: "2026-03-04T03:44:44.481672325Z"
+    dependencies:
+    - alias: postgresql
+      condition: postgresql.enabled
+      name: postgres
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.17.1
+    description: Tolgee Platform Helm chart for Kubernetes
+    digest: 395d591e90ac251dc1dcba2cc33f443a923b25518f68cb9921846c07b7a736e1
+    home: https://tolgee.io
+    icon: https://icoretech.github.io/helm/charts/tolgee/logo.svg
+    keywords:
+    - tolgee
+    - localization
+    - i18n
+    - l10n
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: tolgee
+    sources:
+    - https://github.com/tolgee/tolgee-platform
+    - https://github.com/icoretech/helm/tree/main/charts/tolgee
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-03-04T03:44:44.481973516Z"
