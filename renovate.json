@@ -52,8 +52,8 @@
   ],
   "packageRules": [
     {
-      "matchManagers": ["custom.regex"],
-      "matchFileNames": ["charts/*/Chart.yaml"],
+      "matchFileNames": ["charts/**"],
+      "recreateWhen": "always",
       "bumpVersions": [
         {
           "name": "Bump chart version",
