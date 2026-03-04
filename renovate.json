@@ -15,6 +15,14 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/airbroke\\/Chart\\.yaml$/"],
+      "matchStrings": ["image:\\s*ghcr\\.io\\/icoretech\\/airbroke:(?<currentValue>[^\\s]+)"],
+      "depNameTemplate": "icoretech/airbroke",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^charts\\/browserless\\/Chart\\.yaml$/"],
       "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "browserless/browserless",
@@ -37,6 +45,14 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/metamcp\\/Chart\\.yaml$/"],
+      "matchStrings": ["image:\\s*ghcr\\.io\\/metatool-ai\\/metamcp:(?<currentValue>[^\\s]+)"],
+      "depNameTemplate": "metatool-ai/metamcp",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^charts\\/tolgee\\/Chart\\.yaml$/"],
       "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "tolgee/tolgee-platform",
@@ -53,6 +69,13 @@
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/pgbouncer\\/Chart\\.yaml$/"],
       "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
+      "depNameTemplate": "ghcr.io/icoretech/pgbouncer-docker",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/pgbouncer\\/Chart\\.yaml$/"],
+      "matchStrings": ["image:\\s*ghcr\\.io\\/icoretech\\/pgbouncer-docker:(?<currentValue>[^\\s]+)"],
       "depNameTemplate": "ghcr.io/icoretech/pgbouncer-docker",
       "datasourceTemplate": "docker"
     }

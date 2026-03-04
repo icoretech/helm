@@ -25,6 +25,9 @@ annotations:
   artifacthub.io/signKey: |
     fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
     url: https://icoretech.github.io/helm/pgp-public-key.asc
+  artifacthub.io/images: |
+    - name: airbroke
+      image: ghcr.io/icoretech/airbroke:1.1.96
   artifacthub.io/recommendations: |
     - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
   artifacthub.io/screenshots: |

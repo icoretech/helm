@@ -22,3 +22,6 @@ annotations:
   artifacthub.io/signKey: |
     fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
     url: https://icoretech.github.io/helm/pgp-public-key.asc
+  artifacthub.io/images: |
+    - name: pgbouncer
+      image: ghcr.io/icoretech/pgbouncer-docker:1.25.1

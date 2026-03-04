@@ -26,9 +26,6 @@ annotations:
   artifacthub.io/signKey: |
     fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
     url: https://icoretech.github.io/helm/pgp-public-key.asc
-  artifacthub.io/changes: |
-    - kind: added
-      description: Initial iCoreTech browserless chart with Browserless v2 defaults, token enforcement, and multi-browser image presets
   artifacthub.io/images: |
     - name: browserless-chromium
       image: ghcr.io/browserless/chromium:v2.42.0

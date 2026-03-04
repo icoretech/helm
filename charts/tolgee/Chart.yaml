@@ -24,9 +24,6 @@ annotations:
   artifacthub.io/signKey: |
     fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
     url: https://icoretech.github.io/helm/pgp-public-key.asc
-  artifacthub.io/changes: |
-    - kind: added
-      description: Initial Tolgee chart with optional bundled PostgreSQL dependency, external DB mode, ingress, and Gateway API HTTPRoute support
   artifacthub.io/images: |
     - name: tolgee
       image: tolgee/tolgee:v3.164.0
