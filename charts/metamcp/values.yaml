@@ -88,7 +88,7 @@ extraEnvFrom: []
 # Bundled Postgres for MetaMCP. Override env.DATABASE_URL to use an external DB.
 postgres:
   enabled: true
-  image: postgres:16
+  image: postgres:18
   auth:
     database: metamcp
     username: metamcp
