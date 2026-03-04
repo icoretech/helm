@@ -8,7 +8,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/airbroke\\/Chart\\.yaml$/"],
-      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"]+)\\\"?"],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "icoretech/airbroke",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^v?(?<version>.+)$"
@@ -16,7 +16,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/browserless\\/Chart\\.yaml$/"],
-      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"]+)\\\"?"],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "browserless/browserless",
       "datasourceTemplate": "github-tags"
     },
@@ -30,7 +30,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/metamcp\\/Chart\\.yaml$/"],
-      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"]+)\\\"?"],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "metatool-ai/metamcp",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^v?(?<version>.+)$"
@@ -38,7 +38,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/tolgee\\/Chart\\.yaml$/"],
-      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"]+)\\\"?"],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "tolgee/tolgee-platform",
       "datasourceTemplate": "github-releases"
     },
@@ -52,7 +52,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/pgbouncer\\/Chart\\.yaml$/"],
-      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"]+)\\\"?"],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "ghcr.io/icoretech/pgbouncer-docker",
       "datasourceTemplate": "docker"
     }
