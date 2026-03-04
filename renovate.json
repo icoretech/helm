@@ -68,7 +68,23 @@
       "matchFileNames": ["charts/**"],
       "prConcurrentLimit": 1,
       "branchConcurrentLimit": 1,
-      "recreateWhen": "always",
+      "recreateWhen": "always"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["charts/**"],
+      "bumpVersions": [
+        {
+          "name": "Bump chart version",
+          "filePatterns": ["{{packageFileDir}}/Chart.yaml"],
+          "matchStrings": ["version:\\s*\\\"?(?<version>\\d+\\.\\d+\\.\\d+)\\\"?"],
+          "bumpType": "{{#if isPatch}}patch{{else if isMinor}}minor{{else if isMajor}}major{{else}}minor{{/if}}"
+        }
+      ]
+    },
+    {
+      "matchManagers": ["helm-values", "helmv3"],
+      "matchFileNames": ["charts/**"],
       "bumpVersions": [
         {
           "name": "Bump chart version",
