@@ -69,7 +69,7 @@
           "name": "Bump chart version",
           "filePatterns": ["{{packageFileDir}}/Chart.yaml"],
           "matchStrings": ["version:\\s*\\\"?(?<version>\\d+\\.\\d+\\.\\d+)\\\"?"],
-          "bumpType": "patch"
+          "bumpType": "{{#if isPatch}}patch{{else}}minor{{/if}}"
         }
       ]
     },
