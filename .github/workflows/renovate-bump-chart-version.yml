@@ -1,0 +1,82 @@
+name: Renovate Chart Version Bump
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  bump-chart-version:
+    if: ${{ github.actor == 'renovate[bot]' || github.actor == 'app/renovate' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Bump chart patch version for changed charts
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          changed_files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          if [[ -z "$changed_files" ]]; then
+            echo "No changed files in PR range; nothing to do"
+            exit 0
+          fi
+
+          mapfile -t charts < <(printf '%s\n' "$changed_files" | awk -F/ '/^charts\/[^/]+\// {print $2}' | sort -u)
+          if [[ ${#charts[@]} -eq 0 ]]; then
+            echo "No chart changes detected"
+            exit 0
+          fi
+
+          bumped=0
+          for chart in "${charts[@]}"; do
+            chart_yaml="charts/${chart}/Chart.yaml"
+            [[ -f "$chart_yaml" ]] || continue
+
+            # If version already changed in this PR, skip to avoid repeated bumps.
+            if git diff "$BASE_SHA" "$HEAD_SHA" -- "$chart_yaml" | grep -Eq '^[+-]version:'; then
+              echo "${chart}: version already changed in PR, skipping"
+              continue
+            fi
+
+            current=$(sed -nE 's/^version:[[:space:]]*"?([0-9]+\.[0-9]+\.[0-9]+)"?$/\1/p' "$chart_yaml" | head -n1)
+            if [[ -z "$current" ]]; then
+              echo "${chart}: could not parse semver version from ${chart_yaml}, skipping"
+              continue
+            fi
+
+            IFS='.' read -r major minor patch <<<"$current"
+            next_patch=$((patch + 1))
+            next_version="${major}.${minor}.${next_patch}"
+
+            perl -i -pe "s/^version:[[:space:]]*\"?[0-9]+\.[0-9]+\.[0-9]+\"?$/version: ${next_version}/" "$chart_yaml"
+            echo "${chart}: ${current} -> ${next_version}"
+            bumped=1
+          done
+
+          if [[ $bumped -eq 0 ]]; then
+            echo "No chart versions required bump"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add charts/*/Chart.yaml
+          if git diff --cached --quiet; then
+            echo "No staged changes after bump"
+            exit 0
+          fi
+
+          git commit -m "chore(charts): bump chart patch version for renovate updates"
+          git push

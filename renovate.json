@@ -1,6 +1,90 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
+  "extends": ["config:recommended"],
+  "labels": ["dependencies", "renovate"],
+  "prConcurrentLimit": 10,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/airbroke\\/Chart\\.yaml$/"],
+      "matchStrings": ["appVersion:\\s*\"?(?<currentValue>[^\"]+)\"?"],
+      "depNameTemplate": "icoretech/airbroke",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/airbroke\\/values\\.yaml$/"],
+      "matchStrings": ["web:\\s*[\\s\\S]*?image:\\s*ghcr\\.io\\/icoretech\\/airbroke:(?<currentValue>[^\\s]+)"],
+      "depNameTemplate": "icoretech/airbroke",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/browserless\\/Chart\\.yaml$/"],
+      "matchStrings": ["appVersion:\\s*\"?(?<currentValue>[^\"]+)\"?"],
+      "depNameTemplate": "browserless/browserless",
+      "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/browserless\\/Chart\\.yaml$/"],
+      "matchStrings": ["image:\\s*ghcr\\.io\\/browserless\\/chromium:(?<currentValue>[^\\s]+)"],
+      "depNameTemplate": "browserless/browserless",
+      "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/metamcp\\/Chart\\.yaml$/"],
+      "matchStrings": ["appVersion:\\s*\"?(?<currentValue>[^\"]+)\"?"],
+      "depNameTemplate": "metatool-ai/metamcp",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/metamcp\\/values\\.yaml$/"],
+      "matchStrings": ["image:\\s*[\\s\\S]*?repository:\\s*ghcr\\.io\\/metatool-ai\\/metamcp\\s*[\\s\\S]*?tag:\\s*(?<currentValue>[^\\s#]+)"],
+      "depNameTemplate": "metatool-ai/metamcp",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/tolgee\\/Chart\\.yaml$/"],
+      "matchStrings": ["appVersion:\\s*\"?(?<currentValue>[^\"]+)\"?"],
+      "depNameTemplate": "tolgee/tolgee-platform",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/tolgee\\/Chart\\.yaml$/"],
+      "matchStrings": ["image:\\s*tolgee\\/tolgee:(?<currentValue>[^\\s]+)"],
+      "depNameTemplate": "tolgee/tolgee-platform",
+      "datasourceTemplate": "github-releases"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["regex"],
+      "matchPackageNames": ["icoretech/airbroke"],
+      "groupName": "airbroke chart software updates"
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchPackageNames": ["browserless/browserless"],
+      "groupName": "browserless chart software updates"
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchPackageNames": ["metatool-ai/metamcp"],
+      "groupName": "metamcp chart software updates"
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchPackageNames": ["tolgee/tolgee-platform"],
+      "groupName": "tolgee chart software updates"
+    }
   ]
 }
