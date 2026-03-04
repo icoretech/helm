@@ -9,7 +9,7 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
         with:
