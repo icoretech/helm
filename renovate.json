@@ -85,6 +85,10 @@
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["tolgee/tolgee-platform"],
       "groupName": "tolgee chart software updates"
+    },
+    {
+      "matchPackageNames": ["inngest/inngest"],
+      "enabled": false
     }
   ]
 }
