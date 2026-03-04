@@ -265,7 +265,7 @@ pgbouncerExporter:
     # -- Exporter image repository
     repository: prometheuscommunity/pgbouncer-exporter
     # -- Exporter image tag
-    tag: v0.11.1
+    tag: v0.12.0
     # -- Exporter image pull policy
     pullPolicy: IfNotPresent
   log:
