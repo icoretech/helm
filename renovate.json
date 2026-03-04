@@ -52,6 +52,7 @@
   ],
   "packageRules": [
     {
+      "matchManagers": ["custom.regex", "helm-values", "helmv3"],
       "matchFileNames": ["charts/**"],
       "recreateWhen": "always",
       "bumpVersions": [
