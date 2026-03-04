@@ -2,12 +2,13 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "labels": ["dependencies", "renovate"],
-  "prConcurrentLimit": 10,
+  "prConcurrentLimit": 1,
+  "branchConcurrentLimit": 1,
   "customManagers": [
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/airbroke\\/Chart\\.yaml$/"],
-      "matchStrings": ["appVersion:\\s*\"?(?<currentValue>[^\"]+)\"?"],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"]+)\\\"?"],
       "depNameTemplate": "icoretech/airbroke",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^v?(?<version>.+)$"
@@ -15,7 +16,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/browserless\\/Chart\\.yaml$/"],
-      "matchStrings": ["appVersion:\\s*\"?(?<currentValue>[^\"]+)\"?"],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"]+)\\\"?"],
       "depNameTemplate": "browserless/browserless",
       "datasourceTemplate": "github-tags"
     },
@@ -29,7 +30,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/metamcp\\/Chart\\.yaml$/"],
-      "matchStrings": ["appVersion:\\s*\"?(?<currentValue>[^\"]+)\"?"],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"]+)\\\"?"],
       "depNameTemplate": "metatool-ai/metamcp",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^v?(?<version>.+)$"
@@ -37,7 +38,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/tolgee\\/Chart\\.yaml$/"],
-      "matchStrings": ["appVersion:\\s*\"?(?<currentValue>[^\"]+)\"?"],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"]+)\\\"?"],
       "depNameTemplate": "tolgee/tolgee-platform",
       "datasourceTemplate": "github-releases"
     },
@@ -51,22 +52,34 @@
   ],
   "packageRules": [
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["charts/*/Chart.yaml"],
+      "bumpVersions": [
+        {
+          "name": "Bump chart version",
+          "filePatterns": ["{{packageFileDir}}/Chart.yaml"],
+          "matchStrings": ["version:\\s*\\\"?(?<version>\\d+\\.\\d+\\.\\d+)\\\"?"],
+          "bumpType": "patch"
+        }
+      ]
+    },
+    {
+      "matchManagers": ["custom.regex"],
       "matchPackageNames": ["icoretech/airbroke"],
       "groupName": "airbroke chart software updates"
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchPackageNames": ["browserless/browserless"],
       "groupName": "browserless chart software updates"
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchPackageNames": ["metatool-ai/metamcp"],
       "groupName": "metamcp chart software updates"
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchPackageNames": ["tolgee/tolgee-platform"],
       "groupName": "tolgee chart software updates"
     }

@@ -169,7 +169,7 @@ spec:
       migrations_url: 'postgresql://xxxx:xxxx@postgres-postgresql.postgres.svc.cluster.local:5432/airbroke_production?schema=public'
     web:
       imageRepository: ghcr.io/icoretech/airbroke
-      imageTag: "1.1.22" # {"$imagepolicy": "flux-system:airbroke"}
+      imageTag: "1.1.22" # {"$imagepolicy": "flux-system:airbroke:tag"}
       replicaCount: 2
       cachePersistentVolume:
         enabled: true
