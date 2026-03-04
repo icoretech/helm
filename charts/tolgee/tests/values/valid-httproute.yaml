@@ -1,0 +1,10 @@
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: shared-gateway
+      namespace: infra
+  hostnames:
+    - tolgee.example.com
+tolgee:
+  authentication:
+    jwtSecret: "replace-with-a-strong-secret-at-least-32-characters"

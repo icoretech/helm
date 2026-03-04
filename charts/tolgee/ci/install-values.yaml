@@ -1,0 +1,5 @@
+# Values used by chart-testing (ct install) to ensure the chart can be installed.
+# Internal CloudPirates PostgreSQL remains enabled for install tests.
+tolgee:
+  authentication:
+    jwtSecret: "replace-with-a-strong-secret-at-least-32-characters"

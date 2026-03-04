@@ -1,0 +1,3 @@
+tolgee:
+  authentication:
+    jwtSecret: "replace-with-a-strong-secret-at-least-32-characters"

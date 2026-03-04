@@ -1,0 +1,38 @@
+apiVersion: v2
+name: tolgee
+description: Tolgee Platform Helm chart for Kubernetes
+type: application
+version: 0.1.0
+appVersion: "v3.164.0"
+kubeVersion: ">= 1.24.0-0"
+icon: https://icoretech.github.io/helm/charts/tolgee/logo.svg
+keywords:
+  - tolgee
+  - localization
+  - i18n
+  - l10n
+maintainers:
+  - name: masterkain
+    email: claudio@icorete.ch
+    url: https://github.com/masterkain
+home: https://tolgee.io
+sources:
+  - https://github.com/tolgee/tolgee-platform
+  - https://github.com/icoretech/helm/tree/main/charts/tolgee
+annotations:
+  artifacthub.io/license: "Apache-2.0"
+  artifacthub.io/signKey: |
+    fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+    url: https://icoretech.github.io/helm/pgp-public-key.asc
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial Tolgee chart with optional bundled PostgreSQL dependency, external DB mode, ingress, and Gateway API HTTPRoute support
+  artifacthub.io/images: |
+    - name: tolgee
+      image: tolgee/tolgee:v3.164.0
+dependencies:
+  - name: postgres
+    alias: postgresql
+    version: "0.17.1"
+    repository: oci://registry-1.docker.io/cloudpirates
+    condition: postgresql.enabled

@@ -1,0 +1,12 @@
+postgresql:
+  enabled: true
+database:
+  external:
+    enabled: true
+    host: postgres.example.com
+    name: tolgee
+    username: ext_user
+    password: ext_password
+tolgee:
+  authentication:
+    jwtSecret: "replace-with-a-strong-secret-at-least-32-characters"

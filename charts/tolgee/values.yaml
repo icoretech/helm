@@ -1,0 +1,471 @@
+# -- Number of Tolgee replicas.
+replicaCount: 1
+
+image:
+  # -- Tolgee container repository.
+  repository: tolgee/tolgee
+
+  # -- Image pull policy.
+  pullPolicy: IfNotPresent
+
+  # -- Image tag override. Defaults to chart appVersion.
+  tag: ""
+
+# -- List of image pull secrets.
+imagePullSecrets: []
+
+# -- Override chart name.
+nameOverride: ""
+
+# -- Override fully-qualified release name.
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Create a service account.
+  create: true
+
+  # -- Service account annotations.
+  annotations: {}
+
+  # -- Service account name.
+  name: ""
+
+# -- Pod annotations.
+podAnnotations: {}
+
+# -- Pod labels.
+podLabels: {}
+
+# -- Pod security context.
+podSecurityContext: {}
+
+# -- Container security context.
+securityContext: {}
+
+service:
+  # -- Service annotations.
+  annotations: {}
+
+  # -- Service type.
+  type: ClusterIP
+
+  # -- Service port.
+  port: 80
+
+  # -- Target container port.
+  targetPort: 8080
+
+  # -- Optional nodePort when service.type is NodePort/LoadBalancer.
+  nodePort:
+
+  # -- Optional LoadBalancer IP.
+  loadBalancerIP:
+
+  # -- Optional CIDRs allowed via LoadBalancer.
+  loadBalancerSourceRanges: []
+
+  # -- External traffic policy.
+  externalTrafficPolicy:
+
+metrics:
+  # -- Enable Prometheus metrics scraping hints and ServiceMonitor wiring.
+  enabled: false
+
+  # -- HTTP path exposing Prometheus metrics from Tolgee.
+  path: /actuator/prometheus
+
+  # -- Scrape port for metrics. Use service port name (e.g. http) or numeric target port.
+  port: http
+
+  serviceMonitor:
+    # -- Enable ServiceMonitor resource for Prometheus Operator.
+    enabled: false
+
+    # -- Optional namespace where ServiceMonitor is created. Empty uses release namespace.
+    namespace: ""
+
+    # -- Additional labels on ServiceMonitor (e.g. release label for kube-prometheus-stack).
+    additionalLabels: {}
+
+    # -- Additional annotations on ServiceMonitor.
+    annotations: {}
+
+    # -- Prometheus scrape interval.
+    interval: 30s
+
+    # -- Prometheus scrape timeout.
+    scrapeTimeout: 10s
+
+    # -- Preserve labels from scraped targets.
+    honorLabels: false
+
+    # -- Optional ServiceMonitor jobLabel.
+    jobLabel: ""
+
+    # -- Optional labels from Service copied onto ingested samples.
+    targetLabels: []
+
+    # -- Optional pod labels copied onto ingested samples.
+    podTargetLabels: []
+
+    # -- Scrape scheme.
+    scheme: http
+
+    # -- TLS config for scrape endpoint.
+    tlsConfig: {}
+
+    # -- Relabeling configs for target discovery.
+    relabelings: []
+
+    # -- Metric relabeling configs for scraped samples.
+    metricRelabelings: []
+
+ingress:
+  # -- Enable Ingress.
+  enabled: false
+
+  # -- IngressClass name.
+  className: ""
+
+  # -- Ingress annotations.
+  annotations: {}
+
+  # -- Ingress hosts and paths.
+  hosts: []
+  # - host: tolgee.example.com
+  #   paths:
+  #     - path: /
+  #       pathType: Prefix
+
+  # -- Ingress TLS entries.
+  tls: []
+  # - secretName: tolgee-tls
+  #   hosts:
+  #     - tolgee.example.com
+
+httpRoute:
+  # -- Enable Gateway API HTTPRoute.
+  enabled: false
+
+  # -- HTTPRoute annotations.
+  annotations: {}
+
+  # -- ParentRefs for HTTPRoute (required when enabled).
+  parentRefs: []
+  # - name: shared-gateway
+  #   namespace: infra
+  #   sectionName: https
+
+  # -- Optional HTTPRoute hostnames.
+  hostnames: []
+
+  # -- Match rules for HTTPRoute.
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+
+autoscaling:
+  # -- Enable HPA.
+  enabled: false
+
+  # -- Minimum replicas.
+  minReplicas: 1
+
+  # -- Maximum replicas.
+  maxReplicas: 10
+
+  # -- Target CPU utilization percentage.
+  targetCPUUtilizationPercentage: 80
+
+  # -- Target memory utilization percentage.
+  targetMemoryUtilizationPercentage:
+
+# -- Container resources.
+resources: {}
+
+# -- Node selector.
+nodeSelector: {}
+
+# -- Tolerations.
+tolerations: []
+
+# -- Affinity.
+affinity: {}
+
+persistence:
+  # -- Enable data persistence for Tolgee filesystem storage.
+  enabled: true
+
+  # -- Existing PVC name to use instead of creating one.
+  existingClaim: ""
+
+  # -- PVC storage class.
+  storageClass: ""
+
+  # -- PVC annotations.
+  annotations: {}
+
+  # -- PVC access modes.
+  accessModes:
+    - ReadWriteOnce
+
+  # -- PVC size.
+  size: 10Gi
+
+  # -- PVC volume mode.
+  volumeMode: ""
+
+  # -- Mount path for Tolgee data.
+  mountPath: /data
+
+database:
+  # -- SSL mode appended to JDBC URL.
+  sslMode: disable
+
+  # -- Extra JDBC query parameters (without leading ?), e.g. key1=value1&key2=value2.
+  jdbcParameters: reWriteBatchedInserts=true
+
+  internal:
+    # -- Override internal PostgreSQL service name (defaults to <release>-postgresql).
+    serviceName: ""
+
+    # -- Internal PostgreSQL service port.
+    port: 5432
+
+  external:
+    # -- Enable external PostgreSQL mode. When enabled, set postgresql.enabled=false.
+    enabled: false
+
+    # -- External PostgreSQL host.
+    host: ""
+
+    # -- External PostgreSQL port.
+    port: 5432
+
+    # -- External PostgreSQL database name.
+    name: tolgee
+
+    # -- External PostgreSQL username.
+    username: ""
+
+    # -- External PostgreSQL password.
+    password: ""
+
+    # -- Full external JDBC URL override.
+    jdbcUrl: ""
+
+    existingSecret:
+      # -- Existing secret containing SPRING_DATASOURCE_* values.
+      name: ""
+
+      # -- Key for JDBC URL.
+      urlKey: SPRING_DATASOURCE_URL
+
+      # -- Key for DB username.
+      usernameKey: SPRING_DATASOURCE_USERNAME
+
+      # -- Key for DB password.
+      passwordKey: SPRING_DATASOURCE_PASSWORD
+
+  waitForReady:
+    # -- Wait for PostgreSQL TCP readiness before starting Tolgee.
+    enabled: true
+
+    # -- Init container image used for DB readiness checks.
+    image: busybox:1.36
+
+    # -- Init container image pull policy.
+    imagePullPolicy: IfNotPresent
+
+    # -- Max seconds to wait for DB readiness.
+    timeoutSeconds: 180
+
+    # -- Poll interval in seconds.
+    periodSeconds: 2
+
+tolgee:
+  # -- Public frontend URL (recommended for secure link generation).
+  frontEndUrl: ""
+
+  authentication:
+    # -- tolgee.authentication.enabled
+    enabled: null
+
+    # -- tolgee.authentication.native-enabled
+    nativeEnabled: null
+
+    # -- tolgee.authentication.registrations-allowed
+    registrationsAllowed: null
+
+    # -- tolgee.authentication.needs-email-verification
+    needsEmailVerification: null
+
+    # -- tolgee.authentication.user-can-create-organizations
+    userCanCreateOrganizations: null
+
+    # -- tolgee.authentication.create-demo-for-initial-user
+    createDemoForInitialUser: null
+
+    # -- tolgee.authentication.initial-username
+    initialUsername: ""
+
+    # -- tolgee.authentication.initial-password
+    initialPassword: ""
+
+    initialPasswordRef:
+      # -- Existing secret containing tolgee.authentication.initial-password.
+      name: ""
+
+      # -- Secret key for initial password.
+      key: ""
+
+    # -- tolgee.authentication.jwt-secret
+    jwtSecret: "replace-with-a-strong-secret-at-least-32-characters"
+
+    jwtSecretRef:
+      # -- Existing secret containing tolgee.authentication.jwt-secret.
+      name: ""
+
+      # -- Secret key for jwt secret.
+      key: ""
+
+  smtp:
+    # -- tolgee.smtp.host
+    host: ""
+
+    # -- tolgee.smtp.port
+    port: 25
+
+    # -- tolgee.smtp.username
+    username: ""
+
+    # -- tolgee.smtp.password
+    password: ""
+
+    passwordRef:
+      # -- Existing secret containing tolgee.smtp.password.
+      name: ""
+
+      # -- Secret key for SMTP password.
+      key: ""
+
+    # -- tolgee.smtp.auth
+    auth: null
+
+    # -- tolgee.smtp.tls-enabled
+    tlsEnabled: null
+
+    # -- tolgee.smtp.ssl-enabled
+    sslEnabled: null
+
+    # -- tolgee.smtp.tls-required
+    tlsRequired: null
+
+    # -- tolgee.smtp.from
+    from: ""
+
+  fileStorage:
+    # -- tolgee.file-storage.fs-data-path
+    fsDataPath: /data
+
+    s3:
+      # -- tolgee.file-storage.s3.enabled
+      enabled: false
+
+      # -- tolgee.file-storage.s3.endpoint
+      endpoint: ""
+
+      # -- tolgee.file-storage.s3.signing-region
+      signingRegion: ""
+
+      # -- tolgee.file-storage.s3.bucket-name
+      bucketName: ""
+
+      # -- tolgee.file-storage.s3.path
+      path: ""
+
+      # -- tolgee.file-storage.s3.access-key
+      accessKey: ""
+
+      accessKeyRef:
+        # -- Existing secret containing tolgee.file-storage.s3.access-key.
+        name: ""
+
+        # -- Secret key for S3 access key.
+        key: ""
+
+      # -- tolgee.file-storage.s3.secret-key
+      secretKey: ""
+
+      secretKeyRef:
+        # -- Existing secret containing tolgee.file-storage.s3.secret-key.
+        name: ""
+
+        # -- Secret key for S3 secret key.
+        key: ""
+
+  telemetry:
+    # -- tolgee.telemetry.enabled
+    enabled: null
+
+    # -- tolgee.telemetry.server
+    server: ""
+
+  cache:
+    # -- tolgee.cache.enabled
+    enabled: null
+
+    # -- tolgee.cache.use-redis
+    useRedis: null
+
+  websocket:
+    # -- tolgee.websocket.use-redis
+    useRedis: null
+
+  # -- Additional non-secret Tolgee/Spring properties in dot notation.
+  # -- Example: tolgee.authentication.google.client-id
+  config: {}
+
+  # -- Additional secret Tolgee/Spring properties in dot notation.
+  secretConfig: {}
+
+  # -- Additional env vars.
+  extraEnv: []
+
+  # -- Additional envFrom refs.
+  envFrom: []
+
+livenessProbe:
+  # -- Enable liveness probe.
+  enabled: true
+  httpGet:
+    # -- Liveness probe path.
+    path: /actuator/health
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 6
+
+readinessProbe:
+  # -- Enable readiness probe.
+  enabled: true
+  httpGet:
+    # -- Readiness probe path.
+    path: /actuator/health
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 6
+
+postgresql:
+  enabled: true
+  auth:
+    username: tolgee
+    password: tolgee
+    database: tolgee
+  persistence:
+    enabled: true
+    size: 8Gi

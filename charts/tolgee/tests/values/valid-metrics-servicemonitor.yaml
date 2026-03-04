@@ -1,0 +1,19 @@
+metrics:
+  enabled: true
+  path: /actuator/prometheus
+  port: http
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 30s
+    scrapeTimeout: 10s
+    additionalLabels:
+      release: kube-prometheus-stack
+
+service:
+  annotations:
+    custom.annotation/enabled: "true"
+
+tolgee:
+  authentication:
+    jwtSecret: "replace-with-a-strong-secret-at-least-32-characters"

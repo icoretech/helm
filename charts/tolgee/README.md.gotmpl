@@ -1,0 +1,161 @@
+# Tolgee Helm Chart
+
+Deploy [Tolgee Platform](https://tolgee.io/) on Kubernetes with optional bundled PostgreSQL (CloudPirates chart) or external PostgreSQL wiring.
+
+## Features
+
+- Tolgee upstream image defaults (`tolgee/tolgee:v3.164.0`)
+- Optional bundled PostgreSQL dependency (`postgresql.enabled=true`)
+- External PostgreSQL mode with inline values or existing Secret refs
+- Configurable persistence for Tolgee filesystem data (`/data` by default)
+- Ingress and Gateway API `HTTPRoute` support
+- Generic Tolgee/Spring property pass-through via dot-notation maps (`tolgee.config`, `tolgee.secretConfig`)
+
+## Prerequisites
+
+- Kubernetes 1.24+
+- Helm 3.10+
+
+## Install
+
+```bash
+helm repo add icoretech https://icoretech.github.io/helm
+helm repo update
+helm upgrade --install tolgee icoretech/tolgee \
+  -n tolgee --create-namespace \
+  --set tolgee.authentication.jwtSecret="replace-with-a-strong-secret-at-least-32-characters"
+```
+
+OCI:
+
+```bash
+helm upgrade --install tolgee oci://ghcr.io/icoretech/charts/tolgee \
+  -n tolgee --create-namespace \
+  --set tolgee.authentication.jwtSecret="replace-with-a-strong-secret-at-least-32-characters"
+```
+
+## External PostgreSQL Example
+
+```yaml
+postgresql:
+  enabled: false
+
+database:
+  external:
+    enabled: true
+    host: postgres.example.com
+    port: 5432
+    name: tolgee
+    username: tolgee
+    password: supersecret
+
+tolgee:
+  authentication:
+    jwtSecret: "replace-with-a-strong-secret-at-least-32-characters"
+```
+
+## Existing Secret for External PostgreSQL
+
+```yaml
+postgresql:
+  enabled: false
+
+database:
+  external:
+    enabled: true
+    existingSecret:
+      name: tolgee-db
+      urlKey: SPRING_DATASOURCE_URL
+      usernameKey: SPRING_DATASOURCE_USERNAME
+      passwordKey: SPRING_DATASOURCE_PASSWORD
+```
+
+When using `database.external.existingSecret` without explicit host fields, disable startup wait:
+
+```yaml
+database:
+  waitForReady:
+    enabled: false
+```
+
+or set `database.external.host` so the initContainer can probe DB readiness.
+
+## Sensitive Values via Secret Refs
+
+Use the built-in `*Ref` fields when you want chart-managed env wiring without storing clear-text values in Helm values:
+
+- `tolgee.authentication.jwtSecretRef`
+- `tolgee.authentication.initialPasswordRef`
+- `tolgee.smtp.passwordRef`
+- `tolgee.fileStorage.s3.accessKeyRef`
+- `tolgee.fileStorage.s3.secretKeyRef`
+
+## Gateway API HTTPRoute Example
+
+```yaml
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: shared-gateway
+      namespace: infra
+  hostnames:
+    - tolgee.example.com
+```
+
+## Metrics and ServiceMonitor
+
+`metrics.serviceMonitor.enabled` requires Prometheus Operator CRDs (`monitoring.coreos.com/v1`) in the cluster.
+
+```yaml
+metrics:
+  enabled: true
+  path: /actuator/prometheus
+  port: http
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    additionalLabels:
+      release: kube-prometheus-stack
+```
+
+## Flux Example
+
+```yaml
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: icoretech
+  namespace: flux-system
+spec:
+  type: oci
+  interval: 30m
+  url: oci://ghcr.io/icoretech/charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tolgee
+  namespace: tolgee
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: tolgee
+      version: ">=0.1.0"
+      sourceRef:
+        kind: HelmRepository
+        name: icoretech
+        namespace: flux-system
+  values:
+    postgresql:
+      enabled: true
+    tolgee:
+      authentication:
+        jwtSecretRef:
+          name: tolgee-auth
+          key: jwtSecret
+```
+
+## Configuration reference
+
+{{ template "chart.valuesSection" . }}

@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "tolgee.fullname" . }}
+  labels:
+    {{- include "tolgee.labels" . | nindent 4 }}
+  {{- $annotations := dict -}}
+  {{- if .Values.metrics.enabled }}
+  {{- $_ := set $annotations "prometheus.io/scrape" "true" -}}
+  {{- $_ := set $annotations "prometheus.io/path" .Values.metrics.path -}}
+  {{- $metricsPort := printf "%v" .Values.metrics.port -}}
+  {{- if regexMatch "^[0-9]+$" $metricsPort -}}
+  {{- $_ := set $annotations "prometheus.io/port" $metricsPort -}}
+  {{- else -}}
+  {{- $_ := set $annotations "prometheus.io/port" (printf "%v" .Values.service.port) -}}
+  {{- end -}}
+  {{- end }}
+  {{- range $k, $v := .Values.service.annotations }}
+  {{- $_ := set $annotations $k $v -}}
+  {{- end }}
+  {{- if gt (len $annotations) 0 }}
+  annotations:
+    {{- toYaml $annotations | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- with .Values.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  {{- if eq .Values.service.type "LoadBalancer" }}
+  {{- with .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  {{- with .Values.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+      {{- if semverCompare ">=1.20-0" .Capabilities.KubeVersion.GitVersion }}
+      appProtocol: http
+      {{- end }}
+  selector:
+    {{- include "tolgee.selectorLabels" . | nindent 4 }}

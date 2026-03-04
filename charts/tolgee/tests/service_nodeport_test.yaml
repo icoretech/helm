@@ -1,0 +1,16 @@
+suite: service nodeport
+templates:
+  - service.yaml
+tests:
+  - it: renders explicit nodePort for NodePort services
+    set:
+      service.type: NodePort
+      service.nodePort: 32080
+      service.port: 80
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+      - equal:
+          path: spec.ports[0].nodePort
+          value: 32080

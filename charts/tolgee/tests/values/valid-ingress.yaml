@@ -1,0 +1,10 @@
+ingress:
+  enabled: true
+  hosts:
+    - host: tolgee.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+tolgee:
+  authentication:
+    jwtSecret: "replace-with-a-strong-secret-at-least-32-characters"

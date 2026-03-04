@@ -1,0 +1,26 @@
+suite: internal database wiring
+templates:
+  - deployment.yaml
+tests:
+  - it: renders internal datasource env vars when using bundled postgresql
+    values:
+      - values/valid-minimal.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SPRING_DATASOURCE_URL")].value
+          value: jdbc:postgresql://RELEASE-NAME-postgresql:5432/tolgee?sslmode=disable&reWriteBatchedInserts=true
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SPRING_DATASOURCE_USERNAME")].value
+          value: tolgee
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SPRING_DATASOURCE_PASSWORD")].value
+          value: tolgee
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-postgres
+      - equal:
+          path: spec.template.spec.initContainers[0].env[?(@.name=="DB_HOST")].value
+          value: RELEASE-NAME-postgresql
+      - equal:
+          path: spec.template.spec.initContainers[0].env[?(@.name=="DB_PORT")].value
+          value: "5432"

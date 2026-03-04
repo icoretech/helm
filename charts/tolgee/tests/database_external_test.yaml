@@ -1,0 +1,23 @@
+suite: external database wiring
+templates:
+  - deployment.yaml
+tests:
+  - it: renders external datasource env vars when external mode is enabled
+    values:
+      - values/valid-external.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SPRING_DATASOURCE_URL")].value
+          value: jdbc:postgresql://postgres.example.com:5432/tolgee?sslmode=require&applicationName=tolgee
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SPRING_DATASOURCE_USERNAME")].value
+          value: ext_user
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SPRING_DATASOURCE_PASSWORD")].value
+          value: ext_password
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-postgres
+      - equal:
+          path: spec.template.spec.initContainers[0].env[?(@.name=="DB_HOST")].value
+          value: postgres.example.com

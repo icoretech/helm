@@ -1,0 +1,31 @@
+suite: ingress and httproute templates
+templates:
+  - ingress.yaml
+  - gatewayapi-httproute.yaml
+tests:
+  - it: renders ingress rules when enabled
+    template: ingress.yaml
+    values:
+      - values/valid-ingress.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: tolgee.example.com
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.port.number
+          value: 80
+
+  - it: renders Gateway API HTTPRoute when enabled
+    values:
+      - values/valid-httproute.yaml
+    template: gatewayapi-httproute.yaml
+    asserts:
+      - equal:
+          path: spec.parentRefs[0].name
+          value: shared-gateway
+      - equal:
+          path: spec.hostnames[0]
+          value: tolgee.example.com
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 80

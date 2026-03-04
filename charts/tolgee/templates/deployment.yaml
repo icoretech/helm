@@ -1,0 +1,406 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "tolgee.fullname" . }}
+  labels:
+    {{- include "tolgee.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "tolgee.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "tolgee.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "tolgee.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.database.waitForReady.enabled }}
+      {{- if and .Values.database.external.enabled (not .Values.database.external.host) }}
+      {{- fail "tolgee: database.external.host is required when database.waitForReady.enabled and database.external.enabled" }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-postgres
+          image: {{ .Values.database.waitForReady.image | quote }}
+          imagePullPolicy: {{ .Values.database.waitForReady.imagePullPolicy }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              start_ts="$(date +%s)"
+              while true; do
+                if nc -z "${DB_HOST}" "${DB_PORT}"; then
+                  echo "Database is reachable at ${DB_HOST}:${DB_PORT}"
+                  exit 0
+                fi
+                now_ts="$(date +%s)"
+                elapsed="$((now_ts - start_ts))"
+                if [ "$elapsed" -ge "${WAIT_TIMEOUT}" ]; then
+                  echo "Timed out waiting for database at ${DB_HOST}:${DB_PORT} after ${WAIT_TIMEOUT}s"
+                  exit 1
+                fi
+                echo "Waiting for database at ${DB_HOST}:${DB_PORT} (${elapsed}s elapsed)"
+                sleep "${WAIT_PERIOD}"
+              done
+          env:
+            - name: DB_HOST
+              value: {{ include "tolgee.database.host" . | trim | quote }}
+            - name: DB_PORT
+              value: {{ include "tolgee.database.port" . | trim | quote }}
+            - name: WAIT_TIMEOUT
+              value: {{ printf "%v" .Values.database.waitForReady.timeoutSeconds | quote }}
+            - name: WAIT_PERIOD
+              value: {{ printf "%v" .Values.database.waitForReady.periodSeconds | quote }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- $envSeen := dict }}
+            - name: TOLGEE_POSTGRES_AUTOSTART_ENABLED
+              value: "false"
+            {{- $_ := set $envSeen "TOLGEE_POSTGRES_AUTOSTART_ENABLED" true }}
+
+            - name: TOLGEE_FILE_STORAGE_FS_DATA_PATH
+              value: {{ .Values.tolgee.fileStorage.fsDataPath | quote }}
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_FS_DATA_PATH" true }}
+
+            {{- if and .Values.database.external.enabled .Values.database.external.existingSecret.name }}
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.external.existingSecret.name | quote }}
+                  key: {{ .Values.database.external.existingSecret.urlKey | quote }}
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.external.existingSecret.name | quote }}
+                  key: {{ .Values.database.external.existingSecret.usernameKey | quote }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.external.existingSecret.name | quote }}
+                  key: {{ .Values.database.external.existingSecret.passwordKey | quote }}
+            {{- else }}
+            - name: SPRING_DATASOURCE_URL
+              value: {{ include "tolgee.database.jdbcUrl" . | quote }}
+            - name: SPRING_DATASOURCE_USERNAME
+              value: {{ include "tolgee.database.username" . | quote }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: {{ include "tolgee.database.password" . | quote }}
+            {{- end }}
+            {{- $_ := set $envSeen "SPRING_DATASOURCE_URL" true }}
+            {{- $_ := set $envSeen "SPRING_DATASOURCE_USERNAME" true }}
+            {{- $_ := set $envSeen "SPRING_DATASOURCE_PASSWORD" true }}
+
+            {{- with .Values.tolgee.frontEndUrl }}
+            - name: TOLGEE_FRONT_END_URL
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_FRONT_END_URL" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.authentication.enabled nil }}
+            - name: TOLGEE_AUTHENTICATION_ENABLED
+              value: {{ printf "%v" .Values.tolgee.authentication.enabled | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_ENABLED" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.authentication.nativeEnabled nil }}
+            - name: TOLGEE_AUTHENTICATION_NATIVE_ENABLED
+              value: {{ printf "%v" .Values.tolgee.authentication.nativeEnabled | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_NATIVE_ENABLED" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.authentication.registrationsAllowed nil }}
+            - name: TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED
+              value: {{ printf "%v" .Values.tolgee.authentication.registrationsAllowed | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.authentication.needsEmailVerification nil }}
+            - name: TOLGEE_AUTHENTICATION_NEEDS_EMAIL_VERIFICATION
+              value: {{ printf "%v" .Values.tolgee.authentication.needsEmailVerification | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_NEEDS_EMAIL_VERIFICATION" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.authentication.userCanCreateOrganizations nil }}
+            - name: TOLGEE_AUTHENTICATION_USER_CAN_CREATE_ORGANIZATIONS
+              value: {{ printf "%v" .Values.tolgee.authentication.userCanCreateOrganizations | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_USER_CAN_CREATE_ORGANIZATIONS" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.authentication.createDemoForInitialUser nil }}
+            - name: TOLGEE_AUTHENTICATION_CREATE_DEMO_FOR_INITIAL_USER
+              value: {{ printf "%v" .Values.tolgee.authentication.createDemoForInitialUser | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_CREATE_DEMO_FOR_INITIAL_USER" true }}
+            {{- end }}
+            {{- with .Values.tolgee.authentication.initialUsername }}
+            - name: TOLGEE_AUTHENTICATION_INITIAL_USERNAME
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_INITIAL_USERNAME" true }}
+            {{- end }}
+            {{- if and .Values.tolgee.authentication.initialPasswordRef.name .Values.tolgee.authentication.initialPasswordRef.key }}
+            - name: TOLGEE_AUTHENTICATION_INITIAL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.tolgee.authentication.initialPasswordRef.name | quote }}
+                  key: {{ .Values.tolgee.authentication.initialPasswordRef.key | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_INITIAL_PASSWORD" true }}
+            {{- else }}
+            {{- with .Values.tolgee.authentication.initialPassword }}
+            - name: TOLGEE_AUTHENTICATION_INITIAL_PASSWORD
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_INITIAL_PASSWORD" true }}
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.tolgee.authentication.jwtSecretRef.name .Values.tolgee.authentication.jwtSecretRef.key }}
+            - name: TOLGEE_AUTHENTICATION_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.tolgee.authentication.jwtSecretRef.name | quote }}
+                  key: {{ .Values.tolgee.authentication.jwtSecretRef.key | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_JWT_SECRET" true }}
+            {{- else }}
+            {{- with .Values.tolgee.authentication.jwtSecret }}
+            - name: TOLGEE_AUTHENTICATION_JWT_SECRET
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_JWT_SECRET" true }}
+            {{- end }}
+            {{- end }}
+
+            {{- with .Values.tolgee.smtp.host }}
+            - name: TOLGEE_SMTP_HOST
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_SMTP_HOST" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.smtp.port nil }}
+            - name: TOLGEE_SMTP_PORT
+              value: {{ printf "%v" .Values.tolgee.smtp.port | quote }}
+            {{- $_ := set $envSeen "TOLGEE_SMTP_PORT" true }}
+            {{- end }}
+            {{- with .Values.tolgee.smtp.username }}
+            - name: TOLGEE_SMTP_USERNAME
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_SMTP_USERNAME" true }}
+            {{- end }}
+            {{- if and .Values.tolgee.smtp.passwordRef.name .Values.tolgee.smtp.passwordRef.key }}
+            - name: TOLGEE_SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.tolgee.smtp.passwordRef.name | quote }}
+                  key: {{ .Values.tolgee.smtp.passwordRef.key | quote }}
+            {{- $_ := set $envSeen "TOLGEE_SMTP_PASSWORD" true }}
+            {{- else }}
+            {{- with .Values.tolgee.smtp.password }}
+            - name: TOLGEE_SMTP_PASSWORD
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_SMTP_PASSWORD" true }}
+            {{- end }}
+            {{- end }}
+            {{- if ne .Values.tolgee.smtp.auth nil }}
+            - name: TOLGEE_SMTP_AUTH
+              value: {{ printf "%v" .Values.tolgee.smtp.auth | quote }}
+            {{- $_ := set $envSeen "TOLGEE_SMTP_AUTH" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.smtp.tlsEnabled nil }}
+            - name: TOLGEE_SMTP_TLS_ENABLED
+              value: {{ printf "%v" .Values.tolgee.smtp.tlsEnabled | quote }}
+            {{- $_ := set $envSeen "TOLGEE_SMTP_TLS_ENABLED" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.smtp.sslEnabled nil }}
+            - name: TOLGEE_SMTP_SSL_ENABLED
+              value: {{ printf "%v" .Values.tolgee.smtp.sslEnabled | quote }}
+            {{- $_ := set $envSeen "TOLGEE_SMTP_SSL_ENABLED" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.smtp.tlsRequired nil }}
+            - name: TOLGEE_SMTP_TLS_REQUIRED
+              value: {{ printf "%v" .Values.tolgee.smtp.tlsRequired | quote }}
+            {{- $_ := set $envSeen "TOLGEE_SMTP_TLS_REQUIRED" true }}
+            {{- end }}
+            {{- with .Values.tolgee.smtp.from }}
+            - name: TOLGEE_SMTP_FROM
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_SMTP_FROM" true }}
+            {{- end }}
+
+            {{- if .Values.tolgee.fileStorage.s3.enabled }}
+            - name: TOLGEE_FILE_STORAGE_S3_ENABLED
+              value: "true"
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_S3_ENABLED" true }}
+            {{- with .Values.tolgee.fileStorage.s3.endpoint }}
+            - name: TOLGEE_FILE_STORAGE_S3_ENDPOINT
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_S3_ENDPOINT" true }}
+            {{- end }}
+            {{- with .Values.tolgee.fileStorage.s3.signingRegion }}
+            - name: TOLGEE_FILE_STORAGE_S3_SIGNING_REGION
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_S3_SIGNING_REGION" true }}
+            {{- end }}
+            {{- with .Values.tolgee.fileStorage.s3.bucketName }}
+            - name: TOLGEE_FILE_STORAGE_S3_BUCKET_NAME
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_S3_BUCKET_NAME" true }}
+            {{- end }}
+            {{- with .Values.tolgee.fileStorage.s3.path }}
+            - name: TOLGEE_FILE_STORAGE_S3_PATH
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_S3_PATH" true }}
+            {{- end }}
+            {{- if and .Values.tolgee.fileStorage.s3.accessKeyRef.name .Values.tolgee.fileStorage.s3.accessKeyRef.key }}
+            - name: TOLGEE_FILE_STORAGE_S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.tolgee.fileStorage.s3.accessKeyRef.name | quote }}
+                  key: {{ .Values.tolgee.fileStorage.s3.accessKeyRef.key | quote }}
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_S3_ACCESS_KEY" true }}
+            {{- else }}
+            {{- with .Values.tolgee.fileStorage.s3.accessKey }}
+            - name: TOLGEE_FILE_STORAGE_S3_ACCESS_KEY
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_S3_ACCESS_KEY" true }}
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.tolgee.fileStorage.s3.secretKeyRef.name .Values.tolgee.fileStorage.s3.secretKeyRef.key }}
+            - name: TOLGEE_FILE_STORAGE_S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.tolgee.fileStorage.s3.secretKeyRef.name | quote }}
+                  key: {{ .Values.tolgee.fileStorage.s3.secretKeyRef.key | quote }}
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_S3_SECRET_KEY" true }}
+            {{- else }}
+            {{- with .Values.tolgee.fileStorage.s3.secretKey }}
+            - name: TOLGEE_FILE_STORAGE_S3_SECRET_KEY
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_S3_SECRET_KEY" true }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.telemetry.enabled nil }}
+            - name: TOLGEE_TELEMETRY_ENABLED
+              value: {{ printf "%v" .Values.tolgee.telemetry.enabled | quote }}
+            {{- $_ := set $envSeen "TOLGEE_TELEMETRY_ENABLED" true }}
+            {{- end }}
+            {{- with .Values.tolgee.telemetry.server }}
+            - name: TOLGEE_TELEMETRY_SERVER
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_TELEMETRY_SERVER" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.cache.enabled nil }}
+            - name: TOLGEE_CACHE_ENABLED
+              value: {{ printf "%v" .Values.tolgee.cache.enabled | quote }}
+            {{- $_ := set $envSeen "TOLGEE_CACHE_ENABLED" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.cache.useRedis nil }}
+            - name: TOLGEE_CACHE_USE_REDIS
+              value: {{ printf "%v" .Values.tolgee.cache.useRedis | quote }}
+            {{- $_ := set $envSeen "TOLGEE_CACHE_USE_REDIS" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.websocket.useRedis nil }}
+            - name: TOLGEE_WEBSOCKET_USE_REDIS
+              value: {{ printf "%v" .Values.tolgee.websocket.useRedis | quote }}
+            {{- $_ := set $envSeen "TOLGEE_WEBSOCKET_USE_REDIS" true }}
+            {{- end }}
+
+            {{- range $property, $value := .Values.tolgee.secretConfig }}
+            {{- $name := include "tolgee.propertyToEnvName" $property }}
+            {{- if not (hasKey $envSeen $name) }}
+            - name: {{ $name | quote }}
+              value: {{ printf "%v" $value | quote }}
+            {{- $_ := set $envSeen $name true }}
+            {{- end }}
+            {{- end }}
+
+            {{- range $property, $value := .Values.tolgee.config }}
+            {{- $name := include "tolgee.propertyToEnvName" $property }}
+            {{- if not (hasKey $envSeen $name) }}
+            - name: {{ $name | quote }}
+              value: {{ printf "%v" $value | quote }}
+            {{- $_ := set $envSeen $name true }}
+            {{- end }}
+            {{- end }}
+
+            {{- range .Values.tolgee.extraEnv }}
+            {{- $name := default "" .name }}
+            {{- if and (ne $name "") (not (hasKey $envSeen $name)) }}
+            - name: {{ $name | quote }}
+              {{- if hasKey . "value" }}
+              value: {{ .value | quote }}
+              {{- end }}
+              {{- if hasKey . "valueFrom" }}
+              valueFrom:
+                {{- toYaml .valueFrom | nindent 16 }}
+              {{- end }}
+            {{- $_ := set $envSeen $name true }}
+            {{- end }}
+            {{- end }}
+          {{- with .Values.tolgee.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.httpGet.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.httpGet.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.persistence.mountPath }}
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "tolgee.persistence.claimName" . }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

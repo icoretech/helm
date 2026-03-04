@@ -1,0 +1,49 @@
+suite: metrics and servicemonitor
+templates:
+  - service.yaml
+  - servicemonitor.yaml
+tests:
+  - it: adds prometheus scrape annotations to service when metrics are enabled
+    template: service.yaml
+    set:
+      metrics.enabled: true
+      metrics.path: /actuator/prometheus
+      metrics.port: http
+    asserts:
+      - equal:
+          path: metadata.annotations["prometheus.io/scrape"]
+          value: "true"
+      - equal:
+          path: metadata.annotations["prometheus.io/path"]
+          value: /actuator/prometheus
+      - equal:
+          path: metadata.annotations["prometheus.io/port"]
+          value: "80"
+
+  - it: renders ServiceMonitor when metrics.serviceMonitor is enabled
+    template: servicemonitor.yaml
+    values:
+      - values/valid-metrics-servicemonitor.yaml
+    asserts:
+      - isKind:
+          of: ServiceMonitor
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+      - equal:
+          path: metadata.labels.release
+          value: kube-prometheus-stack
+      - equal:
+          path: spec.endpoints[0].path
+          value: /actuator/prometheus
+      - equal:
+          path: spec.endpoints[0].port
+          value: http
+
+  - it: does not render ServiceMonitor by default
+    template: servicemonitor.yaml
+    values:
+      - values/valid-minimal.yaml
+    asserts:
+      - hasDocuments:
+          count: 0

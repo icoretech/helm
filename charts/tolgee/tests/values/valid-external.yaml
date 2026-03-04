@@ -1,0 +1,15 @@
+postgresql:
+  enabled: false
+database:
+  sslMode: require
+  jdbcParameters: applicationName=tolgee
+  external:
+    enabled: true
+    host: postgres.example.com
+    port: 5432
+    name: tolgee
+    username: ext_user
+    password: ext_password
+tolgee:
+  authentication:
+    jwtSecret: "replace-with-a-strong-secret-at-least-32-characters"

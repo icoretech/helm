@@ -1,0 +1,15 @@
+postgresql:
+  enabled: false
+database:
+  external:
+    enabled: true
+    existingSecret:
+      name: tolgee-db
+      urlKey: jdbc_url
+      usernameKey: username
+      passwordKey: password
+  waitForReady:
+    enabled: true
+tolgee:
+  authentication:
+    jwtSecret: "replace-with-a-strong-secret-at-least-32-characters"
