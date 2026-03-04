@@ -31,6 +31,8 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      {{- $defaultWebImage := printf "%s:%s" .Values.web.imageRepository (.Values.web.imageTag | default .Chart.AppVersion) }}
+      {{- $webImage := .Values.web.image | default $defaultWebImage }}
       {{- if .Values.web.runtimeClassName }}
       runtimeClassName: {{ .Values.web.runtimeClassName }}
       {{- end }}
@@ -40,7 +42,7 @@ spec:
       {{- end }}
       containers:
       - name: {{ include "app.web.name" . }}
-        image: "{{ .Values.web.image }}"
+        image: "{{ $webImage }}"
         imagePullPolicy: {{ .Values.web.imagePullPolicy }}
         envFrom:
           - configMapRef:
@@ -101,7 +103,7 @@ spec:
       {{- if .Values.database.enable_migration }}
       initContainers:
         - name: migrations
-          image: "{{ .Values.web.image }}"
+          image: "{{ $webImage }}"
           imagePullPolicy: {{ .Values.web.imagePullPolicy }}
           envFrom:
             - configMapRef:

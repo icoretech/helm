@@ -14,14 +14,6 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^charts\\/airbroke\\/values\\.yaml$/"],
-      "matchStrings": ["web:\\s*[\\s\\S]*?image:\\s*ghcr\\.io\\/icoretech\\/airbroke:(?<currentValue>[^\\s]+)"],
-      "depNameTemplate": "icoretech/airbroke",
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^v?(?<version>.+)$"
-    },
-    {
-      "customType": "regex",
       "managerFilePatterns": ["/^charts\\/browserless\\/Chart\\.yaml$/"],
       "matchStrings": ["appVersion:\\s*\"?(?<currentValue>[^\"]+)\"?"],
       "depNameTemplate": "browserless/browserless",
@@ -38,14 +30,6 @@
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/metamcp\\/Chart\\.yaml$/"],
       "matchStrings": ["appVersion:\\s*\"?(?<currentValue>[^\"]+)\"?"],
-      "depNameTemplate": "metatool-ai/metamcp",
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^v?(?<version>.+)$"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^charts\\/metamcp\\/values\\.yaml$/"],
-      "matchStrings": ["image:\\s*[\\s\\S]*?repository:\\s*ghcr\\.io\\/metatool-ai\\/metamcp\\s*[\\s\\S]*?tag:\\s*(?<currentValue>[^\\s#]+)"],
       "depNameTemplate": "metatool-ai/metamcp",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^v?(?<version>.+)$"

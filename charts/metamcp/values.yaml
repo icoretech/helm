@@ -7,7 +7,8 @@ replicaCount: 1
 image:
   repository: ghcr.io/metatool-ai/metamcp
   pullPolicy: IfNotPresent
-  tag: 2.4.22
+  # Defaults to Chart.appVersion when empty.
+  tag: ""
 
 # -- imagePullSecrets allows pulling the MetaMCP image from private registries.
 # Example:

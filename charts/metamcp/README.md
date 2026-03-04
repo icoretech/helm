@@ -222,7 +222,7 @@ provision:
 | gatewayAPI.mapBackendPaths | bool | `true` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/metatool-ai/metamcp"` |  |
-| image.tag | string | `"2.4.22"` |  |
+| image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` | imagePullSecrets allows pulling the MetaMCP image from private registries. Example: imagePullSecrets:   - name: regcred |
 | ingress.annotations | object | `{}` |  |
 | ingress.className | string | `""` |  |

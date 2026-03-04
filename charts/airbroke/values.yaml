@@ -10,7 +10,11 @@ web:
   prismaVersion: "7"
   imagePullPolicy: IfNotPresent
   imagePullSecrets: ""  # must be present in namespace
-  image: ghcr.io/icoretech/airbroke:1.1.81
+  # Deprecated full image override; when empty, repository/tag below are used.
+  image: ""
+  imageRepository: ghcr.io/icoretech/airbroke
+  # Defaults to Chart.appVersion when empty.
+  imageTag: ""
   terminationGracePeriodSeconds: 0
   replicaCount: 1
   runtimeClassName:
