@@ -93,7 +93,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | runtimeClassName | string | `""` | Runtime class for the PgBouncer pods (e.g. gvisor). |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsGroup":70,"runAsNonRoot":true,"runAsUser":70}` | Pod security context for the main PgBouncer container. By default, this forces the container to run without root privileges and with a read-only root filesystem. |
 | service.annotations | object | `{}` | Annotations for the Service. |
-| service.externalTrafficPolicy | string | `"Cluster"` | External traffic policy for the Service (Cluster or Local). |
+| service.externalTrafficPolicy | string | `nil` | External traffic policy for the Service (Cluster or Local). Set to null to omit it. |
 | service.internalTrafficPolicy | string | `"Cluster"` | Internal traffic policy for the Service (Cluster or Local). |
 | service.nodePort | string | `nil` | Set service nodePort, can be null |
 | service.port | int | `5432` | The service port for PgBouncer. |

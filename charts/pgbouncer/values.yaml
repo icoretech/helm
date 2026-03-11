@@ -58,8 +58,8 @@ service:
   port: 5432
   # -- Set service nodePort, can be null
   nodePort:
-  # -- External traffic policy for the Service (Cluster or Local).
-  externalTrafficPolicy: Cluster
+  # -- External traffic policy for the Service (Cluster or Local). Set to null to omit it.
+  externalTrafficPolicy:
   # -- Internal traffic policy for the Service (Cluster or Local).
   internalTrafficPolicy: Cluster
   # -- Session Affinity for Kubernetes service, can be "None" or "ClientIP"

@@ -10,7 +10,9 @@ metadata:
   {{- end }}
 spec:
   type: {{ .Values.service.type }}
-  externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy | default "Cluster" }}
+  {{- with .Values.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
   internalTrafficPolicy: {{ .Values.service.internalTrafficPolicy | default "Cluster" }}
   ports:
     - port: {{ .Values.service.port }}

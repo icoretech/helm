@@ -1,2 +1,5 @@
-tests/
+tests/*
+!tests/
+!tests/service_nodeport_test.yaml
 scripts/
+.DS_Store

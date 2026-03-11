@@ -1,0 +1,47 @@
+suite: service nodeport
+templates:
+  - service.yaml
+tests:
+  - it: defaults to ClusterIP without nodePort
+    set:
+      config.existingAdminSecret: ""
+      config.adminUser: admin
+      config.adminPassword: changeme
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - notExists:
+          path: spec.externalTrafficPolicy
+      - notExists:
+          path: spec.ports[0].nodePort
+
+  - it: NodePort renders explicit nodePort
+    set:
+      config.existingAdminSecret: ""
+      config.adminUser: admin
+      config.adminPassword: changeme
+      service.type: NodePort
+      service.nodePort: 30054
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+      - equal:
+          path: spec.ports[0].nodePort
+          value: 30054
+
+  - it: renders externalTrafficPolicy when explicitly set
+    set:
+      config.existingAdminSecret: ""
+      config.adminUser: admin
+      config.adminPassword: changeme
+      service.type: LoadBalancer
+      service.externalTrafficPolicy: Local
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.externalTrafficPolicy
+          value: Local
