@@ -19,6 +19,23 @@ fi
 TIMEOUT=${TIMEOUT:-5m}
 APP="${REL}-metamcp"
 
+dump_debug() {
+  local exit_code=${1:-1}
+  echo "# e2e failed, collecting kubernetes diagnostics" >&2
+  kubectl --context "$KCTX" -n "$NS" get all -o wide >&2 || true
+  kubectl --context "$KCTX" -n "$NS" get ingress,httproute  >&2 || true
+  kubectl --context "$KCTX" -n "$NS" get events --sort-by=.lastTimestamp >&2 || true
+  kubectl --context "$KCTX" -n "$NS" describe deploy "$APP" >&2 || true
+  kubectl --context "$KCTX" -n "$NS" describe pod -l app.kubernetes.io/instance="$REL" >&2 || true
+  kubectl --context "$KCTX" -n "$NS" logs deploy/"$APP" --tail=200 >&2 || true
+  kubectl --context "$KCTX" -n "$NS" logs job/"$APP"-provision --tail=200 >&2 || true
+  kubectl --context "$KCTX" -n "$NS" logs job/"$APP"-user-bootstrap --tail=200 >&2 || true
+  kubectl --context "$KCTX" -n "$NS" logs -l app.kubernetes.io/component=server --tail=120 >&2 || true
+  exit "$exit_code"
+}
+
+trap 'dump_debug $?' ERR
+
 echo "# Using context: $KCTX"
 echo "# Cleaning namespace $NS"
 kubectl --context "$KCTX" delete ns "$NS" --ignore-not-found --wait=true >/dev/null 2>&1 || true
