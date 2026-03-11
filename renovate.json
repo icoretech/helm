@@ -114,9 +114,17 @@
           "name": "Bump chart version",
           "filePatterns": ["{{packageFileDir}}/Chart.yaml"],
           "matchStrings": ["version:\\s*\\\"?(?<version>\\d+\\.\\d+\\.\\d+)\\\"?"],
-          "bumpType": "patch"
+          "bumpType": "{{#if isMajor}}major{{else}}patch{{/if}}"
         }
       ]
+    },
+    {
+      "matchManagers": ["helm-values"],
+      "matchDatasources": ["docker"],
+      "matchFileNames": ["charts/metamcp/**"],
+      "matchPackageNames": ["postgres"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     },
     {
       "matchManagers": ["custom.regex"],
