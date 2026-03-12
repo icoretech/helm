@@ -5,7 +5,7 @@ Deploy [Tolgee Platform](https://tolgee.io/) on Kubernetes with optional bundled
 ## Features
 
 - Tolgee upstream image defaults (`tolgee/tolgee:v3.164.0`)
-- Optional bundled PostgreSQL dependency (`postgresql.enabled=true`)
+- Optional bundled PostgreSQL dependency (`postgres.enabled=true`)
 - External PostgreSQL mode with inline values or existing Secret refs
 - Configurable persistence for Tolgee filesystem data (`/data` by default)
 - Ingress and Gateway API `HTTPRoute` support
@@ -37,7 +37,7 @@ helm upgrade --install tolgee oci://ghcr.io/icoretech/charts/tolgee \
 ## External PostgreSQL Example
 
 ```yaml
-postgresql:
+postgres:
   enabled: false
 
 database:
@@ -57,7 +57,7 @@ tolgee:
 ## Existing Secret for External PostgreSQL
 
 ```yaml
-postgresql:
+postgres:
   enabled: false
 
 database:
@@ -147,7 +147,7 @@ spec:
         name: icoretech
         namespace: flux-system
   values:
-    postgresql:
+    postgres:
       enabled: true
     tolgee:
       authentication:

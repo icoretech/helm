@@ -1,4 +1,4 @@
-postgresql:
+postgres:
   enabled: true
 database:
   external:

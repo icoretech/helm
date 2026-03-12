@@ -62,11 +62,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/* Default service name of the internal Postgres dependency. */}}
-{{- define "tolgee.postgresql.serviceName" -}}
+{{- define "tolgee.postgres.serviceName" -}}
 {{- if .Values.database.internal.serviceName -}}
 {{- .Values.database.internal.serviceName -}}
 {{- else -}}
-{{- printf "%s-postgresql" .Release.Name -}}
+{{- printf "%s-postgres" .Release.Name -}}
 {{- end -}}
 {{- end }}
 
@@ -93,7 +93,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
     {{- printf "jdbc:postgresql://%s:%v/%s%s" .Values.database.external.host .Values.database.external.port .Values.database.external.name (include "tolgee.database.queryString" .) -}}
   {{- end -}}
 {{- else -}}
-  {{- printf "jdbc:postgresql://%s:%v/%s%s" (include "tolgee.postgresql.serviceName" .) .Values.database.internal.port (default "postgres" .Values.postgresql.auth.database) (include "tolgee.database.queryString" .) -}}
+  {{- printf "jdbc:postgresql://%s:%v/%s%s" (include "tolgee.postgres.serviceName" .) .Values.database.internal.port (default "postgres" .Values.postgres.auth.database) (include "tolgee.database.queryString" .) -}}
 {{- end -}}
 {{- end }}
 
@@ -102,7 +102,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if .Values.database.external.enabled -}}
   {{- .Values.database.external.host -}}
 {{- else -}}
-  {{- include "tolgee.postgresql.serviceName" . -}}
+  {{- include "tolgee.postgres.serviceName" . -}}
 {{- end -}}
 {{- end }}
 
@@ -120,7 +120,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if .Values.database.external.enabled -}}
   {{- .Values.database.external.username -}}
 {{- else -}}
-  {{- default "postgres" .Values.postgresql.auth.username -}}
+  {{- default "postgres" .Values.postgres.auth.username -}}
 {{- end -}}
 {{- end }}
 
@@ -129,6 +129,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if .Values.database.external.enabled -}}
   {{- .Values.database.external.password -}}
 {{- else -}}
-  {{- default "" .Values.postgresql.auth.password -}}
+  {{- default "" .Values.postgres.auth.password -}}
 {{- end -}}
 {{- end }}

@@ -231,14 +231,14 @@ database:
   jdbcParameters: reWriteBatchedInserts=true
 
   internal:
-    # -- Override internal PostgreSQL service name (defaults to <release>-postgresql).
+    # -- Override internal PostgreSQL service name (defaults to <release>-postgres).
     serviceName: ""
 
     # -- Internal PostgreSQL service port.
     port: 5432
 
   external:
-    # -- Enable external PostgreSQL mode. When enabled, set postgresql.enabled=false.
+    # -- Enable external PostgreSQL mode. When enabled, set postgres.enabled=false.
     enabled: false
 
     # -- External PostgreSQL host.
@@ -464,7 +464,7 @@ readinessProbe:
   successThreshold: 1
   failureThreshold: 6
 
-postgresql:
+postgres:
   enabled: true
   auth:
     username: tolgee

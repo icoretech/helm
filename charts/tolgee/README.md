@@ -5,7 +5,7 @@ Deploy [Tolgee Platform](https://tolgee.io/) on Kubernetes with optional bundled
 ## Features
 
 - Tolgee upstream image defaults (`tolgee/tolgee:v3.164.0`)
-- Optional bundled PostgreSQL dependency (`postgresql.enabled=true`)
+- Optional bundled PostgreSQL dependency (`postgres.enabled=true`)
 - External PostgreSQL mode with inline values or existing Secret refs
 - Configurable persistence for Tolgee filesystem data (`/data` by default)
 - Ingress and Gateway API `HTTPRoute` support
@@ -37,7 +37,7 @@ helm upgrade --install tolgee oci://ghcr.io/icoretech/charts/tolgee \
 ## External PostgreSQL Example
 
 ```yaml
-postgresql:
+postgres:
   enabled: false
 
 database:
@@ -57,7 +57,7 @@ tolgee:
 ## Existing Secret for External PostgreSQL
 
 ```yaml
-postgresql:
+postgres:
   enabled: false
 
 database:
@@ -147,7 +147,7 @@ spec:
         name: icoretech
         namespace: flux-system
   values:
-    postgresql:
+    postgres:
       enabled: true
     tolgee:
       authentication:
@@ -168,7 +168,7 @@ spec:
 | autoscaling.minReplicas | int | `1` | Minimum replicas. |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` | Target CPU utilization percentage. |
 | autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Target memory utilization percentage. |
-| database.external.enabled | bool | `false` | Enable external PostgreSQL mode. When enabled, set postgresql.enabled=false. |
+| database.external.enabled | bool | `false` | Enable external PostgreSQL mode. When enabled, set postgres.enabled=false. |
 | database.external.existingSecret.name | string | `""` | Existing secret containing SPRING_DATASOURCE_* values. |
 | database.external.existingSecret.passwordKey | string | `"SPRING_DATASOURCE_PASSWORD"` | Key for DB password. |
 | database.external.existingSecret.urlKey | string | `"SPRING_DATASOURCE_URL"` | Key for JDBC URL. |
@@ -180,7 +180,7 @@ spec:
 | database.external.port | int | `5432` | External PostgreSQL port. |
 | database.external.username | string | `""` | External PostgreSQL username. |
 | database.internal.port | int | `5432` | Internal PostgreSQL service port. |
-| database.internal.serviceName | string | `""` | Override internal PostgreSQL service name (defaults to <release>-postgresql). |
+| database.internal.serviceName | string | `""` | Override internal PostgreSQL service name (defaults to <release>-postgres). |
 | database.jdbcParameters | string | `"reWriteBatchedInserts=true"` | Extra JDBC query parameters (without leading ?), e.g. key1=value1&key2=value2. |
 | database.sslMode | string | `"disable"` | SSL mode appended to JDBC URL. |
 | database.waitForReady.enabled | bool | `true` | Wait for PostgreSQL TCP readiness before starting Tolgee. |
@@ -241,12 +241,12 @@ spec:
 | podAnnotations | object | `{}` | Pod annotations. |
 | podLabels | object | `{}` | Pod labels. |
 | podSecurityContext | object | `{}` | Pod security context. |
-| postgresql.auth.database | string | `"tolgee"` |  |
-| postgresql.auth.password | string | `"tolgee"` |  |
-| postgresql.auth.username | string | `"tolgee"` |  |
-| postgresql.enabled | bool | `true` |  |
-| postgresql.persistence.enabled | bool | `true` |  |
-| postgresql.persistence.size | string | `"8Gi"` |  |
+| postgres.auth.database | string | `"tolgee"` |  |
+| postgres.auth.password | string | `"tolgee"` |  |
+| postgres.auth.username | string | `"tolgee"` |  |
+| postgres.enabled | bool | `true` |  |
+| postgres.persistence.enabled | bool | `true` |  |
+| postgres.persistence.size | string | `"8Gi"` |  |
 | readinessProbe.enabled | bool | `true` | Enable readiness probe. |
 | readinessProbe.failureThreshold | int | `6` |  |
 | readinessProbe.httpGet.path | string | `"/actuator/health"` | Readiness probe path. |

@@ -433,7 +433,7 @@
       },
       "required": ["enabled", "httpGet"]
     },
-    "postgresql": { "type": "object" }
+    "postgres": { "type": "object" }
   },
   "allOf": [
     {
@@ -508,7 +508,7 @@
       },
       "then": {
         "properties": {
-          "postgresql": {
+          "postgres": {
             "type": "object",
             "properties": {
               "enabled": { "const": false }
@@ -582,7 +582,7 @@
       },
       "then": {
         "properties": {
-          "postgresql": {
+          "postgres": {
             "type": "object",
             "properties": {
               "enabled": { "const": true }
