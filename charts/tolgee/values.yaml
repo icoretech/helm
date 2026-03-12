@@ -181,6 +181,10 @@ autoscaling:
   # -- Target memory utilization percentage.
   targetMemoryUtilizationPercentage:
 
+deployment:
+  # -- Time in seconds for the Deployment controller to wait before marking a rollout failed.
+  progressDeadlineSeconds: 1800
+
 # -- Container resources.
 resources: {}
 

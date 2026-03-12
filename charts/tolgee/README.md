@@ -184,10 +184,11 @@ spec:
 | database.jdbcParameters | string | `"reWriteBatchedInserts=true"` | Extra JDBC query parameters (without leading ?), e.g. key1=value1&key2=value2. |
 | database.sslMode | string | `"disable"` | SSL mode appended to JDBC URL. |
 | database.waitForReady.enabled | bool | `true` | Wait for PostgreSQL TCP readiness before starting Tolgee. |
-| database.waitForReady.image | string | `"busybox:1.36"` | Init container image used for DB readiness checks. |
+| database.waitForReady.image | string | `"busybox:1.37"` | Init container image used for DB readiness checks. |
 | database.waitForReady.imagePullPolicy | string | `"IfNotPresent"` | Init container image pull policy. |
 | database.waitForReady.periodSeconds | int | `2` | Poll interval in seconds. |
 | database.waitForReady.timeoutSeconds | int | `180` | Max seconds to wait for DB readiness. |
+| deployment.progressDeadlineSeconds | int | `1800` | Time in seconds for the Deployment controller to wait before marking a rollout failed. |
 | fullnameOverride | string | `""` | Override fully-qualified release name. |
 | httpRoute.annotations | object | `{}` | HTTPRoute annotations. |
 | httpRoute.enabled | bool | `false` | Enable Gateway API HTTPRoute. |

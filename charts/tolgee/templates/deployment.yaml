@@ -8,6 +8,7 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  progressDeadlineSeconds: {{ .Values.deployment.progressDeadlineSeconds }}
   selector:
     matchLabels:
       {{- include "tolgee.selectorLabels" . | nindent 6 }}

@@ -1,0 +1,21 @@
+suite: deployment rollout timing
+templates:
+  - deployment.yaml
+tests:
+  - it: renders an explicit deployment progress deadline by default
+    values:
+      - values/valid-minimal.yaml
+    asserts:
+      - equal:
+          path: spec.progressDeadlineSeconds
+          value: 1800
+
+  - it: allows overriding deployment progress deadline
+    values:
+      - values/valid-minimal.yaml
+    set:
+      deployment.progressDeadlineSeconds: 2400
+    asserts:
+      - equal:
+          path: spec.progressDeadlineSeconds
+          value: 2400
