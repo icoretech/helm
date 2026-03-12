@@ -433,7 +433,6 @@
       },
       "required": ["enabled", "httpGet"]
     },
-    "postgres": { "type": "object" },
     "postgresql": { "type": "object" }
   },
   "allOf": [
