@@ -184,6 +184,9 @@ autoscaling:
 deployment:
   # -- Time in seconds for the Deployment controller to wait before marking a rollout failed.
   progressDeadlineSeconds: 1800
+  strategy:
+    # -- Deployment strategy. `Recreate` avoids RWO PVC multi-attach deadlocks during single-replica upgrades.
+    type: Recreate
 
 # -- Container resources.
 resources: {}

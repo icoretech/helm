@@ -169,9 +169,17 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "progressDeadlineSeconds": { "type": "integer", "minimum": 1 }
+        "progressDeadlineSeconds": { "type": "integer", "minimum": 1 },
+        "strategy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string", "enum": ["Recreate", "RollingUpdate"] }
+          },
+          "required": ["type"]
+        }
       },
-      "required": ["progressDeadlineSeconds"]
+      "required": ["progressDeadlineSeconds", "strategy"]
     },
     "resources": { "type": "object" },
     "nodeSelector": { "type": "object" },

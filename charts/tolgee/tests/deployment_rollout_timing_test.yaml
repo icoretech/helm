@@ -9,6 +9,9 @@ tests:
       - equal:
           path: spec.progressDeadlineSeconds
           value: 1800
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
 
   - it: allows overriding deployment progress deadline
     values:
@@ -19,3 +22,13 @@ tests:
       - equal:
           path: spec.progressDeadlineSeconds
           value: 2400
+
+  - it: allows overriding deployment strategy
+    values:
+      - values/valid-minimal.yaml
+    set:
+      deployment.strategy.type: RollingUpdate
+    asserts:
+      - equal:
+          path: spec.strategy.type
+          value: RollingUpdate

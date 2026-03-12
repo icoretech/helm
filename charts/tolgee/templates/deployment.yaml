@@ -9,6 +9,8 @@ spec:
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   progressDeadlineSeconds: {{ .Values.deployment.progressDeadlineSeconds }}
+  strategy:
+    type: {{ .Values.deployment.strategy.type }}
   selector:
     matchLabels:
       {{- include "tolgee.selectorLabels" . | nindent 6 }}

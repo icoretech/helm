@@ -189,6 +189,7 @@ spec:
 | database.waitForReady.periodSeconds | int | `2` | Poll interval in seconds. |
 | database.waitForReady.timeoutSeconds | int | `180` | Max seconds to wait for DB readiness. |
 | deployment.progressDeadlineSeconds | int | `1800` | Time in seconds for the Deployment controller to wait before marking a rollout failed. |
+| deployment.strategy.type | string | `"Recreate"` | Deployment strategy. `Recreate` avoids RWO PVC multi-attach deadlocks during single-replica upgrades. |
 | fullnameOverride | string | `""` | Override fully-qualified release name. |
 | httpRoute.annotations | object | `{}` | HTTPRoute annotations. |
 | httpRoute.enabled | bool | `false` | Enable Gateway API HTTPRoute. |
