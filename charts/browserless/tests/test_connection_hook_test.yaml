@@ -1,0 +1,33 @@
+suite: helm test hook
+templates:
+  - templates/tests/test-connection.yaml
+tests:
+  - it: checks the pressure endpoint with the inline token by default
+    asserts:
+      - equal:
+          path: spec.containers[0].command
+          value:
+            - /bin/sh
+            - -ec
+      - equal:
+          path: spec.containers[0].args[0]
+          value: wget -qO- "http://RELEASE-NAME-browserless:80/pressure?token=${TOKEN}" >/dev/null
+      - equal:
+          path: spec.containers[0].env[0].name
+          value: TOKEN
+      - equal:
+          path: spec.containers[0].env[0].value
+          value: change-me
+
+  - it: reads the token from config.tokenSecretRef when configured
+    set:
+      config.token: ""
+      config.tokenSecretRef.name: browserless-auth
+      config.tokenSecretRef.key: token
+    asserts:
+      - equal:
+          path: spec.containers[0].env[0].valueFrom.secretKeyRef.name
+          value: browserless-auth
+      - equal:
+          path: spec.containers[0].env[0].valueFrom.secretKeyRef.key
+          value: token

@@ -1,3 +1,15 @@
+{{- $extraEnvToken := dict "found" false "value" nil "valueFrom" nil -}}
+{{- range .Values.extraEnv }}
+  {{- if eq (default "" .name) "TOKEN" }}
+    {{- $_ := set $extraEnvToken "found" true }}
+    {{- if hasKey . "value" }}
+      {{- $_ := set $extraEnvToken "value" .value }}
+    {{- end }}
+    {{- if hasKey . "valueFrom" }}
+      {{- $_ := set $extraEnvToken "valueFrom" .valueFrom }}
+    {{- end }}
+  {{- end }}
+{{- end }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -10,6 +22,29 @@ spec:
   containers:
     - name: wget
       image: busybox
-      command: ["wget"]
-      args: ['{{ include "browserless.fullname" . }}:{{ .Values.service.port }}']
+      command:
+        - /bin/sh
+        - -ec
+      args:
+        - wget -qO- "http://{{ include "browserless.fullname" . }}:{{ .Values.service.port }}/pressure?token=${TOKEN}" >/dev/null
+      env:
+        {{- if and (hasKey .Values.config "tokenSecretRef") .Values.config.tokenSecretRef }}
+        - name: TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ required "browserless: config.tokenSecretRef.name is required" .Values.config.tokenSecretRef.name | quote }}
+              key: {{ required "browserless: config.tokenSecretRef.key is required" .Values.config.tokenSecretRef.key | quote }}
+        {{- else if and (hasKey .Values.config "token") (ne (printf "%v" .Values.config.token) "") }}
+        - name: TOKEN
+          value: {{ printf "%v" .Values.config.token | quote }}
+        {{- else if index $extraEnvToken "found" }}
+        - name: TOKEN
+          {{- with index $extraEnvToken "value" }}
+          value: {{ . | quote }}
+          {{- end }}
+          {{- with index $extraEnvToken "valueFrom" }}
+          valueFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
   restartPolicy: Never
