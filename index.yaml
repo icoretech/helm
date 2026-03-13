@@ -5,6 +5,54 @@ entries:
       artifacthub.io/category: monitoring-logging
       artifacthub.io/images: |
         - name: airbroke
+          image: ghcr.io/icoretech/airbroke:1.1.99
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.1.99
+    created: "2026-03-13T06:10:29.066798692Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 4.1.5
+    description: Airbroke Helm chart for Kubernetes
+    digest: d052f9af224b4ddd0d0cdbf735bec52ad14a177758440bcdead1a4e5ae2fdf2a
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-1.3.11/airbroke-1.3.11.tgz
+    version: 1.3.11
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/images: |
+        - name: airbroke
           image: ghcr.io/icoretech/airbroke:1.1.98
       artifacthub.io/license: MIT
       artifacthub.io/recommendations: |
@@ -5933,4 +5981,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-03-13T06:10:17.139795347Z"
+generated: "2026-03-13T06:10:29.067314303Z"
