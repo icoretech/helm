@@ -55,12 +55,16 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/tolgee\\/Chart\\.yaml$/"],
-      "matchStrings": [
-        "appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?(?<imageBlock>[\\s\\S]*?artifacthub\\.io/images:\\s*\\|\\n\\s*-\\s*name:\\s*tolgee\\n\\s*image:\\s*tolgee/tolgee:)(?<currentImageValue>[^\\s]+)"
-      ],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "tolgee/tolgee",
-      "datasourceTemplate": "docker",
-      "autoReplaceStringTemplate": "appVersion: \"{{{newValue}}}\"{{{imageBlock}}}{{{newValue}}}"
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/tolgee\\/Chart\\.yaml$/"],
+      "matchStrings": ["image:\\s*tolgee\\/tolgee:(?<currentValue>[^\\s]+)"],
+      "depNameTemplate": "tolgee/tolgee",
+      "datasourceTemplate": "docker"
     },
     {
       "customType": "regex",
@@ -139,7 +143,7 @@
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchPackageNames": ["tolgee/tolgee-platform"],
+      "matchPackageNames": ["tolgee/tolgee"],
       "groupName": "tolgee chart software updates"
     },
     {
