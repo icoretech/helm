@@ -127,6 +127,11 @@
       "enabled": false
     },
     {
+      "matchManagers": ["github-actions"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["icoretech/airbroke"],
       "groupName": "airbroke chart software updates"
