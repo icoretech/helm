@@ -133,8 +133,22 @@
     },
     {
       "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["icoretech/airbroke"],
+      "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "matchManagers": ["custom.regex"],
       "matchPackageNames": ["browserless/browserless"],
       "groupName": "browserless chart software updates"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["browserless/browserless"],
+      "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "platformAutomerge": true
     },
     {
       "matchManagers": ["custom.regex"],
@@ -149,7 +163,7 @@
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["tolgee/tolgee"],
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
       "automerge": true,
       "platformAutomerge": true
     },
