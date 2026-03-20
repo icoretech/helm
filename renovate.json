@@ -95,6 +95,11 @@
       "recreateWhen": "always"
     },
     {
+      "matchManagers": ["helmv3"],
+      "matchFileNames": ["charts/**"],
+      "enabled": false
+    },
+    {
       "matchManagers": ["custom.regex"],
       "matchFileNames": ["charts/**"],
       "bumpVersions": [
