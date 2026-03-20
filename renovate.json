@@ -147,6 +147,13 @@
       "groupName": "tolgee chart software updates"
     },
     {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["tolgee/tolgee"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
       "matchManagers": ["custom.regex", "helm-values"],
       "matchPackageNames": ["ghcr.io/icoretech/pgbouncer-docker"],
       "groupName": "pgbouncer chart software updates"
