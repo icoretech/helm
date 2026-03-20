@@ -4,7 +4,7 @@ Deploy [Tolgee Platform](https://tolgee.io/) on Kubernetes with optional bundled
 
 ## Features
 
-- Tolgee upstream image defaults (`tolgee/tolgee:v3.164.0`)
+- Tolgee upstream image defaults (`image.repository=tolgee/tolgee` with the default tag tracked in chart values)
 - Optional bundled PostgreSQL dependency (`postgres.enabled=true`)
 - External PostgreSQL mode with inline values or existing Secret refs
 - Configurable persistence for Tolgee filesystem data (`/data` by default)
