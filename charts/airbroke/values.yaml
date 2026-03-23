@@ -10,8 +10,6 @@ web:
   prismaVersion: "7"
   imagePullPolicy: IfNotPresent
   imagePullSecrets: ""  # must be present in namespace
-  # Deprecated full image override; when empty, repository/tag below are used.
-  image: ""
   imageRepository: ghcr.io/icoretech/airbroke
   # Defaults to Chart.appVersion when empty.
   imageTag: ""
@@ -108,9 +106,9 @@ web:
   #     value: "xxxxx"
   #   - name: AIRBROKE_GITHUB_ORGS
   #     value: "xxxxx"
-  #   - name: NEXTAUTH_SECRET
+  #   - name: BETTER_AUTH_SECRET
   #     value: "xxxxxxx"
-  #   - name: NEXTAUTH_URL
+  #   - name: BETTER_AUTH_URL
   #     value: "https://xxxxxx"
   #   - name: AIRBROKE_OPENAI_API_KEY
   #     value: "sk-xxxxxxx"

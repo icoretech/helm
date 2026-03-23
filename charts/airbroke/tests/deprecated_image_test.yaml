@@ -1,0 +1,13 @@
+suite: airbroke deprecated image
+templates:
+  - templates/web-env-secret.yaml
+values:
+  - ../ci/install-values.yaml
+
+tests:
+  - it: fails when deprecated web.image is used
+    set:
+      web.image: nginx:latest
+    asserts:
+      - failedTemplate:
+          errorMessage: web.image was removed in airbroke chart 2.0.0; use web.imageRepository and optional web.imageTag instead

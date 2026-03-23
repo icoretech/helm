@@ -61,6 +61,21 @@ Shorthand for component names
 {{- required "database.migrations_url is required!" .Values.database.migrations_url -}}
 {{- end -}}
 
+{{- define "app.validate" -}}
+{{- if .Values.web.image -}}
+{{- fail "web.image was removed in airbroke chart 2.0.0; use web.imageRepository and optional web.imageTag instead" -}}
+{{- end -}}
+{{- range $index, $env := .Values.web.extraEnvs }}
+{{- $name := $env.name | upper | replace "-" "_" -}}
+{{- if eq $name "NEXTAUTH_SECRET" -}}
+{{- fail (printf "web.extraEnvs[%d].name=%s is no longer supported in airbroke chart 2.0.0; use BETTER_AUTH_SECRET" $index $env.name) -}}
+{{- end -}}
+{{- if eq $name "NEXTAUTH_URL" -}}
+{{- fail (printf "web.extraEnvs[%d].name=%s is no longer supported in airbroke chart 2.0.0; use BETTER_AUTH_URL" $index $env.name) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{/*
 Common labels
 */}}

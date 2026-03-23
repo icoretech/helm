@@ -28,6 +28,12 @@ helm install my-airbroke icoretech/airbroke
 
 Please remember to set at least the `database.url` and `database.migrations_url` values. Continue reading for further details.
 
+## Breaking changes in 2.0.0
+
+- `web.image` was removed; use `web.imageRepository` and optional `web.imageTag`
+- Airbroke auth examples now use Better Auth env names: `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`
+- Releases still passing `NEXTAUTH_SECRET` or `NEXTAUTH_URL` via `web.extraEnvs` now fail template rendering on purpose
+
 ## Database
 
 The `database.url` and `database.migrations_url` values must be set to the connection string of your PostgreSQL database.
@@ -76,7 +82,6 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | web.hpa.maxReplicas | int | `10` |  |
 | web.hpa.memory | string | `nil` |  |
 | web.hpa.requests | string | `nil` |  |
-| web.image | string | `""` |  |
 | web.imagePullPolicy | string | `"IfNotPresent"` |  |
 | web.imagePullSecrets | string | `""` |  |
 | web.imageRepository | string | `"ghcr.io/icoretech/airbroke"` |  |
@@ -151,7 +156,7 @@ spec:
   chart:
     spec:
       chart: airbroke
-      version: ">= 1.1.3"
+      version: ">= 2.0.0"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -169,7 +174,7 @@ spec:
       migrations_url: 'postgresql://xxxx:xxxx@postgres-postgresql.postgres.svc.cluster.local:5432/airbroke_production?schema=public'
     web:
       imageRepository: ghcr.io/icoretech/airbroke
-      imageTag: "1.1.22" # {"$imagepolicy": "flux-system:airbroke:tag"}
+      imageTag: "1.2.0" # {"$imagepolicy": "flux-system:airbroke:tag"}
       replicaCount: 2
       cachePersistentVolume:
         enabled: true
@@ -195,9 +200,9 @@ spec:
           value: "xxxxx"
         - name: AIRBROKE_GITHUB_ORGS
           value: "xxxxx"
-        - name: NEXTAUTH_SECRET
+        - name: BETTER_AUTH_SECRET
           value: "xxxxxxx"
-        - name: NEXTAUTH_URL
+        - name: BETTER_AUTH_URL
           value: "https://xxxxxx"
         - name: AIRBROKE_OPENAI_API_KEY
           value: "sk-xxxxxxx"
@@ -242,7 +247,7 @@ spec:
     name: airbroke
   policy:
     semver:
-      range: '>=1.1.22 <2.0.0'
+      range: '>=1.2.0 <2.0.0'
 ```
 
 ```yaml

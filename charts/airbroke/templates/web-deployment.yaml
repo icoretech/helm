@@ -31,8 +31,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- $defaultWebImage := printf "%s:%s" .Values.web.imageRepository (.Values.web.imageTag | default .Chart.AppVersion) }}
-      {{- $webImage := .Values.web.image | default $defaultWebImage }}
+      {{- $webImage := printf "%s:%s" .Values.web.imageRepository (.Values.web.imageTag | default .Chart.AppVersion) }}
       {{- if .Values.web.runtimeClassName }}
       runtimeClassName: {{ .Values.web.runtimeClassName }}
       {{- end }}

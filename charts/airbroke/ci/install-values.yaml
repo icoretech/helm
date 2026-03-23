@@ -6,7 +6,8 @@ database:
 
 web:
   # Use a harmless image for ct install; users should override in real deployments.
-  image: nginx:latest
+  imageRepository: nginx
+  imageTag: latest
   livenessProbe:
     enabled: false
   readinessProbe:

@@ -1,0 +1,19 @@
+suite: airbroke render
+templates:
+  - templates/web-env-cm.yaml
+  - templates/web-env-secret.yaml
+  - templates/web-env-migrations-secret.yaml
+  - templates/web-deployment.yaml
+values:
+  - ../ci/install-values.yaml
+
+tests:
+  - it: renders the web image from imageRepository and imageTag
+    template: templates/web-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: nginx:latest

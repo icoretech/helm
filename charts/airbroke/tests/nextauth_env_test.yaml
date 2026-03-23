@@ -1,0 +1,12 @@
+suite: airbroke deprecated auth envs
+templates:
+  - templates/web-env-secret.yaml
+values:
+  - ../ci/install-values.yaml
+  - values/nextauth-secret.yaml
+
+tests:
+  - it: fails when NEXTAUTH_SECRET is passed via extraEnvs
+    asserts:
+      - failedTemplate:
+          errorMessage: web.extraEnvs[0].name=NEXTAUTH_SECRET is no longer supported in airbroke chart 2.0.0; use BETTER_AUTH_SECRET
