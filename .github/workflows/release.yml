@@ -95,7 +95,7 @@ jobs:
           if [ -d ".cr-release-packages" ]; then
             shopt -s nullglob
             for pkg in .cr-release-packages/*.tgz; do
-              helm push "${pkg}" oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts
+              helm push "${pkg}" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"
             done
           else
             echo "Directory .cr-release-packages does not exist."
