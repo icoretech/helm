@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Setup Helm
-        uses: azure/setup-helm@v4.3.1
+        uses: azure/setup-helm@v5.0.0
       - name: Setup kind
         uses: helm/kind-action@v1.14.0
         with:
