@@ -1,0 +1,313 @@
+# Default values for codex-lb.
+
+# -- Number of replicas. codex-lb is effectively single-replica due to in-memory state.
+replicaCount: 1
+
+image:
+  # -- Container image repository.
+  repository: ghcr.io/soju06/codex-lb
+
+  # -- Image pull policy.
+  pullPolicy: IfNotPresent
+
+  # -- Image tag override. Defaults to chart appVersion.
+  tag: ""
+
+# -- List of image pull secrets.
+imagePullSecrets: []
+
+# -- Override chart name.
+nameOverride: ""
+
+# -- Override fully-qualified release name.
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Create a service account.
+  create: true
+
+  # -- Service account annotations.
+  annotations: {}
+
+  # -- Service account name.
+  name: ""
+
+# -- Pod annotations.
+podAnnotations: {}
+
+# -- Pod labels.
+podLabels: {}
+
+# -- Pod security context.
+podSecurityContext: {}
+
+# -- Container security context.
+securityContext: {}
+
+service:
+  # -- Service annotations.
+  annotations: {}
+
+  # -- Service type.
+  type: ClusterIP
+
+  # -- Main API + dashboard service port.
+  port: 80
+
+  # -- Target container port for the main API.
+  targetPort: 2455
+
+  # -- Optional nodePort when service.type is NodePort/LoadBalancer.
+  nodePort:
+
+  # -- Optional LoadBalancer IP.
+  loadBalancerIP:
+
+  # -- Optional CIDRs allowed via LoadBalancer.
+  loadBalancerSourceRanges: []
+
+  # -- External traffic policy.
+  externalTrafficPolicy:
+
+  oauth:
+    # -- Enable a separate Service for the OAuth callback port.
+    enabled: false
+
+    # -- OAuth callback service type.
+    type: ClusterIP
+
+    # -- OAuth callback service port.
+    port: 1455
+
+    # -- Optional nodePort for OAuth callback service.
+    nodePort:
+
+ingress:
+  # -- Enable Ingress.
+  enabled: false
+
+  # -- IngressClass name.
+  className: ""
+
+  # -- Ingress annotations. For WebSocket support with nginx, set proxy-read-timeout, proxy-send-timeout, and proxy-http-version.
+  annotations: {}
+
+  # -- Ingress hosts and paths.
+  hosts: []
+  # - host: codex-lb.example.com
+  #   paths:
+  #     - path: /
+  #       pathType: Prefix
+
+  # -- Ingress TLS entries.
+  tls: []
+  # - secretName: codex-lb-tls
+  #   hosts:
+  #     - codex-lb.example.com
+
+  oauth:
+    # -- Enable a separate Ingress for the OAuth callback path.
+    # -- Requires service.oauth.enabled=true.
+    enabled: false
+
+    # -- IngressClass name for the OAuth Ingress (inherits ingress.className if empty).
+    className: ""
+
+    # -- OAuth Ingress annotations.
+    annotations: {}
+
+    # -- OAuth Ingress hosts and paths.
+    hosts: []
+    # - host: codex-lb.example.com
+    #   paths:
+    #     - path: /auth/callback
+    #       pathType: Exact
+
+    # -- OAuth Ingress TLS entries.
+    tls: []
+
+httpRoute:
+  # -- Enable Gateway API HTTPRoute.
+  enabled: false
+
+  # -- HTTPRoute annotations.
+  annotations: {}
+
+  # -- ParentRefs for HTTPRoute (required when enabled).
+  parentRefs: []
+  # - name: shared-gateway
+  #   namespace: infra
+  #   sectionName: https
+
+  # -- Optional HTTPRoute hostnames.
+  hostnames: []
+
+  # -- Match rules for HTTPRoute.
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+
+  oauth:
+    # -- Enable a separate HTTPRoute for the OAuth callback.
+    # -- Requires service.oauth.enabled=true.
+    enabled: false
+
+    # -- ParentRefs for the OAuth HTTPRoute (inherits httpRoute.parentRefs if empty).
+    parentRefs: []
+
+    # -- Optional hostnames for OAuth HTTPRoute.
+    hostnames: []
+
+    # -- Match rules for OAuth HTTPRoute callback path.
+    matches:
+      - path:
+          type: Exact
+          value: /auth/callback
+
+deployment:
+  # -- Time in seconds for the Deployment controller to wait before marking a rollout failed.
+  progressDeadlineSeconds: 600
+  strategy:
+    # -- Deployment strategy. Recreate avoids RWO PVC multi-attach deadlocks during single-replica upgrades.
+    type: Recreate
+
+# -- Container resources.
+resources: {}
+
+# -- Node selector.
+nodeSelector: {}
+
+# -- Tolerations.
+tolerations: []
+
+# -- Affinity.
+affinity: {}
+
+persistence:
+  # -- Enable data persistence for codex-lb (SQLite DB, encryption key, backups).
+  enabled: true
+
+  # -- Existing PVC name to use instead of creating one.
+  existingClaim: ""
+
+  # -- PVC storage class.
+  storageClass: ""
+
+  # -- PVC annotations.
+  annotations: {}
+
+  # -- PVC access modes.
+  accessModes:
+    - ReadWriteOnce
+
+  # -- PVC size.
+  size: 5Gi
+
+  # -- PVC volume mode.
+  volumeMode: ""
+
+  # -- Mount path for codex-lb data.
+  mountPath: /var/lib/codex-lb
+
+# -- codex-lb application configuration mapped to CODEX_LB_* environment variables.
+config:
+  # -- Database URL. Use sqlite (default) or postgresql+asyncpg:// for PostgreSQL.
+  databaseUrl: ""
+
+  # -- Database connection pool size.
+  databasePoolSize: 15
+
+  # -- Run Alembic migrations on startup.
+  databaseMigrateOnStartup: true
+
+  # -- Upstream ChatGPT API base URL.
+  upstreamBaseUrl: "https://chatgpt.com/backend-api"
+
+  # -- Stream transport mode: auto, http, or websocket.
+  upstreamStreamTransport: "auto"
+
+  # -- Max proxy request duration in seconds.
+  proxyRequestBudgetSeconds: 600
+
+  # -- SSE stream idle timeout in seconds.
+  streamIdleTimeoutSeconds: 300
+
+  # -- OpenAI OAuth base URL.
+  authBaseUrl: "https://auth.openai.com"
+
+  # -- OAuth callback bind host.
+  oauthCallbackHost: "0.0.0.0"
+
+  # -- OAuth callback port.
+  oauthCallbackPort: 1455
+
+  # -- OAuth redirect URI (also enable service.oauth and ingress.oauth when exposing via Ingress).
+  oauthRedirectUri: "http://localhost:1455/auth/callback"
+
+  # -- Trust X-Forwarded-For headers (set true when behind ingress/proxy).
+  firewallTrustProxyHeaders: false
+
+  # -- Trusted proxy CIDRs (comma-separated).
+  firewallTrustedProxyCidrs: "127.0.0.1/32,::1/128"
+
+  # -- Enable model registry auto-fetching from upstream.
+  modelRegistryEnabled: true
+
+  # -- Enable inline image fetching.
+  imageInlineFetchEnabled: true
+
+  # -- Session bridge instance ID (defaults to hostname).
+  sessionBridgeInstanceId: ""
+
+  # -- Session bridge instance ring (for multi-instance awareness).
+  sessionBridgeInstanceRing: ""
+
+# -- Encryption key configuration.
+encryptionKey:
+  # -- Path inside the container for the Fernet encryption key file.
+  path: /var/lib/codex-lb/encryption.key
+
+  # -- Use an existing Kubernetes Secret for the encryption key instead of auto-generating.
+  existingSecret:
+    # -- Secret name containing the encryption key.
+    name: ""
+
+    # -- Key within the secret.
+    key: ""
+
+# -- Additional environment variables.
+extraEnv: []
+
+# -- Extra envFrom entries.
+envFrom: []
+
+# -- Additional volumes.
+volumes: []
+
+# -- Additional volume mounts.
+volumeMounts: []
+
+livenessProbe:
+  # -- Enable liveness probe.
+  enabled: true
+  httpGet:
+    # -- Liveness probe path.
+    path: /health
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 3
+
+readinessProbe:
+  # -- Enable readiness probe.
+  enabled: true
+  httpGet:
+    # -- Readiness probe path.
+    path: /health
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 3

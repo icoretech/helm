@@ -1,0 +1,69 @@
+suite: deployment configuration
+templates:
+  - deployment.yaml
+tests:
+  - it: uses correct default image tag from appVersion
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: "ghcr.io/soju06/codex-lb:1\\."
+
+  - it: allows image tag override
+    set:
+      image.tag: "1.7.0"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "ghcr.io/soju06/codex-lb:1.7.0"
+
+  - it: sets Recreate strategy by default
+    asserts:
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+
+  - it: exposes both http and oauth container ports
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: http
+            containerPort: 2455
+            protocol: TCP
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: oauth
+            containerPort: 1455
+            protocol: TCP
+
+  - it: renders liveness and readiness probes by default
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /health
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /health
+
+  - it: skips probes when disabled
+    set:
+      livenessProbe.enabled: false
+      readinessProbe.enabled: false
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: passes extra env vars without clobbering config env
+    set:
+      extraEnv:
+        - name: MY_CUSTOM_VAR
+          value: custom-value
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MY_CUSTOM_VAR
+            value: "custom-value"

@@ -1,0 +1,36 @@
+suite: encryption key behavior
+templates:
+  - deployment.yaml
+tests:
+  - it: defaults encryption key path to persistence mountPath
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_LB_ENCRYPTION_KEY_FILE
+            value: /var/lib/codex-lb/encryption.key
+
+  - it: mounts secret volume when existingSecret is set
+    values:
+      - values/valid-encryption-secret.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_LB_ENCRYPTION_KEY_FILE
+            value: /etc/codex-lb/encryption.key
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: encryption-key
+            mountPath: /etc/codex-lb
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: encryption-key
+            secret:
+              secretName: my-encryption-secret
+              items:
+                - key: fernet-key
+                  path: encryption.key

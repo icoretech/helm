@@ -1,0 +1,198 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "codex-lb.fullname" . }}
+  labels:
+    {{- include "codex-lb.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  progressDeadlineSeconds: {{ .Values.deployment.progressDeadlineSeconds }}
+  strategy:
+    type: {{ .Values.deployment.strategy.type }}
+  selector:
+    matchLabels:
+      {{- include "codex-lb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "codex-lb.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "codex-lb.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- $envSeen := dict }}
+            {{- with .Values.config.databaseUrl }}
+            - name: CODEX_LB_DATABASE_URL
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_DATABASE_URL" true }}
+            {{- end }}
+            - name: CODEX_LB_DATABASE_POOL_SIZE
+              value: {{ printf "%v" .Values.config.databasePoolSize | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_DATABASE_POOL_SIZE" true }}
+            - name: CODEX_LB_DATABASE_MIGRATE_ON_STARTUP
+              value: {{ printf "%v" .Values.config.databaseMigrateOnStartup | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_DATABASE_MIGRATE_ON_STARTUP" true }}
+            - name: CODEX_LB_UPSTREAM_BASE_URL
+              value: {{ .Values.config.upstreamBaseUrl | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_UPSTREAM_BASE_URL" true }}
+            - name: CODEX_LB_UPSTREAM_STREAM_TRANSPORT
+              value: {{ .Values.config.upstreamStreamTransport | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_UPSTREAM_STREAM_TRANSPORT" true }}
+            - name: CODEX_LB_PROXY_REQUEST_BUDGET_SECONDS
+              value: {{ printf "%v" .Values.config.proxyRequestBudgetSeconds | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_PROXY_REQUEST_BUDGET_SECONDS" true }}
+            - name: CODEX_LB_STREAM_IDLE_TIMEOUT_SECONDS
+              value: {{ printf "%v" .Values.config.streamIdleTimeoutSeconds | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_STREAM_IDLE_TIMEOUT_SECONDS" true }}
+            - name: CODEX_LB_AUTH_BASE_URL
+              value: {{ .Values.config.authBaseUrl | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_AUTH_BASE_URL" true }}
+            - name: CODEX_LB_OAUTH_CALLBACK_HOST
+              value: {{ .Values.config.oauthCallbackHost | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_OAUTH_CALLBACK_HOST" true }}
+            - name: CODEX_LB_OAUTH_CALLBACK_PORT
+              value: {{ printf "%v" .Values.config.oauthCallbackPort | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_OAUTH_CALLBACK_PORT" true }}
+            - name: CODEX_LB_OAUTH_REDIRECT_URI
+              value: {{ .Values.config.oauthRedirectUri | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_OAUTH_REDIRECT_URI" true }}
+            - name: CODEX_LB_FIREWALL_TRUST_PROXY_HEADERS
+              value: {{ printf "%v" .Values.config.firewallTrustProxyHeaders | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_FIREWALL_TRUST_PROXY_HEADERS" true }}
+            - name: CODEX_LB_FIREWALL_TRUSTED_PROXY_CIDRS
+              value: {{ .Values.config.firewallTrustedProxyCidrs | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_FIREWALL_TRUSTED_PROXY_CIDRS" true }}
+            - name: CODEX_LB_MODEL_REGISTRY_ENABLED
+              value: {{ printf "%v" .Values.config.modelRegistryEnabled | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_MODEL_REGISTRY_ENABLED" true }}
+            - name: CODEX_LB_IMAGE_INLINE_FETCH_ENABLED
+              value: {{ printf "%v" .Values.config.imageInlineFetchEnabled | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_IMAGE_INLINE_FETCH_ENABLED" true }}
+            {{- with .Values.config.sessionBridgeInstanceId }}
+            - name: CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID" true }}
+            {{- end }}
+            {{- with .Values.config.sessionBridgeInstanceRing }}
+            - name: CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_RING
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_RING" true }}
+            {{- end }}
+            {{- if and .Values.encryptionKey.existingSecret.name .Values.encryptionKey.existingSecret.key }}
+            - name: CODEX_LB_ENCRYPTION_KEY_FILE
+              value: /etc/codex-lb/encryption.key
+            {{- $_ := set $envSeen "CODEX_LB_ENCRYPTION_KEY_FILE" true }}
+            {{- else }}
+            - name: CODEX_LB_ENCRYPTION_KEY_FILE
+              value: {{ .Values.encryptionKey.path | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_ENCRYPTION_KEY_FILE" true }}
+            {{- end }}
+            {{- range .Values.extraEnv }}
+            {{- $name := default "" .name }}
+            {{- if and (ne $name "") (not (hasKey $envSeen $name)) }}
+            - name: {{ $name | quote }}
+              {{- if hasKey . "value" }}
+              value: {{ .value | quote }}
+              {{- end }}
+              {{- if hasKey . "valueFrom" }}
+              valueFrom:
+                {{- toYaml .valueFrom | nindent 16 }}
+              {{- end }}
+            {{- $_ := set $envSeen $name true }}
+            {{- end }}
+            {{- end }}
+          {{- with .Values.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+            - name: oauth
+              containerPort: {{ .Values.config.oauthCallbackPort }}
+              protocol: TCP
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.httpGet.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.httpGet.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.persistence.enabled }}
+            - name: data
+              mountPath: {{ .Values.persistence.mountPath }}
+            {{- end }}
+            {{- if and .Values.encryptionKey.existingSecret.name .Values.encryptionKey.existingSecret.key }}
+            - name: encryption-key
+              mountPath: /etc/codex-lb
+              readOnly: true
+            {{- end }}
+            {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        {{- if .Values.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "codex-lb.persistence.claimName" . }}
+        {{- end }}
+        {{- if and .Values.encryptionKey.existingSecret.name .Values.encryptionKey.existingSecret.key }}
+        - name: encryption-key
+          secret:
+            secretName: {{ .Values.encryptionKey.existingSecret.name }}
+            items:
+              - key: {{ .Values.encryptionKey.existingSecret.key }}
+                path: encryption.key
+        {{- end }}
+        {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

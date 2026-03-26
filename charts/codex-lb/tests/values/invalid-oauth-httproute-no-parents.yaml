@@ -1,0 +1,16 @@
+# Invalid: oauth HTTPRoute enabled but no parentRefs anywhere.
+persistence:
+  enabled: false
+service:
+  oauth:
+    enabled: true
+httpRoute:
+  enabled: false
+  parentRefs: []
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+  oauth:
+    enabled: true
+    parentRefs: []

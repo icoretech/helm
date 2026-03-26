@@ -1,0 +1,41 @@
+suite: persistence behavior
+templates:
+  - pvc.yaml
+  - deployment.yaml
+tests:
+  - it: renders pvc when persistence is enabled
+    template: pvc.yaml
+    asserts:
+      - equal:
+          path: spec.resources.requests.storage
+          value: 5Gi
+      - equal:
+          path: spec.accessModes[0]
+          value: ReadWriteOnce
+
+  - it: skips pvc creation when existingClaim is set
+    set:
+      persistence.enabled: true
+      persistence.existingClaim: existing-data
+    template: pvc.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: mounts existing claim in deployment
+    set:
+      persistence.enabled: true
+      persistence.existingClaim: existing-data
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].persistentVolumeClaim.claimName
+          value: existing-data
+
+  - it: skips pvc and volume when persistence is disabled
+    values:
+      - values/valid-minimal.yaml
+    template: pvc.yaml
+    asserts:
+      - hasDocuments:
+          count: 0

@@ -1,0 +1,3 @@
+# Minimal valid install: persistence disabled (default SQLite in ephemeral storage).
+persistence:
+  enabled: false

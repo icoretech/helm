@@ -1,0 +1,20 @@
+persistence:
+  enabled: false
+service:
+  oauth:
+    enabled: true
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: codex-lb.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  oauth:
+    enabled: true
+    hosts:
+      - host: codex-lb.example.com
+        paths:
+          - path: /auth/callback
+            pathType: Exact

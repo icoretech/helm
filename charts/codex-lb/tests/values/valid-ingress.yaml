@@ -1,0 +1,14 @@
+persistence:
+  enabled: false
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: codex-lb.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: codex-lb-tls
+      hosts:
+        - codex-lb.example.com

@@ -1,0 +1,18 @@
+persistence:
+  enabled: false
+service:
+  oauth:
+    enabled: true
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: shared-gateway
+      namespace: infra
+  hostnames:
+    - codex-lb.example.com
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+  oauth:
+    enabled: true

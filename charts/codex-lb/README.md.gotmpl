@@ -1,0 +1,134 @@
+# Codex LB Helm Chart
+
+Deploy [Codex LB](https://github.com/Soju06/codex-lb) on Kubernetes — a load balancer and account pool for proxying ChatGPT / OpenAI API requests across multiple accounts.
+
+## Features
+
+- SQLite by default (zero-dependency), PostgreSQL optional via `config.databaseUrl`
+- Persistent volume for the SQLite database and Fernet encryption key
+- Encryption key management: auto-generated on PVC or injected via existing Secret
+- OAuth callback flow for adding ChatGPT accounts (separate Service + Ingress)
+- Ingress and Gateway API `HTTPRoute` support (main API and OAuth callback)
+- Configurable upstream, firewall, streaming, and model registry settings
+
+## Prerequisites
+
+- Kubernetes 1.24+
+- Helm 3.10+
+
+## Install
+
+```bash
+helm repo add icoretech https://icoretech.github.io/helm
+helm repo update
+helm upgrade --install codex-lb icoretech/codex-lb \
+  -n codex-lb --create-namespace
+```
+
+OCI:
+
+```bash
+helm upgrade --install codex-lb oci://ghcr.io/icoretech/charts/codex-lb \
+  -n codex-lb --create-namespace
+```
+
+## Encryption Key via Secret (recommended for production)
+
+The encryption key protects all stored OAuth tokens. Losing it requires re-authenticating every ChatGPT account.
+
+```yaml
+encryptionKey:
+  existingSecret:
+    name: codex-lb-encryption
+    key: fernet-key
+```
+
+## External PostgreSQL
+
+```yaml
+config:
+  databaseUrl: "postgresql+asyncpg://user:pass@postgres.example.com:5432/codexlb"
+
+persistence:
+  enabled: false   # no SQLite file needed
+```
+
+## OAuth Callback via Ingress
+
+To expose the OAuth callback through your ingress controller, enable both the OAuth Service and OAuth Ingress:
+
+```yaml
+config:
+  oauthRedirectUri: "https://codex-lb.example.com/auth/callback"
+
+service:
+  oauth:
+    enabled: true
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: codex-lb.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  oauth:
+    enabled: true
+    hosts:
+      - host: codex-lb.example.com
+        paths:
+          - path: /auth/callback
+            pathType: Exact
+```
+
+## Gateway API HTTPRoute Example
+
+```yaml
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: shared-gateway
+      namespace: infra
+  hostnames:
+    - codex-lb.example.com
+```
+
+## Flux Example
+
+```yaml
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: icoretech
+  namespace: flux-system
+spec:
+  type: oci
+  interval: 30m
+  url: oci://ghcr.io/icoretech/charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: codex-lb
+  namespace: codex-lb
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: codex-lb
+      version: ">=0.1.0"
+      sourceRef:
+        kind: HelmRepository
+        name: icoretech
+        namespace: flux-system
+  values:
+    encryptionKey:
+      existingSecret:
+        name: codex-lb-encryption
+        key: fernet-key
+```
+
+## Configuration reference
+
+{{ template "chart.valuesSection" . }}

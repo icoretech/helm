@@ -1,0 +1,14 @@
+persistence:
+  enabled: false
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: shared-gateway
+      namespace: infra
+      sectionName: https
+  hostnames:
+    - codex-lb.example.com
+  matches:
+    - path:
+        type: PathPrefix
+        value: /

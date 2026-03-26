@@ -1,0 +1,45 @@
+suite: service templates
+templates:
+  - service.yaml
+tests:
+  - it: defaults to ClusterIP without nodePort
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - notExists:
+          path: spec.ports[0].nodePort
+
+  - it: renders NodePort with explicit nodePort
+    set:
+      service.type: NodePort
+      service.nodePort: 30054
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+      - equal:
+          path: spec.ports[0].nodePort
+          value: 30054
+
+  - it: does not render oauth service when disabled
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: renders oauth service when enabled
+    set:
+      service.oauth.enabled: true
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-codex-lb-oauth
+      - equal:
+          path: spec.ports[0].name
+          value: oauth
+      - equal:
+          path: spec.ports[0].port
+          value: 1455

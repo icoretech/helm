@@ -1,0 +1,4 @@
+# Values used by chart-testing (ct install) to ensure the chart can be installed.
+# Uses default SQLite mode with persistence disabled for ephemeral CI testing.
+persistence:
+  enabled: false
