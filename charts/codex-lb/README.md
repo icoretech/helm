@@ -53,6 +53,28 @@ persistence:
   enabled: false   # no SQLite file needed
 ```
 
+For secret-backed deployments, avoid putting the URL in `config.databaseUrl`, because that renders it into the Deployment manifest. Instead inject `CODEX_LB_DATABASE_URL` from a Secret:
+
+```yaml
+envFrom:
+  - secretRef:
+      name: codex-lb-env
+
+persistence:
+  enabled: false
+```
+
+## Database Migrations
+
+By default Codex LB runs Alembic migrations on startup (`config.databaseMigrateOnStartup: true`). On app startup it converts async URLs to a sync driver for Alembic, applies pending revisions, and fails startup if migrations fail.
+
+For single-replica installs this is usually the simplest option. If you need an external migration workflow, disable it explicitly:
+
+```yaml
+config:
+  databaseMigrateOnStartup: false
+```
+
 ## OAuth Callback via Ingress
 
 To expose the OAuth callback through your ingress controller, enable both the OAuth Service and OAuth Ingress:
@@ -123,6 +145,9 @@ spec:
         name: icoretech
         namespace: flux-system
   values:
+    envFrom:
+      - secretRef:
+          name: codex-lb-env
     encryptionKey:
       existingSecret:
         name: codex-lb-encryption
@@ -140,7 +165,7 @@ spec:
 | config.authBaseUrl | string | `"https://auth.openai.com"` | OpenAI OAuth base URL. |
 | config.databaseMigrateOnStartup | bool | `true` | Run Alembic migrations on startup. |
 | config.databasePoolSize | int | `15` | Database connection pool size. |
-| config.databaseUrl | string | `""` | Database URL. Use sqlite (default) or postgresql+asyncpg:// for PostgreSQL. |
+| config.databaseUrl | string | `""` | For secret-backed deployments, prefer envFrom/extraEnv with CODEX_LB_DATABASE_URL instead of setting this literal value. |
 | config.firewallTrustProxyHeaders | bool | `false` | Trust X-Forwarded-For headers (set true when behind ingress/proxy). |
 | config.firewallTrustedProxyCidrs | string | `"127.0.0.1/32,::1/128"` | Trusted proxy CIDRs (comma-separated). |
 | config.imageInlineFetchEnabled | bool | `true` | Enable inline image fetching. |

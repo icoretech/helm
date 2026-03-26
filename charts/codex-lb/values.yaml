@@ -213,6 +213,7 @@ persistence:
 # -- codex-lb application configuration mapped to CODEX_LB_* environment variables.
 config:
   # -- Database URL. Use sqlite (default) or postgresql+asyncpg:// for PostgreSQL.
+  # -- For secret-backed deployments, prefer envFrom/extraEnv with CODEX_LB_DATABASE_URL instead of setting this literal value.
   databaseUrl: ""
 
   # -- Database connection pool size.
