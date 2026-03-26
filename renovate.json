@@ -79,6 +79,22 @@
       "matchStrings": ["image:\\s*ghcr\\.io\\/icoretech\\/pgbouncer-docker:(?<currentValue>[^\\s]+)"],
       "depNameTemplate": "ghcr.io/icoretech/pgbouncer-docker",
       "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/codex-lb\\/Chart\\.yaml$/"],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
+      "depNameTemplate": "Soju06/codex-lb",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/codex-lb\\/Chart\\.yaml$/"],
+      "matchStrings": ["image:\\s*ghcr\\.io\\/soju06\\/codex-lb:(?<currentValue>[^\\s]+)"],
+      "depNameTemplate": "Soju06/codex-lb",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
     }
   ],
   "packageRules": [
@@ -181,6 +197,18 @@
       "matchManagers": ["custom.regex", "helm-values"],
       "matchPackageNames": ["ghcr.io/icoretech/pgbouncer-docker"],
       "groupName": "pgbouncer chart software updates"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["Soju06/codex-lb"],
+      "groupName": "codex-lb chart software updates"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["Soju06/codex-lb"],
+      "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "platformAutomerge": true
     },
     {
       "matchPackageNames": ["inngest/inngest"],
