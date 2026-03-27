@@ -1,6 +1,6 @@
 # nextjs
 
-![Version: 1.1.16](https://img.shields.io/badge/Version-1.1.16-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.2.0](https://img.shields.io/badge/Version-1.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 Generic Helm chart for Nextjs apps on Kubernetes
 
@@ -15,6 +15,20 @@ Generic Helm chart for Nextjs apps on Kubernetes
 ## Source Code
 
 * <https://github.com/icoretech/helm>
+
+## Gateway API HTTPRoute Example
+
+```yaml
+web:
+  httpRoute:
+    enabled: true
+    parentRefs:
+      - name: shared-gateway
+        namespace: infra
+        sectionName: https
+    hostnames:
+      - nextjs.example.com
+```
 
 ## Values
 
@@ -48,6 +62,12 @@ Generic Helm chart for Nextjs apps on Kubernetes
 | web.hpa.maxReplicas | int | `10` |  |
 | web.hpa.memory | string | `nil` |  |
 | web.hpa.requests | string | `nil` |  |
+| web.httpRoute.annotations | object | `{}` |  |
+| web.httpRoute.enabled | bool | `false` |  |
+| web.httpRoute.hostnames | list | `[]` |  |
+| web.httpRoute.matches[0].path.type | string | `"PathPrefix"` |  |
+| web.httpRoute.matches[0].path.value | string | `"/"` |  |
+| web.httpRoute.parentRefs | list | `[]` |  |
 | web.image | string | `"nginx:latest"` |  |
 | web.imagePullPolicy | string | `"IfNotPresent"` |  |
 | web.imagePullSecrets | string | `""` |  |

@@ -1,0 +1,42 @@
+suite: airbroke ingress and httproute
+templates:
+  - templates/web-ingress.yaml
+  - templates/web-gatewayapi-httproute.yaml
+values:
+  - ../ci/install-values.yaml
+
+tests:
+  - it: renders ingress rules when enabled
+    template: templates/web-ingress.yaml
+    values:
+      - values/valid-ingress.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: airbroke.example.com
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.port.number
+          value: 3000
+
+  - it: renders Gateway API HTTPRoute when enabled
+    template: templates/web-gatewayapi-httproute.yaml
+    values:
+      - values/valid-httproute.yaml
+    asserts:
+      - equal:
+          path: spec.parentRefs[0].name
+          value: shared-gateway
+      - equal:
+          path: spec.hostnames[0]
+          value: airbroke.example.com
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 3000
+
+  - it: fails when Gateway API HTTPRoute is enabled without parentRefs
+    template: templates/web-gatewayapi-httproute.yaml
+    set:
+      web.httpRoute.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "airbroke: web.httpRoute.enabled requires web.httpRoute.parentRefs to be set"

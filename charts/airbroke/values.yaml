@@ -57,6 +57,21 @@ web:
     hosts: []
     tls: []
 
+  httpRoute:
+    # Enable Gateway API HTTPRoute.
+    enabled: false
+    # HTTPRoute annotations.
+    annotations: {}
+    # ParentRefs for HTTPRoute (required when enabled).
+    parentRefs: []
+    # Optional HTTPRoute hostnames.
+    hostnames: []
+    # Match rules for HTTPRoute.
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+
   service:
     enabled: true
     type: ClusterIP

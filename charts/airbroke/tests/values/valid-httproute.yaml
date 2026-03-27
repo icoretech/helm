@@ -1,0 +1,8 @@
+web:
+  httpRoute:
+    enabled: true
+    parentRefs:
+      - name: shared-gateway
+        namespace: infra
+    hostnames:
+      - airbroke.example.com

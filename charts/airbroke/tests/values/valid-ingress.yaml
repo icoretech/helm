@@ -1,0 +1,7 @@
+web:
+  ingress:
+    enabled: true
+    hosts:
+      - host: airbroke.example.com
+        paths:
+          - /
