@@ -28,6 +28,20 @@ helm install my-airbroke icoretech/airbroke
 
 Please remember to set at least the `database.url` and `database.migrations_url` values. Continue reading for further details.
 
+## Gateway API HTTPRoute Example
+
+```yaml
+web:
+  httpRoute:
+    enabled: true
+    parentRefs:
+      - name: shared-gateway
+        namespace: infra
+        sectionName: https
+    hostnames:
+      - airbroke.example.com
+```
+
 ## Breaking changes in 2.0.0
 
 - `web.image` was removed; use `web.imageRepository` and optional `web.imageTag`

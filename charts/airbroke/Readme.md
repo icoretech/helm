@@ -28,6 +28,20 @@ helm install my-airbroke icoretech/airbroke
 
 Please remember to set at least the `database.url` and `database.migrations_url` values. Continue reading for further details.
 
+## Gateway API HTTPRoute Example
+
+```yaml
+web:
+  httpRoute:
+    enabled: true
+    parentRefs:
+      - name: shared-gateway
+        namespace: infra
+        sectionName: https
+    hostnames:
+      - airbroke.example.com
+```
+
 ## Breaking changes in 2.0.0
 
 - `web.image` was removed; use `web.imageRepository` and optional `web.imageTag`
@@ -82,6 +96,12 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | web.hpa.maxReplicas | int | `10` |  |
 | web.hpa.memory | string | `nil` |  |
 | web.hpa.requests | string | `nil` |  |
+| web.httpRoute.annotations | object | `{}` |  |
+| web.httpRoute.enabled | bool | `false` |  |
+| web.httpRoute.hostnames | list | `[]` |  |
+| web.httpRoute.matches[0].path.type | string | `"PathPrefix"` |  |
+| web.httpRoute.matches[0].path.value | string | `"/"` |  |
+| web.httpRoute.parentRefs | list | `[]` |  |
 | web.imagePullPolicy | string | `"IfNotPresent"` |  |
 | web.imagePullSecrets | string | `""` |  |
 | web.imageRepository | string | `"ghcr.io/icoretech/airbroke"` |  |
