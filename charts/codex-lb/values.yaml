@@ -38,11 +38,15 @@ podAnnotations: {}
 # -- Pod labels.
 podLabels: {}
 
-# -- Pod security context.
-podSecurityContext: {}
+# -- Pod security context. Defaults ensure the PVC-mounted SQLite database stays writable for the non-root app user.
+podSecurityContext:
+  fsGroup: 1000
 
-# -- Container security context.
-securityContext: {}
+# -- Container security context. Matches the upstream `app` user baked into the image.
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
 
 service:
   # -- Service annotations.
@@ -207,8 +211,8 @@ persistence:
   # -- PVC volume mode.
   volumeMode: ""
 
-  # -- Mount path for codex-lb data.
-  mountPath: /var/lib/codex-lb
+  # -- Mount path for codex-lb data. Keep this aligned with codex-lb's default Kubernetes data directory unless you also override the database URL.
+  mountPath: /home/app/.codex-lb
 
 # -- codex-lb application configuration mapped to CODEX_LB_* environment variables.
 config:
@@ -267,7 +271,7 @@ config:
 # -- Encryption key configuration.
 encryptionKey:
   # -- Path inside the container for the Fernet encryption key file.
-  path: /var/lib/codex-lb/encryption.key
+  path: /home/app/.codex-lb/encryption.key
 
   # -- Use an existing Kubernetes Secret for the encryption key instead of auto-generating.
   existingSecret:

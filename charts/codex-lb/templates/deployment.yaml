@@ -155,10 +155,8 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            {{- if .Values.persistence.enabled }}
             - name: data
               mountPath: {{ .Values.persistence.mountPath }}
-            {{- end }}
             {{- if and .Values.encryptionKey.existingSecret.name .Values.encryptionKey.existingSecret.key }}
             - name: encryption-key
               mountPath: /etc/codex-lb
@@ -168,11 +166,13 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
       volumes:
-        {{- if .Values.persistence.enabled }}
         - name: data
+          {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
             claimName: {{ include "codex-lb.persistence.claimName" . }}
-        {{- end }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
         {{- if and .Values.encryptionKey.existingSecret.name .Values.encryptionKey.existingSecret.key }}
         - name: encryption-key
           secret:

@@ -32,10 +32,25 @@ tests:
           path: spec.template.spec.volumes[0].persistentVolumeClaim.claimName
           value: existing-data
 
-  - it: skips pvc and volume when persistence is disabled
+  - it: skips pvc creation when persistence is disabled
     values:
       - values/valid-minimal.yaml
     template: pvc.yaml
     asserts:
       - hasDocuments:
           count: 0
+  - it: mounts emptyDir data volume when persistence is disabled
+    values:
+      - values/valid-minimal.yaml
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /home/app/.codex-lb

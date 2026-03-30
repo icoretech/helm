@@ -8,7 +8,7 @@ tests:
           path: spec.template.spec.containers[0].env
           content:
             name: CODEX_LB_ENCRYPTION_KEY_FILE
-            value: /var/lib/codex-lb/encryption.key
+            value: /home/app/.codex-lb/encryption.key
 
   - it: mounts secret volume when existingSecret is set
     values:
