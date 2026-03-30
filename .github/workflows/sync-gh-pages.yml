@@ -42,6 +42,15 @@ jobs:
           fi
 
           cp -v README.md ghp/README.md
+          {
+            echo "---";
+            echo "layout: default";
+            echo "title: iCoreTech Helm Charts Repository";
+            echo "---";
+            echo;
+            cat README.md;
+          } > ghp/index.md
+          echo "Wrote ghp/index.md from README.md with front matter"
           cp -v artifacthub-repo.yml ghp/artifacthub-repo.yml
           if [ -f signing/pgp-public-key.asc ]; then
             cp -v signing/pgp-public-key.asc ghp/pgp-public-key.asc
@@ -80,7 +89,7 @@ jobs:
 
           pushd ghp >/dev/null
           if [[ -n "$(git status --porcelain)" ]]; then
-            git add README.md artifacthub-repo.yml pgp-public-key.asc charts || true
+            git add README.md index.md artifacthub-repo.yml pgp-public-key.asc charts || true
             git commit -m "docs: sync README & artifacthub metadata from main"
             git fetch origin gh-pages
             git rebase origin/gh-pages
