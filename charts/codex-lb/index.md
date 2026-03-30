@@ -186,11 +186,11 @@ spec:
 | config.upstreamStreamTransport | string | `"auto"` | Stream transport mode: auto, http, or websocket. |
 | deployment.progressDeadlineSeconds | int | `600` | Time in seconds for the Deployment controller to wait before marking a rollout failed. |
 | deployment.strategy.type | string | `"Recreate"` | Deployment strategy. Recreate avoids RWO PVC multi-attach deadlocks during single-replica upgrades. |
-| encryptionKey | object | `{"existingSecret":{"key":"","name":""},"path":"/var/lib/codex-lb/encryption.key"}` | Encryption key configuration. |
+| encryptionKey | object | `{"existingSecret":{"key":"","name":""},"path":"/home/app/.codex-lb/encryption.key"}` | Encryption key configuration. |
 | encryptionKey.existingSecret | object | `{"key":"","name":""}` | Use an existing Kubernetes Secret for the encryption key instead of auto-generating. |
 | encryptionKey.existingSecret.key | string | `""` | Key within the secret. |
 | encryptionKey.existingSecret.name | string | `""` | Secret name containing the encryption key. |
-| encryptionKey.path | string | `"/var/lib/codex-lb/encryption.key"` | Path inside the container for the Fernet encryption key file. |
+| encryptionKey.path | string | `"/home/app/.codex-lb/encryption.key"` | Path inside the container for the Fernet encryption key file. |
 | envFrom | list | `[]` | Extra envFrom entries. |
 | extraEnv | list | `[]` | Additional environment variables. |
 | fullnameOverride | string | `""` | Override fully-qualified release name. |
@@ -230,13 +230,13 @@ spec:
 | persistence.annotations | object | `{}` | PVC annotations. |
 | persistence.enabled | bool | `true` | Enable data persistence for codex-lb (SQLite DB, encryption key, backups). |
 | persistence.existingClaim | string | `""` | Existing PVC name to use instead of creating one. |
-| persistence.mountPath | string | `"/var/lib/codex-lb"` | Mount path for codex-lb data. |
+| persistence.mountPath | string | `"/home/app/.codex-lb"` | Mount path for codex-lb data. Keep this aligned with codex-lb's default Kubernetes data directory unless you also override the database URL. |
 | persistence.size | string | `"5Gi"` | PVC size. |
 | persistence.storageClass | string | `""` | PVC storage class. |
 | persistence.volumeMode | string | `""` | PVC volume mode. |
 | podAnnotations | object | `{}` | Pod annotations. |
 | podLabels | object | `{}` | Pod labels. |
-| podSecurityContext | object | `{}` | Pod security context. |
+| podSecurityContext | object | `{"fsGroup":1000}` | Pod security context. Defaults ensure the PVC-mounted SQLite database stays writable for the non-root app user. |
 | readinessProbe.enabled | bool | `true` | Enable readiness probe. |
 | readinessProbe.failureThreshold | int | `3` |  |
 | readinessProbe.httpGet.path | string | `"/health"` | Readiness probe path. |
@@ -246,7 +246,7 @@ spec:
 | readinessProbe.timeoutSeconds | int | `3` |  |
 | replicaCount | int | `1` | Number of replicas. codex-lb is effectively single-replica due to in-memory state. |
 | resources | object | `{}` | Container resources. |
-| securityContext | object | `{}` | Container security context. |
+| securityContext | object | `{"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000}` | Container security context. Matches the upstream `app` user baked into the image. |
 | service.annotations | object | `{}` | Service annotations. |
 | service.externalTrafficPolicy | string | `nil` | External traffic policy. |
 | service.loadBalancerIP | string | `nil` | Optional LoadBalancer IP. |

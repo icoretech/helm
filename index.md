@@ -16,7 +16,10 @@ For detailed information on the individual charts and their usage, please naviga
 - [Airbroke](https://icoretech.github.io/helm/charts/airbroke): A modern, React-based open-source error catcher web application.
 - [PgBouncer](https://icoretech.github.io/helm/charts/pgbouncer): A lightweight connection pooler for PostgreSQL.
 - [Next.js](https://icoretech.github.io/helm/charts/nextjs): Generic, no-database Helm chart for Next.js standalone apps.
-- [MetaMCP](https://icoretech.github.io/helm/charts/metamcp): MetaMCP aggregator Helm chart for orchestrating multiple MCP servers.
+- [MetaMCP](https://icoretech.github.io/helm/charts/metamcp): MetaMCP aggregator + declarative provisioning of MCP servers (STDIO/HTTP/SSE), namespaces, and endpoints.
+- [Browserless](https://icoretech.github.io/helm/charts/browserless): Browserless v2 chart with token enforcement and multi-browser image presets for browser automation workloads.
+- [Codex LB](https://icoretech.github.io/helm/charts/codex-lb): ChatGPT / OpenAI account-pool proxy with PostgreSQL support, OAuth onboarding flow, and dashboard/API routing.
+- [Tolgee](https://icoretech.github.io/helm/charts/tolgee): Tolgee Platform chart with optional bundled PostgreSQL, external DB mode, and Gateway API/Ingress support.
 
 ## Deprecated Charts
 
