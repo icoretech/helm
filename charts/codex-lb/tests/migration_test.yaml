@@ -83,6 +83,9 @@ tests:
             - -ec
             - |
               deadline=$(( $(date +%s) + 90 ))
+              if python -m app.db.migrate --help 2>&1 | grep -q 'wait-for-head'; then
+                exec python -m app.db.migrate wait-for-head --timeout-seconds 90 --interval-seconds 5
+              fi
               until python -m app.db.migrate check >/dev/null 2>&1; do
                 if [ "$(date +%s)" -ge "$deadline" ]; then
                   echo "schema did not reach the expected state before timeout" >&2

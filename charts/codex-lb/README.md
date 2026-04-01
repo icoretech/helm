@@ -80,7 +80,12 @@ migration:
     enabled: true
 ```
 
-That mode uses the released `python -m app.db.migrate upgrade` and `python -m app.db.migrate check` commands from Codex LB `1.8.3`. The migration Job is best suited to external database deployments. If you stay on SQLite, keep startup migration enabled.
+That mode uses the released `python -m app.db.migrate upgrade` command and a schema gate that is forward-compatible across image versions:
+
+- on `1.8.3`, it falls back to looping on `python -m app.db.migrate check`
+- on newer images that expose `wait-for-head`, it automatically prefers the native `wait-for-head` command
+
+The migration Job is best suited to external database deployments. If you stay on SQLite, keep startup migration enabled.
 
 ## OAuth Callback via Ingress
 
