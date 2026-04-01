@@ -68,7 +68,27 @@ persistence:
 
 By default Codex LB runs Alembic migrations on startup (`config.databaseMigrateOnStartup: true`). On app startup it converts async URLs to a sync driver for Alembic, applies pending revisions, and fails startup if migrations fail.
 
-For single-replica SQLite installs this remains the safest default. For PostgreSQL-style deployments you can disable startup migration and let Helm run a hook Job before install/upgrade instead:
+### SQLite / single replica (current default)
+
+Use this for the simple PVC-backed SQLite setup. The application pod handles its own migrations on boot.
+
+```yaml
+config:
+  databaseMigrateOnStartup: true
+
+migration:
+  enabled: false
+```
+
+What happens:
+
+- the app container starts
+- it runs `python -m app.db.migrate upgrade` during startup
+- if migrations fail, the pod does not become ready
+
+### External PostgreSQL / Helm-managed migration
+
+Use this when you want migrations to run once per Helm install or upgrade, instead of in every app pod:
 
 ```yaml
 config:
@@ -80,12 +100,18 @@ migration:
     enabled: true
 ```
 
+What happens:
+
+- Helm runs a hook Job that executes `python -m app.db.migrate upgrade`
+- the app pod waits for the schema to be current before starting the main container
+- the app container starts without running migrations itself
+
 That mode uses the released `python -m app.db.migrate upgrade` command and a schema gate that is forward-compatible across image versions:
 
 - on `1.8.3`, it falls back to looping on `python -m app.db.migrate check`
 - on newer images that expose `wait-for-head`, it automatically prefers the native `wait-for-head` command
 
-The migration Job is best suited to external database deployments. If you stay on SQLite, keep startup migration enabled.
+The hook-job mode is best suited to external database deployments. If you stay on SQLite, keep startup migration enabled.
 
 ## OAuth Callback via Ingress
 
