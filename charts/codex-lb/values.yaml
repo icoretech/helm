@@ -293,6 +293,37 @@ volumes: []
 # -- Additional volume mounts.
 volumeMounts: []
 
+migration:
+  # -- Enable a Helm hook Job that runs `python -m app.db.migrate upgrade` before install/upgrade.
+  # -- Intended for PostgreSQL-style deployments where startup migration is disabled.
+  enabled: false
+
+  hook:
+    # -- Hook phases for the migration Job.
+    phases: pre-install,pre-upgrade
+
+    # -- Hook delete policy for the migration Job.
+    deletePolicy: before-hook-creation,hook-failed
+
+  # -- Number of retries before the migration Job is marked failed.
+  backoffLimit: 1
+
+  # -- Maximum runtime for the migration Job in seconds.
+  activeDeadlineSeconds: 300
+
+  # -- Resources for the migration Job and schema gate init container.
+  resources: {}
+
+  schemaGate:
+    # -- Add an init container that loops on `python -m app.db.migrate check` until schema is ready.
+    enabled: false
+
+    # -- Maximum seconds the schema gate waits before failing the pod.
+    timeoutSeconds: 120
+
+    # -- Poll interval in seconds while waiting for schema readiness.
+    intervalSeconds: 5
+
 livenessProbe:
   # -- Enable liveness probe.
   enabled: true

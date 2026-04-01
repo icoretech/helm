@@ -68,12 +68,19 @@ persistence:
 
 By default Codex LB runs Alembic migrations on startup (`config.databaseMigrateOnStartup: true`). On app startup it converts async URLs to a sync driver for Alembic, applies pending revisions, and fails startup if migrations fail.
 
-For single-replica installs this is usually the simplest option. If you need an external migration workflow, disable it explicitly:
+For single-replica SQLite installs this remains the safest default. For PostgreSQL-style deployments you can disable startup migration and let Helm run a hook Job before install/upgrade instead:
 
 ```yaml
 config:
   databaseMigrateOnStartup: false
+
+migration:
+  enabled: true
+  schemaGate:
+    enabled: true
 ```
+
+That mode uses the released `python -m app.db.migrate upgrade` and `python -m app.db.migrate check` commands from Codex LB `1.8.3`. The migration Job is best suited to external database deployments. If you stay on SQLite, keep startup migration enabled.
 
 ## OAuth Callback via Ingress
 
@@ -219,6 +226,15 @@ spec:
 | livenessProbe.periodSeconds | int | `10` |  |
 | livenessProbe.successThreshold | int | `1` |  |
 | livenessProbe.timeoutSeconds | int | `3` |  |
+| migration.activeDeadlineSeconds | int | `300` | Maximum runtime for the migration Job in seconds. |
+| migration.backoffLimit | int | `1` | Number of retries before the migration Job is marked failed. |
+| migration.enabled | bool | `false` | Intended for PostgreSQL-style deployments where startup migration is disabled. |
+| migration.hook.deletePolicy | string | `"before-hook-creation,hook-failed"` | Hook delete policy for the migration Job. |
+| migration.hook.phases | string | `"pre-install,pre-upgrade"` | Hook phases for the migration Job. |
+| migration.resources | object | `{}` | Resources for the migration Job and schema gate init container. |
+| migration.schemaGate.enabled | bool | `false` | Add an init container that loops on `python -m app.db.migrate check` until schema is ready. |
+| migration.schemaGate.intervalSeconds | int | `5` | Poll interval in seconds while waiting for schema readiness. |
+| migration.schemaGate.timeoutSeconds | int | `120` | Maximum seconds the schema gate waits before failing the pod. |
 | nameOverride | string | `""` | Override chart name. |
 | nodeSelector | object | `{}` | Node selector. |
 | persistence.accessModes | list | `["ReadWriteOnce"]` | PVC access modes. |

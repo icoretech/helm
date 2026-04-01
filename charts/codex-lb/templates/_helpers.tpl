@@ -55,3 +55,8 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "%s-data" (include "codex-lb.fullname" .) -}}
 {{- end -}}
 {{- end }}
+
+{{/* Migration job name. */}}
+{{- define "codex-lb.migrationJobName" -}}
+{{- printf "%s-migrate" (include "codex-lb.fullname" . | trunc 55 | trimSuffix "-") -}}
+{{- end }}

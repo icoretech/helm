@@ -1,0 +1,105 @@
+suite: migration workflow
+templates:
+  - deployment.yaml
+  - hooks/migration-job.yaml
+tests:
+  - it: does not render a migration job by default
+    template: hooks/migration-job.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders a migration hook job when enabled
+    template: hooks/migration-job.yaml
+    set:
+      migration.enabled: true
+      config.databaseMigrateOnStartup: false
+      envFrom:
+        - secretRef:
+            name: codex-lb-env
+      extraEnv:
+        - name: CODEX_LB_DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: codex-lb-db
+              key: url
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: pre-install,pre-upgrade
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - python
+            - -m
+            - app.db.migrate
+            - upgrade
+      - contains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            secretRef:
+              name: codex-lb-env
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_LB_DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: codex-lb-db
+                key: url
+
+  - it: does not add a schema gate by default
+    template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.initContainers
+
+  - it: adds a schema gate init container when startup migration is disabled
+    template: deployment.yaml
+    set:
+      config.databaseMigrateOnStartup: false
+      migration.schemaGate.enabled: true
+      migration.schemaGate.timeoutSeconds: 90
+      migration.schemaGate.intervalSeconds: 5
+      envFrom:
+        - secretRef:
+            name: codex-lb-env
+      extraEnv:
+        - name: CODEX_LB_DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: codex-lb-db
+              key: url
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-schema
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value:
+            - /bin/sh
+            - -ec
+            - |
+              deadline=$(( $(date +%s) + 90 ))
+              until python -m app.db.migrate check >/dev/null 2>&1; do
+                if [ "$(date +%s)" -ge "$deadline" ]; then
+                  echo "schema did not reach the expected state before timeout" >&2
+                  exit 1
+                fi
+                sleep 5
+              done
+      - contains:
+          path: spec.template.spec.initContainers[0].envFrom
+          content:
+            secretRef:
+              name: codex-lb-env
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: CODEX_LB_DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: codex-lb-db
+                key: url

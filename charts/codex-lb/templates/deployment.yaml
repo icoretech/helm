@@ -31,6 +31,45 @@ spec:
       serviceAccountName: {{ include "codex-lb.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if and (not .Values.config.databaseMigrateOnStartup) .Values.migration.schemaGate.enabled }}
+      initContainers:
+        - name: wait-for-schema
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              deadline=$(( $(date +%s) + {{ .Values.migration.schemaGate.timeoutSeconds }} ))
+              until python -m app.db.migrate check >/dev/null 2>&1; do
+                if [ "$(date +%s)" -ge "$deadline" ]; then
+                  echo "schema did not reach the expected state before timeout" >&2
+                  exit 1
+                fi
+                sleep {{ .Values.migration.schemaGate.intervalSeconds }}
+              done
+          {{- if or .Values.config.databaseUrl .Values.extraEnv }}
+          env:
+            {{- with .Values.config.databaseUrl }}
+            - name: CODEX_LB_DATABASE_URL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.migration.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.persistence.mountPath }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:

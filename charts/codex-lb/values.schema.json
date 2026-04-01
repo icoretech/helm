@@ -239,6 +239,36 @@
     "envFrom": { "type": "array", "items": { "type": "object" } },
     "volumes": { "type": "array", "items": { "type": "object" } },
     "volumeMounts": { "type": "array", "items": { "type": "object" } },
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "hook": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "phases": { "type": "string", "minLength": 1 },
+            "deletePolicy": { "type": "string", "minLength": 1 }
+          },
+          "required": ["phases", "deletePolicy"]
+        },
+        "backoffLimit": { "type": "integer", "minimum": 0 },
+        "activeDeadlineSeconds": { "type": "integer", "minimum": 1 },
+        "resources": { "type": "object" },
+        "schemaGate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "timeoutSeconds": { "type": "integer", "minimum": 1 },
+            "intervalSeconds": { "type": "integer", "minimum": 1 }
+          },
+          "required": ["enabled", "timeoutSeconds", "intervalSeconds"]
+        }
+      },
+      "required": ["enabled", "hook", "backoffLimit", "activeDeadlineSeconds", "resources", "schemaGate"]
+    },
     "livenessProbe": {
       "type": "object",
       "additionalProperties": false,
