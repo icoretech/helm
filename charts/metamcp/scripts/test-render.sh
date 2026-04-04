@@ -12,3 +12,11 @@ if ! rg -q 'name: PRUNE' "$OUT"; then
   sed -n '1,220p' "$OUT" >&2
   exit 1
 fi
+
+helm template t "$CHART" -f "$ROOT/ci/headersfrom-values.yaml" >"$OUT"
+
+if ! rg -q '"headersFrom":\[\{"secretRef":\{"name":"metamcp-icoretech-airbroke-headers"\}\}\]' "$OUT"; then
+  echo "expected provision.json to preserve headersFrom secret refs for remote servers" >&2
+  sed -n '1,220p' "$OUT" >&2
+  exit 1
+fi

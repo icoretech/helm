@@ -82,6 +82,7 @@
               "url": { "type": ["string","null"] },
               "bearerToken": { "type": "string" },
               "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+              "headersFrom": { "type": "array", "items": { "type": "object" } },
               "command": { "type": ["string","null"] },
               "args": { "type": "array", "items": { "type": "string" } },
               "env": { "type": "object", "additionalProperties": { "type": "string" } },

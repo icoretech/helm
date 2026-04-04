@@ -62,6 +62,17 @@ def k8s_get_configmap_data(name: str):
         pass
     return {}
 
+def merge_refs(refs):
+    merged = {}
+    for src in (refs or []):
+        if not isinstance(src, dict):
+            continue
+        if 'secretRef' in src and isinstance(src['secretRef'], dict) and src['secretRef'].get('name'):
+            merged.update({k: str(v) for k, v in k8s_get_secret_data(src['secretRef']['name']).items()})
+        if 'configMapRef' in src and isinstance(src['configMapRef'], dict) and src['configMapRef'].get('name'):
+            merged.update({k: str(v) for k, v in k8s_get_configmap_data(src['configMapRef']['name']).items()})
+    return merged
+
 def load_managed_state():
     data = k8s_get_configmap_data(STATE_CONFIGMAP)
     state = {key: set() for key in STATE_KEYS}
@@ -357,18 +368,20 @@ for s in servers:
         env_map = {}
         if s.get('env') and isinstance(s['env'], dict):
             env_map.update({k:str(v) for k,v in s['env'].items()})
-        for src in (s.get('envFrom') or []):
-            if not isinstance(src, dict):
-                continue
-            if 'secretRef' in src and isinstance(src['secretRef'], dict) and src['secretRef'].get('name'):
-                env_map.update(k8s_get_secret_data(src['secretRef']['name']))
-            if 'configMapRef' in src and isinstance(src['configMapRef'], dict) and src['configMapRef'].get('name'):
-                env_map.update(k8s_get_configmap_data(src['configMapRef']['name']))
+        env_map.update(merge_refs(s.get('envFrom') or []))
         if env_map:
             desired_env = env_map
     desired_url = None
+    desired_headers = None
     if st in ('SSE','STREAMABLE_HTTP'):
         desired_url = s.get('url')
+        header_map = {}
+        if s.get('headers') and isinstance(s['headers'], dict):
+            header_map.update({k:str(v) for k,v in s['headers'].items()})
+        if s.get('headersFrom'):
+            header_map.update(merge_refs(s.get('headersFrom') or []))
+        if header_map or s.get('headersFrom'):
+            desired_headers = header_map
         if not desired_url:
             base = s.get('serviceBase')
             if base:
@@ -401,8 +414,8 @@ for s in servers:
             body['url'] = desired_url
         if s.get('bearerToken'):
             body['bearerToken'] = s['bearerToken']
-        if s.get('headers'):
-            body['headers'] = s['headers']
+        if desired_headers is not None:
+            body['headers'] = desired_headers
 
     # If server exists and updates are allowed, patch safe fields
     if name in srv_map:
@@ -416,8 +429,8 @@ for s in servers:
                 # Optional fields
                 if 'bearerToken' in body:
                     patch['bearerToken'] = body['bearerToken']
-                if 'headers' in body:
-                    patch['headers'] = body['headers']
+                if desired_headers is not None:
+                    patch['headers'] = desired_headers
                 r = trpc_post('/trpc/frontend/frontend.mcpServers.update', patch)
                 if r.ok:
                     log(f"server updated: {name}")

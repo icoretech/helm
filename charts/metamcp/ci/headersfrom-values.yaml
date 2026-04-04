@@ -1,0 +1,14 @@
+users:
+  - email: admin@example.com
+    name: Admin
+    password: change-me
+
+provision:
+  enabled: true
+  servers:
+    - name: icoretech-airbroke
+      type: STREAMABLE_HTTP
+      url: https://errors.icorete.ch/api/mcp
+      headersFrom:
+        - secretRef:
+            name: metamcp-icoretech-airbroke-headers

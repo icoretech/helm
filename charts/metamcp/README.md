@@ -214,6 +214,20 @@ provision:
             name: figma-mcp-env
 ```
 
+Secret-backed remote headers (Airbroke):
+
+```yaml
+provision:
+  enabled: true
+  servers:
+    - name: icoretech-airbroke
+      type: STREAMABLE_HTTP
+      url: https://errors.icorete.ch/api/mcp
+      headersFrom:
+        - secretRef:
+            name: metamcp-icoretech-airbroke-headers
+```
+
 ## Configuration reference
 
 <!-- markdownlint-disable MD013 -->

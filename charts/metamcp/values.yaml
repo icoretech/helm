@@ -147,6 +147,13 @@ provision:
   #   enabled: true
   #   type: SSE
   #   url: http://external.svc.local:3002/sse
+  # - name: errbit
+  #   enabled: true
+  #   type: STREAMABLE_HTTP
+  #   url: https://errors.example.com/api/mcp
+  #   headersFrom:
+  #     - secretRef:
+  #         name: errbit-mcp-headers
 
   # namespaces: list of { name, servers: [<server-names>] }
   namespaces: []
