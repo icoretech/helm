@@ -80,6 +80,7 @@
               "enabled": { "type": "boolean", "default": true },
               "type": { "type": "string", "enum": ["SSE", "STREAMABLE_HTTP", "STDIO"] },
               "url": { "type": ["string","null"] },
+              "urlFrom": { "type": "array", "items": { "type": "object" } },
               "bearerToken": { "type": "string" },
               "headers": { "type": "object", "additionalProperties": { "type": "string" } },
               "headersFrom": { "type": "array", "items": { "type": "object" } },

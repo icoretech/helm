@@ -154,6 +154,12 @@ provision:
   #   headersFrom:
   #     - secretRef:
   #         name: errbit-mcp-headers
+  # - name: windmill
+  #   enabled: true
+  #   type: SSE
+  #   urlFrom:
+  #     - secretRef:
+  #         name: windmill-mcp-url
 
   # namespaces: list of { name, servers: [<server-names>] }
   namespaces: []

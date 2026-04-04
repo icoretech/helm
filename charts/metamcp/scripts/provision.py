@@ -73,6 +73,22 @@ def merge_refs(refs):
             merged.update({k: str(v) for k, v in k8s_get_configmap_data(src['configMapRef']['name']).items()})
     return merged
 
+def resolve_remote_url(server):
+    desired_url = server.get('url')
+    if server.get('urlFrom'):
+        desired_url = merge_refs(server.get('urlFrom') or []).get('url') or desired_url
+    if desired_url:
+        return desired_url
+    base = server.get('serviceBase')
+    if base:
+        suffix = '/mcp' if server['type'] == 'STREAMABLE_HTTP' else '/sse'
+        if base.startswith('http://') or base.startswith('https://'):
+            return base + suffix
+        return 'http://' + base + suffix
+    raise RuntimeError(
+        f"server {server.get('name')}: remote server requires url, urlFrom[url], or a deployable serviceBase"
+    )
+
 def load_managed_state():
     data = k8s_get_configmap_data(STATE_CONFIGMAP)
     state = {key: set() for key in STATE_KEYS}
@@ -374,7 +390,7 @@ for s in servers:
     desired_url = None
     desired_headers = None
     if st in ('SSE','STREAMABLE_HTTP'):
-        desired_url = s.get('url')
+        desired_url = resolve_remote_url(s)
         header_map = {}
         if s.get('headers') and isinstance(s['headers'], dict):
             header_map.update({k:str(v) for k,v in s['headers'].items()})
@@ -382,34 +398,25 @@ for s in servers:
             header_map.update(merge_refs(s.get('headersFrom') or []))
         if header_map or s.get('headersFrom'):
             desired_headers = header_map
-        if not desired_url:
-            base = s.get('serviceBase')
-            if base:
-                suffix = '/mcp' if st=='STREAMABLE_HTTP' else '/sse'
-                # ensure scheme
-                if base.startswith('http://') or base.startswith('https://'):
-                    desired_url = base + suffix
-                else:
-                    desired_url = 'http://' + base + suffix
-            # proactive readiness for deployed servers
-            if base:
-                try:
-                    hostport = base.split('://')[-1]
-                    host, port = hostport.split(':')[0], int(hostport.split(':')[1])
-                except Exception:
-                    host, port = None, None
-                if host and port:
-                    log(f"[ready] waiting tcp {host}:{port} …")
-                    max_tries = 8
-                    ok = False
-                    for _ in range(max_tries):
-                        try:
-                            with socket.create_connection((host, port), timeout=1.5):
-                                ok = True
-                                break
-                        except Exception:
-                            time.sleep(1)
-                    log(f"[ready] tcp {host}:{port} -> {'ok' if ok else 'timeout'}")
+        base = s.get('serviceBase')
+        if base:
+            try:
+                hostport = base.split('://')[-1]
+                host, port = hostport.split(':')[0], int(hostport.split(':')[1])
+            except Exception:
+                host, port = None, None
+            if host and port:
+                log(f"[ready] waiting tcp {host}:{port} …")
+                max_tries = 8
+                ok = False
+                for _ in range(max_tries):
+                    try:
+                        with socket.create_connection((host, port), timeout=1.5):
+                            ok = True
+                            break
+                    except Exception:
+                        time.sleep(1)
+                log(f"[ready] tcp {host}:{port} -> {'ok' if ok else 'timeout'}")
         if desired_url:
             body['url'] = desired_url
         if s.get('bearerToken'):

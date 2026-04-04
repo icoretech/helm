@@ -1,0 +1,13 @@
+users:
+  - email: admin@example.com
+    name: Admin
+    password: change-me
+
+provision:
+  enabled: true
+  servers:
+    - name: windmill-icoretech
+      type: SSE
+      urlFrom:
+        - secretRef:
+            name: metamcp-windmill-icoretech-url

@@ -38,7 +38,7 @@ Declare everything under `provision.*`:
 - Servers:
   - `type: STDIO` → MetaMCP spawns the process inside its container using `command` + `args` (+ optional `env`). Ensure the MetaMCP image contains the required runtime (e.g., Node/PNPM/NPM or Python/uv).
   - `type: STREAMABLE_HTTP` or `SSE`:
-    - remote: provide `url` (no Pod is created here) + optional `bearerToken`/`headers`.
+    - remote: provide `url` or `urlFrom` (no Pod is created here) + optional `bearerToken`/`headers`.
     - deploy: provide one of `node`/`python`/`image` and optionally `port` (defaults to `3001`);
       the chart creates a Deployment/Service and auto‑derives the URL for registration.
 - Namespaces: group servers by name.
@@ -226,6 +226,19 @@ provision:
       headersFrom:
         - secretRef:
             name: metamcp-icoretech-airbroke-headers
+```
+
+Secret-backed remote URL (Windmill):
+
+```yaml
+provision:
+  enabled: true
+  servers:
+    - name: windmill-icoretech
+      type: SSE
+      urlFrom:
+        - secretRef:
+            name: metamcp-windmill-icoretech-url
 ```
 
 ## Configuration reference
