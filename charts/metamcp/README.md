@@ -136,9 +136,15 @@ By default the provisioning job runs after every Helm install and upgrade and wi
   - `true`: update existing Namespaces (description + membership) and Endpoints when names already exist
   - `false`: create-only; existing objects are left untouched (good for “seed once, then manage via UI”)
 
+- `provision.prune` (bool, default `false`)
+  - `true`: delete previously chart-managed servers, namespaces, and endpoints that are no longer present in values
+  - requires `provision.runOnUpgrade=true` and `provision.updateExisting=true`
+  - managed objects are tracked in a Kubernetes ConfigMap so UI-created objects are not pruned just because their names are absent from Helm values
+
 Notes
-- Servers are always create-only (by name). The job does not modify or delete existing servers.
-- Deletions are not automatic. Removing items from values does not delete them in MetaMCP. If you need prune semantics, open an issue so we can add an opt‑in `prune` mode.
+- Servers are created by name and updated in place when `provision.updateExisting=true`
+- With `provision.prune=false`, removing items from values does not delete them in MetaMCP; the chart only records them as previously managed so a later declarative prune run can remove them safely
+- With `provision.prune=true`, the job prunes only the objects that this chart previously managed; it does not sweep arbitrary UI-created objects by name
 
 Examples
 
@@ -149,6 +155,16 @@ provision:
   enabled: true
   runOnUpgrade: true
   updateExisting: true
+```
+
+Continuous upsert with prune:
+
+```yaml
+provision:
+  enabled: true
+  runOnUpgrade: true
+  updateExisting: true
+  prune: true
 ```
 
 Seed once, keep UI changes later:
@@ -248,6 +264,7 @@ provision:
 | provision.enabled | bool | `false` |  |
 | provision.endpoints | list | `[]` |  |
 | provision.namespaces | list | `[]` |  |
+| provision.prune | bool | `false` |  |
 | provision.runOnUpgrade | bool | `true` |  |
 | provision.servers | list | `[]` |  |
 | provision.updateExisting | bool | `true` |  |

@@ -31,9 +31,9 @@ data:
 {{- end }}
 
 ---
-{{- $prov := .Values.provision -}}
-{{- if and (kindIs "map" $prov) ($prov.enabled | default false) -}}
-{{- $users := .Values.users | default (list) -}}
+{{ $prov := .Values.provision }}
+{{- if and (kindIs "map" $prov) ($prov.enabled | default false) }}
+{{- $users := .Values.users | default (list) }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -66,8 +66,12 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: PRUNE
+              value: {{ (default false .Values.provision.prune) | ternary "true" "false" | quote }}
             - name: UPDATE_EXISTING
               value: {{ (default true .Values.provision.updateExisting) | ternary "true" "false" | quote }}
+            - name: STATE_CONFIGMAP
+              value: {{ printf "%s-provision-state" (include "metamcp.fullname" .) | quote }}
             - name: SVC
               value: {{ printf "%s.%s.svc.cluster.local" (include "metamcp.fullname" .) .Release.Namespace | quote }}
             - name: FRONTEND_PORT

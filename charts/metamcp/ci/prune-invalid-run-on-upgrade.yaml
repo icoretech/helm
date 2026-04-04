@@ -1,0 +1,10 @@
+users:
+  - email: admin@example.com
+    name: Admin
+    password: change-me
+
+provision:
+  enabled: true
+  runOnUpgrade: false
+  updateExisting: true
+  prune: true

@@ -1,0 +1,29 @@
+auth:
+  betterAuthSecret: dev-secret
+env: {}
+users:
+  - email: admin@example.com
+    name: Admin
+    passwordFrom:
+      secretKeyRef:
+        name: metamcp-admin-credentials
+        key: password
+disablePublicSignup: true
+
+provision:
+  enabled: true
+  runOnUpgrade: true
+  updateExisting: true
+  prune: true
+  servers:
+    - name: stdio-everything
+      type: STDIO
+      command: "npx"
+      args: ["-y","@modelcontextprotocol/server-everything","stdio"]
+  namespaces:
+    - name: lab
+      servers: ["stdio-everything"]
+  endpoints:
+    - name: lab
+      namespace: lab
+      enableApiKeyAuth: false

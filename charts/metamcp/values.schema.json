@@ -69,6 +69,7 @@
         "enabled": { "type": "boolean" },
         "runOnUpgrade": { "type": "boolean", "default": true },
         "updateExisting": { "type": "boolean", "default": true },
+        "prune": { "type": "boolean", "default": false },
         "servers": {
           "type": "array",
           "items": {
@@ -228,7 +229,23 @@
             }
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "prune": { "const": true } },
+            "required": ["prune"]
+          },
+          "then": {
+            "properties": {
+              "enabled": { "const": true },
+              "runOnUpgrade": { "const": true },
+              "updateExisting": { "const": true }
+            },
+            "required": ["enabled", "runOnUpgrade", "updateExisting"]
+          }
+        }
+      ]
     }
     ,"ingress": {
       "type": "object",

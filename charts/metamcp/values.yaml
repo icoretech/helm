@@ -119,6 +119,10 @@ provision:
   # When false, the job will only create missing objects and leave existing ones untouched
   # (useful for "initial provision then manage via UI").
   updateExisting: true
+  # Opt-in declarative prune mode. When enabled, the provisioning job deletes
+  # only previously chart-managed servers/namespaces/endpoints that are no longer
+  # present in values. Requires runOnUpgrade=true and updateExisting=true.
+  prune: false
   # Single source of truth for servers MetaMCP exposes. Each entry can be:
   # - STDIO (MetaMCP runs it)
   # - STREAMABLE_HTTP/SSE with either:

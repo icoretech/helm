@@ -16,14 +16,24 @@ BACKEND = f"http://{SVC}:12009"
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL','admin@example.com')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD','change-me')
 UPDATE_EXISTING = (os.environ.get('UPDATE_EXISTING','true').lower() == 'true')
+PRUNE = (os.environ.get('PRUNE','false').lower() == 'true')
+STATE_CONFIGMAP = os.environ.get('STATE_CONFIGMAP', f"{SVC.split('.')[0]}-provision-state")
 BOOTSTRAP_CFG_PATH = os.environ.get('BOOTSTRAP_CFG_PATH', '/users/config.json')
+
+STATE_KEYS = ('servers', 'namespaces', 'endpoints')
+
+def k8s_api_request(method: str, path: str, body=None, content_type='application/json'):
+    token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
+    cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+    headers = {'Authorization': f'Bearer {token}'}
+    if body is not None:
+        headers['Content-Type'] = content_type
+    url = f"https://kubernetes.default.svc{path}"
+    return requests.request(method, url, headers=headers, json=body, verify=cacert, timeout=5)
 
 def k8s_get_secret_val(name: str, key: str):
     try:
-        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
-        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
-        url = f"https://kubernetes.default.svc/api/v1/namespaces/{NS}/secrets/{name}"
-        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
+        r = k8s_api_request('GET', f"/api/v1/namespaces/{NS}/secrets/{name}")
         if r.status_code == 200:
             data = r.json().get('data',{})
             b = data.get(key)
@@ -35,10 +45,7 @@ def k8s_get_secret_val(name: str, key: str):
 
 def k8s_get_secret_data(name: str):
     try:
-        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
-        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
-        url = f"https://kubernetes.default.svc/api/v1/namespaces/{NS}/secrets/{name}"
-        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
+        r = k8s_api_request('GET', f"/api/v1/namespaces/{NS}/secrets/{name}")
         if r.status_code == 200:
             data = r.json().get('data',{})
             return {k: base64.b64decode(v).decode() for k,v in data.items()}
@@ -48,15 +55,64 @@ def k8s_get_secret_data(name: str):
 
 def k8s_get_configmap_data(name: str):
     try:
-        token = open('/var/run/secrets/kubernetes.io/serviceaccount/token','r').read().strip()
-        cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
-        url = f"https://kubernetes.default.svc/api/v1/namespaces/{NS}/configmaps/{name}"
-        r = requests.get(url, headers={'Authorization': f'Bearer {token}'}, verify=cacert, timeout=5)
+        r = k8s_api_request('GET', f"/api/v1/namespaces/{NS}/configmaps/{name}")
         if r.status_code == 200:
             return r.json().get('data',{}) or {}
     except Exception:
         pass
     return {}
+
+def load_managed_state():
+    data = k8s_get_configmap_data(STATE_CONFIGMAP)
+    state = {key: set() for key in STATE_KEYS}
+    for key in STATE_KEYS:
+        raw = data.get(f"{key}.json")
+        if not raw:
+            continue
+        try:
+            items = json.loads(raw)
+            if isinstance(items, list):
+                state[key] = {item for item in items if isinstance(item, str)}
+        except Exception:
+            log(f"WARN cannot parse managed state for {key}")
+    return state
+
+def save_managed_state(state):
+    data = {f"{key}.json": json.dumps(sorted(list(state.get(key, set())))) for key in STATE_KEYS}
+    manifest = {
+        'apiVersion': 'v1',
+        'kind': 'ConfigMap',
+        'metadata': {
+            'name': STATE_CONFIGMAP,
+            'namespace': NS,
+            'labels': {
+                'app.kubernetes.io/component': 'provision',
+                'app.kubernetes.io/managed-by': 'metamcp-provision-job',
+            },
+        },
+        'data': data,
+    }
+    try:
+        existing = k8s_api_request('GET', f"/api/v1/namespaces/{NS}/configmaps/{STATE_CONFIGMAP}")
+        if existing.status_code == 404:
+            r = k8s_api_request('POST', f"/api/v1/namespaces/{NS}/configmaps", manifest)
+        elif existing.status_code == 200:
+            patch = {
+                'metadata': manifest['metadata'],
+                'data': data,
+            }
+            r = k8s_api_request(
+                'PATCH',
+                f"/api/v1/namespaces/{NS}/configmaps/{STATE_CONFIGMAP}",
+                patch,
+                content_type='application/merge-patch+json',
+            )
+        else:
+            raise RuntimeError(f"state configmap read failed -> {existing.status_code}: {existing.text[:160]}")
+        if r.status_code not in (200, 201):
+            raise RuntimeError(f"state configmap write failed -> {r.status_code}: {r.text[:160]}")
+    except Exception as exc:
+        raise RuntimeError(f"cannot persist managed state: {exc}") from exc
 
 # Prefer credentials from a mounted file (Secret) to avoid placing passwords in env vars.
 try:
@@ -78,6 +134,12 @@ cfg = json.load(open('/cfg/provision.json','r')).get('provision',{})
 servers = cfg.get('servers', [])
 namespaces = cfg.get('namespaces', [])
 endpoints = cfg.get('endpoints', [])
+previous_state = load_managed_state()
+desired_state = {
+    'servers': {s.get('name') for s in servers if s.get('name') and s.get('enabled', True)},
+    'namespaces': {ns.get('name') for ns in namespaces if ns.get('name')},
+    'endpoints': {ep.get('name') for ep in endpoints if ep.get('name')},
+}
 
 for _ in range(60):
     try:
@@ -185,15 +247,87 @@ def trpc_post_batch(path, body):
     # Wrap body as {"0": body} and use ?batch=1 to match UI routes
     return sess.post(f"{BACKEND}{path}?batch=1", headers={'Content-Type':'application/json','Host': SVC}, json={"0": body}, timeout=12)
 
+def trpc_result_payload(resp):
+    try:
+        data = resp.json()
+    except Exception:
+        return None
+    candidates = [
+        data.get('result', {}).get('data', {}).get('json'),
+        data.get('result', {}).get('data', {}).get('data'),
+        data.get('result', {}).get('data'),
+        data,
+    ]
+    for candidate in candidates:
+        if isinstance(candidate, dict):
+            return candidate
+    return None
+
+def ensure_trpc_success(resp, action):
+    if not resp.ok:
+        raise RuntimeError(f"{action} -> {resp.status_code}: {resp.text[:160]}")
+    payload = trpc_result_payload(resp)
+    if isinstance(payload, dict) and payload.get('success') is False:
+        raise RuntimeError(f"{action} -> {payload.get('message') or 'unknown failure'}")
+    return payload
+
+def list_servers():
+    lr = trpc_get('/trpc/frontend/frontend.mcpServers.list?input=%7B%7D')
+    if not lr.ok:
+        return []
+    return lr.json().get('result',{}).get('data',{}).get('data',[])
+
+def list_namespaces():
+    lr = trpc_get('/trpc/frontend/frontend.namespaces.list?input=%7B%7D')
+    if not lr.ok:
+        return []
+    return lr.json().get('result',{}).get('data',{}).get('data',[])
+
+def list_endpoints():
+    lr = trpc_get('/trpc/frontend/frontend.endpoints.list?input=%7B%7D')
+    if not lr.ok:
+        return []
+    return lr.json().get('result',{}).get('data',{}).get('data',[])
+
+def map_by_name(items):
+    out = {}
+    for item in items:
+        name = item.get('name')
+        if name:
+            out[name] = item
+    return out
+
+def delete_endpoint(name, endpoints_by_name):
+    current = endpoints_by_name.get(name)
+    if not current:
+        log(f"endpoint already absent: {name}")
+        return
+    ensure_trpc_success(trpc_post('/trpc/frontend/frontend.endpoints.delete', {'uuid': current['uuid']}), f"endpoint delete {name}")
+    log(f"endpoint deleted: {name}")
+
+def delete_namespace(name, namespaces_by_name):
+    current = namespaces_by_name.get(name)
+    if not current:
+        log(f"namespace already absent: {name}")
+        return
+    ensure_trpc_success(trpc_post('/trpc/frontend/frontend.namespaces.delete', {'uuid': current['uuid']}), f"namespace delete {name}")
+    log(f"namespace deleted: {name}")
+
+def delete_server(name, servers_by_name):
+    current = servers_by_name.get(name)
+    if not current:
+        log(f"server already absent: {name}")
+        return
+    ensure_trpc_success(trpc_post('/trpc/frontend/frontend.mcpServers.delete', {'uuid': current['uuid']}), f"server delete {name}")
+    log(f"server deleted: {name}")
+
 # Map existing servers (name -> uuid and full info)
 srv_map = {}
 srv_info = {}
 try:
-    lr = trpc_get('/trpc/frontend/frontend.mcpServers.list?input=%7B%7D')
-    if lr.ok:
-        for s in lr.json().get('result',{}).get('data',{}).get('data',[]):
-            srv_map[s['name']] = s['uuid']
-            srv_info[s['name']] = s
+    for s in list_servers():
+        srv_map[s['name']] = s['uuid']
+        srv_info[s['name']] = s
 except Exception:
     pass
 
@@ -428,9 +562,6 @@ for ep in endpoints:
 # If APP_URL used the frontend port (12008), the server URL points to the wrong port.
 # We normalize such servers to backend port 12009 so connections succeed in-cluster.
 try:
-    def list_servers():
-        r = trpc_get('/trpc/frontend/frontend.mcpServers.list?input=%7B%7D')
-        return r.json().get('result',{}).get('data',{}).get('data',[]) if r.ok else []
     svcs = list_servers()
     # Build namespace->server endpoint name mapping ("<ns>-endpoint")
     ns_names = [ns.get('name') for ns in namespaces if ns.get('name')]
@@ -444,9 +575,32 @@ try:
         url = s.get('url') or ''
         if ':12008/metamcp/' in url:
             # rewrite to backend port
-            fixed = url.replace(':12008/metamcp/', ':12009/metamcp/')
-            payload = {'uuid': s['uuid'], 'name': s['name'], 'type': s['type'], 'url': fixed}
-            trpc_post('/trpc/frontend/frontend.mcpServers.update', payload)
+                fixed = url.replace(':12008/metamcp/', ':12009/metamcp/')
+                payload = {'uuid': s['uuid'], 'name': s['name'], 'type': s['type'], 'url': fixed}
+                trpc_post('/trpc/frontend/frontend.mcpServers.update', payload)
 except Exception:
     pass
+
+if PRUNE:
+    stale_endpoints = sorted(previous_state['endpoints'] - desired_state['endpoints'])
+    stale_namespaces = sorted(previous_state['namespaces'] - desired_state['namespaces'])
+    stale_servers = sorted(previous_state['servers'] - desired_state['servers'])
+
+    current_endpoints = map_by_name(list_endpoints())
+    for name in stale_endpoints:
+        delete_endpoint(name, current_endpoints)
+
+    current_namespaces = map_by_name(list_namespaces())
+    for name in stale_namespaces:
+        delete_namespace(name, current_namespaces)
+
+    current_servers = map_by_name(list_servers())
+    for name in stale_servers:
+        delete_server(name, current_servers)
+
+    managed_state = {key: set(desired_state[key]) for key in STATE_KEYS}
+else:
+    managed_state = {key: set(previous_state[key]) | set(desired_state[key]) for key in STATE_KEYS}
+
+save_managed_state(managed_state)
  
