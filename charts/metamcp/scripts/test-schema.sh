@@ -19,5 +19,7 @@ run_expect_failure() {
 }
 
 run_expect_success "$ROOT/ci/prune-valid-values.yaml"
+run_expect_success "$ROOT/ci/namespace-server-active-values.yaml"
 run_expect_failure "$ROOT/ci/prune-invalid-run-on-upgrade.yaml"
 run_expect_failure "$ROOT/ci/prune-invalid-update-existing.yaml"
+run_expect_failure "$ROOT/ci/namespace-server-active-invalid.yaml"

@@ -28,3 +28,17 @@ if ! rg -q '"urlFrom":\[\{"secretRef":\{"name":"metamcp-windmill-icoretech-url"\
   sed -n '1,220p' "$OUT" >&2
   exit 1
 fi
+
+helm template t "$CHART" -f "$ROOT/ci/namespace-server-active-values.yaml" >"$OUT"
+
+if ! rg -q '"active":false,"name":"stripe-aigen-development"' "$OUT"; then
+  echo "expected provision.json to preserve namespace server objects with active=false" >&2
+  sed -n '1,220p' "$OUT" >&2
+  exit 1
+fi
+
+if ! rg -q '"stripe-aigen-production"' "$OUT"; then
+  echo "expected provision.json to preserve namespace server objects with active=false" >&2
+  sed -n '1,220p' "$OUT" >&2
+  exit 1
+fi

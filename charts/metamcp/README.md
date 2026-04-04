@@ -143,6 +143,7 @@ By default the provisioning job runs after every Helm install and upgrade and wi
 
 Notes
 - Servers are created by name and updated in place when `provision.updateExisting=true`
+- Namespace server refs can be either a bare server name or an object like `{ name: stripe-aigen-production, active: false }` when you want Helm to keep the server configured but disabled in that namespace
 - With `provision.prune=false`, removing items from values does not delete them in MetaMCP; the chart only records them as previously managed so a later declarative prune run can remove them safely
 - With `provision.prune=true`, the job prunes only the objects that this chart previously managed; it does not sweep arbitrary UI-created objects by name
 
@@ -239,6 +240,19 @@ provision:
       urlFrom:
         - secretRef:
             name: metamcp-windmill-icoretech-url
+```
+
+Namespace-scoped inactive server:
+
+```yaml
+provision:
+  enabled: true
+  namespaces:
+    - name: icoretech
+      servers:
+        - name: stripe-aigen-development
+          active: false
+        - stripe-aigen-production
 ```
 
 ## Configuration reference

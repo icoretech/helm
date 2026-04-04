@@ -324,6 +324,15 @@ def map_by_name(items):
             out[name] = item
     return out
 
+def normalize_namespace_server_ref(ref):
+    if isinstance(ref, str):
+        return ref, True
+    if isinstance(ref, dict):
+        name = ref.get('name')
+        if isinstance(name, str) and name:
+            return name, bool(ref.get('active', True))
+    return None, True
+
 def delete_endpoint(name, endpoints_by_name):
     current = endpoints_by_name.get(name)
     if not current:
@@ -517,10 +526,16 @@ for ns in namespaces:
     nid, existed = ensure_namespace(name, desc)
     # Map server names to UUIDs if available
     srv_ids = []
-    for nm in nssrvs:
+    inactive_srv_ids = []
+    for ref in nssrvs:
+        nm, active = normalize_namespace_server_ref(ref)
+        if not nm:
+            continue
         sid = srv_map.get(nm)
         if sid:
             srv_ids.append(sid)
+            if not active:
+                inactive_srv_ids.append((nm, sid))
     # Update namespace membership if allowed or if the namespace was just created
     if nid and srv_ids and (UPDATE_EXISTING or not existed):
         try:
@@ -528,8 +543,17 @@ for ns in namespaces:
             if desc:
                 payload['description'] = desc
             trpc_post_batch('/trpc/frontend/frontend.namespaces.update', payload)
-        except Exception:
-            pass
+            for server_name, server_uuid in inactive_srv_ids:
+                ensure_trpc_success(
+                    trpc_post(
+                        '/trpc/frontend/frontend.namespaces.updateServerStatus',
+                        {'namespaceUuid': nid, 'serverUuid': server_uuid, 'status': 'INACTIVE'},
+                    ),
+                    f"namespace server status {name}/{server_name}",
+                )
+                log(f"namespace server inactive: {name}/{server_name}")
+        except Exception as exc:
+            log(f"WARN namespace sync {name} -> {exc}")
 
 def create_endpoint(name, nsref, extra=None, description=None, update_existing=True):
     lr = trpc_get('/trpc/frontend/frontend.namespaces.list?input=%7B%7D')

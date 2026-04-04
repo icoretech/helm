@@ -161,10 +161,13 @@ provision:
   #     - secretRef:
   #         name: windmill-mcp-url
 
-  # namespaces: list of { name, servers: [<server-names>] }
+  # namespaces: list of { name, servers: [<server-name> | { name, active }] }
   namespaces: []
   # - name: lab
-  #   servers: ["stdio-everything","http-everything"]
+  #   servers:
+  #     - "stdio-everything"
+  #     - name: "http-everything"
+  #       active: false
 
   # endpoints: list of { name, namespace, enableApiKeyAuth, enableOauth, useQueryParamAuth }
   endpoints: []

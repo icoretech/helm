@@ -1,0 +1,25 @@
+auth:
+  betterAuthSecret: dev-secret
+
+users:
+  - email: admin@example.com
+    name: Admin
+    password: changeme
+
+provision:
+  enabled: true
+  servers:
+    - name: stripe-aigen-development
+      type: STDIO
+      command: "npx"
+      args: ["-y", "@modelcontextprotocol/server-everything"]
+    - name: stripe-aigen-production
+      type: STDIO
+      command: "npx"
+      args: ["-y", "@modelcontextprotocol/server-everything"]
+  namespaces:
+    - name: icoretech
+      servers:
+        - name: stripe-aigen-development
+          active: false
+        - stripe-aigen-production

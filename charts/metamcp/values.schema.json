@@ -212,7 +212,23 @@
             "properties": {
               "name": { "type": "string" },
               "description": { "type": "string" },
-              "servers": { "type": "array", "items": { "type": "string" } }
+              "servers": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    { "type": "string" },
+                    {
+                      "type": "object",
+                      "required": ["name"],
+                      "properties": {
+                        "name": { "type": "string" },
+                        "active": { "type": "boolean", "default": true }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
             }
           }
         },
