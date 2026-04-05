@@ -30,6 +30,8 @@ data:
   # No separate workloads.json; serviceBase is included per server above when deploy specs exist
   provision.py: |
 {{ (.Files.Get "scripts/provision.py") | indent 4 }}
+  provision_lib.py: |
+{{ (.Files.Get "scripts/provision_lib.py") | indent 4 }}
 {{- end }}
 
 ---

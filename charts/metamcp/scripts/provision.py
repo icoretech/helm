@@ -5,6 +5,8 @@ import socket
 from urllib.parse import urlparse
 import base64
 
+from provision_lib import normalize_server_type, server_needs_recreate
+
 def log(msg):
     print(f"[provision] {msg}", flush=True)
 
@@ -370,11 +372,9 @@ except Exception:
 for s in servers:
     if not (s.get('enabled', True)):
         continue
-    name = s.get('name'); st = (s.get('type','SSE') or 'SSE').upper()
+    name = s.get('name'); st = normalize_server_type(s.get('type'))
     if not name:
         continue
-    if st in ('SSE','STREAMABLE'):
-        st = 'SSE' if st=='SSE' else 'STREAMABLE_HTTP'
     body = {'name': name, 'type': st}
     # Pre-compute desired fields for STDIO so we can also update existing servers
     desired_cmd = None
@@ -435,9 +435,14 @@ for s in servers:
 
     # If server exists and updates are allowed, patch safe fields
     if name in srv_map:
-        if UPDATE_EXISTING and st in ('SSE','STREAMABLE_HTTP'):
+        current = srv_info.get(name, {})
+        if UPDATE_EXISTING and server_needs_recreate(current, st):
+            log(f"server transport cleanup: recreating {name}")
+            delete_server(name, srv_info)
+            srv_map.pop(name, None)
+            srv_info.pop(name, None)
+        if UPDATE_EXISTING and name in srv_map and st in ('SSE','STREAMABLE_HTTP'):
             try:
-                current = srv_info.get(name, {})
                 patch = {'uuid': current.get('uuid'), 'name': name, 'type': st}
                 # Always include required field for HTTP/SSE: url
                 if desired_url:
@@ -454,9 +459,8 @@ for s in servers:
                     log(f"WARN server update {name} -> {r.status_code}: {r.text[:160]}")
             except Exception:
                 pass
-        elif UPDATE_EXISTING and st == 'STDIO':
+        elif UPDATE_EXISTING and name in srv_map and st == 'STDIO':
             try:
-                current = srv_info.get(name, {})
                 patch = {'uuid': current.get('uuid'), 'name': name, 'type': st}
                 # Always include required field for STDIO: command
                 if desired_cmd is not None:
@@ -473,7 +477,8 @@ for s in servers:
                     log(f"WARN server update {name} -> {r.status_code}: {r.text[:160]}")
             except Exception:
                 pass
-        continue
+        if name in srv_map:
+            continue
     if st == 'STDIO':
         if desired_cmd is not None:
             body['command'] = desired_cmd
