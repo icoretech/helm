@@ -32,3 +32,20 @@ def server_needs_recreate(current, desired_type):
 def stale_generated_endpoint_server_names(previous_endpoints, desired_endpoints):
     stale_endpoints = set(previous_endpoints or set()) - set(desired_endpoints or set())
     return {f"{name}-endpoint" for name in stale_endpoints if name}
+
+
+def orphan_generated_endpoint_server_names(current_servers, current_endpoints, desired_servers):
+    current_endpoint_names = set(current_endpoints or set())
+    desired_server_names = set(desired_servers or set())
+    orphans = set()
+
+    for name in current_servers or set():
+        if not isinstance(name, str) or not name.endswith("-endpoint"):
+            continue
+        if name in desired_server_names:
+            continue
+        endpoint_name = name[: -len("-endpoint")]
+        if endpoint_name not in current_endpoint_names:
+            orphans.add(name)
+
+    return orphans

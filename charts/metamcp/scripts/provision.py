@@ -7,6 +7,7 @@ import base64
 
 from provision_lib import (
     normalize_server_type,
+    orphan_generated_endpoint_server_names,
     server_needs_recreate,
     stale_generated_endpoint_server_names,
 )
@@ -637,20 +638,22 @@ except Exception:
 if PRUNE:
     stale_endpoints = sorted(previous_state['endpoints'] - desired_state['endpoints'])
     stale_namespaces = sorted(previous_state['namespaces'] - desired_state['namespaces'])
+    current_endpoints = map_by_name(list_endpoints())
+    current_namespaces = map_by_name(list_namespaces())
+    current_servers = map_by_name(list_servers())
+
     stale_servers = sorted(
         (previous_state['servers'] - desired_state['servers'])
         | stale_generated_endpoint_server_names(previous_state['endpoints'], desired_state['endpoints'])
+        | orphan_generated_endpoint_server_names(current_servers.keys(), current_endpoints.keys(), desired_state['servers'])
     )
 
-    current_endpoints = map_by_name(list_endpoints())
     for name in stale_endpoints:
         delete_endpoint(name, current_endpoints)
 
-    current_namespaces = map_by_name(list_namespaces())
     for name in stale_namespaces:
         delete_namespace(name, current_namespaces)
 
-    current_servers = map_by_name(list_servers())
     for name in stale_servers:
         delete_server(name, current_servers)
 

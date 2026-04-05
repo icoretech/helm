@@ -47,6 +47,16 @@ class ProvisionLibTests(unittest.TestCase):
             {"bsmart-endpoint"},
         )
 
+    def test_prunes_orphan_generated_endpoint_server_from_current_rows(self):
+        self.assertEqual(
+            MODULE.orphan_generated_endpoint_server_names(
+                {"bsmart-endpoint", "icoretech-endpoint", "keychain-icoretech"},
+                {"icoretech"},
+                {"keychain-icoretech"},
+            ),
+            {"bsmart-endpoint"},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
