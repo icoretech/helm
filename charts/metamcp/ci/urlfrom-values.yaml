@@ -6,8 +6,8 @@ users:
 provision:
   enabled: true
   servers:
-    - name: windmill-icoretech
+    - name: automation-remote
       type: SSE
       urlFrom:
         - secretRef:
-            name: metamcp-windmill-icoretech-url
+            name: metamcp-remote-url

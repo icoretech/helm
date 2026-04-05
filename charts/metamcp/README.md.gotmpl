@@ -143,7 +143,7 @@ By default the provisioning job runs after every Helm install and upgrade and wi
 
 Notes
 - Servers are created by name and updated in place when `provision.updateExisting=true`
-- Namespace server refs can be either a bare server name or an object like `{ name: stripe-aigen-production, active: false }` when you want Helm to keep the server configured but disabled in that namespace
+- Namespace server refs can be either a bare server name or an object like `{ name: billing-production, active: false }` when you want Helm to keep the server configured but disabled in that namespace
 - With `provision.prune=false`, removing items from values does not delete them in MetaMCP; the chart only records them as previously managed so a later declarative prune run can remove them safely
 - With `provision.prune=true`, the job prunes only the objects that this chart previously managed; it does not sweep arbitrary UI-created objects by name
 
@@ -221,12 +221,12 @@ Secret-backed remote headers (Airbroke):
 provision:
   enabled: true
   servers:
-    - name: icoretech-airbroke
+    - name: errbit-example
       type: STREAMABLE_HTTP
-      url: https://errors.icorete.ch/api/mcp
+      url: https://errors.example.com/api/mcp
       headersFrom:
         - secretRef:
-            name: metamcp-icoretech-airbroke-headers
+            name: metamcp-remote-headers
 ```
 
 Secret-backed remote URL (Windmill):
@@ -235,11 +235,11 @@ Secret-backed remote URL (Windmill):
 provision:
   enabled: true
   servers:
-    - name: windmill-icoretech
+    - name: automation-remote
       type: SSE
       urlFrom:
         - secretRef:
-            name: metamcp-windmill-icoretech-url
+            name: metamcp-remote-url
 ```
 
 Namespace-scoped inactive server:
@@ -248,11 +248,11 @@ Namespace-scoped inactive server:
 provision:
   enabled: true
   namespaces:
-    - name: icoretech
+    - name: workspace
       servers:
-        - name: stripe-aigen-development
+        - name: billing-sandbox
           active: false
-        - stripe-aigen-production
+        - billing-production
 ```
 
 ## Configuration reference

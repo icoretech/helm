@@ -9,17 +9,17 @@ users:
 provision:
   enabled: true
   servers:
-    - name: stripe-aigen-development
+    - name: billing-sandbox
       type: STDIO
       command: "npx"
       args: ["-y", "@modelcontextprotocol/server-everything"]
-    - name: stripe-aigen-production
+    - name: billing-production
       type: STDIO
       command: "npx"
       args: ["-y", "@modelcontextprotocol/server-everything"]
   namespaces:
-    - name: icoretech
+    - name: workspace
       servers:
-        - name: stripe-aigen-development
+        - name: billing-sandbox
           active: false
-        - stripe-aigen-production
+        - billing-production

@@ -15,7 +15,7 @@ fi
 
 helm template t "$CHART" -f "$ROOT/ci/headersfrom-values.yaml" >"$OUT"
 
-if ! rg -q '"headersFrom":\[\{"secretRef":\{"name":"metamcp-icoretech-airbroke-headers"\}\}\]' "$OUT"; then
+if ! rg -q '"headersFrom":\[\{"secretRef":\{"name":"metamcp-remote-headers"\}\}\]' "$OUT"; then
   echo "expected provision.json to preserve headersFrom secret refs for remote servers" >&2
   sed -n '1,220p' "$OUT" >&2
   exit 1
@@ -23,7 +23,7 @@ fi
 
 helm template t "$CHART" -f "$ROOT/ci/urlfrom-values.yaml" >"$OUT"
 
-if ! rg -q '"urlFrom":\[\{"secretRef":\{"name":"metamcp-windmill-icoretech-url"\}\}\]' "$OUT"; then
+if ! rg -q '"urlFrom":\[\{"secretRef":\{"name":"metamcp-remote-url"\}\}\]' "$OUT"; then
   echo "expected provision.json to preserve urlFrom secret refs for remote servers" >&2
   sed -n '1,220p' "$OUT" >&2
   exit 1
@@ -31,13 +31,13 @@ fi
 
 helm template t "$CHART" -f "$ROOT/ci/namespace-server-active-values.yaml" >"$OUT"
 
-if ! rg -q '"active":false,"name":"stripe-aigen-development"' "$OUT"; then
+if ! rg -q '"active":false,"name":"billing-sandbox"' "$OUT"; then
   echo "expected provision.json to preserve namespace server objects with active=false" >&2
   sed -n '1,220p' "$OUT" >&2
   exit 1
 fi
 
-if ! rg -q '"stripe-aigen-production"' "$OUT"; then
+if ! rg -q '"billing-production"' "$OUT"; then
   echo "expected provision.json to preserve namespace server objects with active=false" >&2
   sed -n '1,220p' "$OUT" >&2
   exit 1

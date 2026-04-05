@@ -9,10 +9,10 @@ users:
 provision:
   enabled: true
   servers:
-    - name: stripe-aigen-development
+    - name: billing-sandbox
       type: STDIO
       command: "npx"
   namespaces:
-    - name: icoretech
+    - name: workspace
       servers:
         - active: false

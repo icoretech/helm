@@ -6,9 +6,9 @@ users:
 provision:
   enabled: true
   servers:
-    - name: icoretech-airbroke
+    - name: errbit-example
       type: STREAMABLE_HTTP
-      url: https://errors.icorete.ch/api/mcp
+      url: https://errors.example.com/api/mcp
       headersFrom:
         - secretRef:
-            name: metamcp-icoretech-airbroke-headers
+            name: metamcp-remote-headers
