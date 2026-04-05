@@ -147,13 +147,13 @@ provision:
   #   enabled: true
   #   type: SSE
   #   url: http://external.svc.local:3002/sse
-  # - name: errbit
+  # - name: airbroke-example
   #   enabled: true
   #   type: STREAMABLE_HTTP
   #   url: https://errors.example.com/api/mcp
   #   headersFrom:
   #     - secretRef:
-  #         name: errbit-mcp-headers
+  #         name: airbroke-mcp-headers
   # - name: windmill
   #   enabled: true
   #   type: SSE

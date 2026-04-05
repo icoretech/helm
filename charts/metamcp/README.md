@@ -221,7 +221,7 @@ Secret-backed remote headers (Airbroke):
 provision:
   enabled: true
   servers:
-    - name: errbit-example
+    - name: airbroke-example
       type: STREAMABLE_HTTP
       url: https://errors.example.com/api/mcp
       headersFrom:
