@@ -2,8 +2,8 @@ apiVersion: v2
 name: airbroke
 description: Airbroke Helm chart for Kubernetes
 type: application
-version: 2.1.2
-appVersion: "1.2.4"
+version: 2.1.3
+appVersion: "1.2.7"
 keywords:
   - open
   - source
@@ -27,7 +27,7 @@ annotations:
     url: https://icoretech.github.io/helm/pgp-public-key.asc
   artifacthub.io/images: |
     - name: airbroke
-      image: ghcr.io/icoretech/airbroke:1.2.4
+      image: ghcr.io/icoretech/airbroke:1.2.7
   artifacthub.io/recommendations: |
     - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
   artifacthub.io/screenshots: |
