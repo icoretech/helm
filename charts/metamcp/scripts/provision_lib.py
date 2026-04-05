@@ -27,3 +27,8 @@ def server_needs_recreate(current, desired_type):
         )
 
     return False
+
+
+def stale_generated_endpoint_server_names(previous_endpoints, desired_endpoints):
+    stale_endpoints = set(previous_endpoints or set()) - set(desired_endpoints or set())
+    return {f"{name}-endpoint" for name in stale_endpoints if name}

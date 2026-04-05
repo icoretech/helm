@@ -41,6 +41,12 @@ class ProvisionLibTests(unittest.TestCase):
 
         self.assertFalse(MODULE.server_needs_recreate(current, "STREAMABLE_HTTP"))
 
+    def test_prunes_generated_endpoint_server_for_removed_endpoint(self):
+        self.assertEqual(
+            MODULE.stale_generated_endpoint_server_names({"bsmart", "icoretech"}, {"icoretech"}),
+            {"bsmart-endpoint"},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

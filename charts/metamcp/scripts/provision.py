@@ -5,7 +5,11 @@ import socket
 from urllib.parse import urlparse
 import base64
 
-from provision_lib import normalize_server_type, server_needs_recreate
+from provision_lib import (
+    normalize_server_type,
+    server_needs_recreate,
+    stale_generated_endpoint_server_names,
+)
 
 def log(msg):
     print(f"[provision] {msg}", flush=True)
@@ -633,7 +637,10 @@ except Exception:
 if PRUNE:
     stale_endpoints = sorted(previous_state['endpoints'] - desired_state['endpoints'])
     stale_namespaces = sorted(previous_state['namespaces'] - desired_state['namespaces'])
-    stale_servers = sorted(previous_state['servers'] - desired_state['servers'])
+    stale_servers = sorted(
+        (previous_state['servers'] - desired_state['servers'])
+        | stale_generated_endpoint_server_names(previous_state['endpoints'], desired_state['endpoints'])
+    )
 
     current_endpoints = map_by_name(list_endpoints())
     for name in stale_endpoints:

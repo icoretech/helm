@@ -140,6 +140,7 @@ By default the provisioning job runs after every Helm install and upgrade and wi
   - `true`: delete previously chart-managed servers, namespaces, and endpoints that are no longer present in values
   - requires `provision.runOnUpgrade=true` and `provision.updateExisting=true`
   - managed objects are tracked in a Kubernetes ConfigMap so UI-created objects are not pruned just because their names are absent from Helm values
+  - when a managed endpoint is removed, prune also deletes MetaMCP's derived `<endpoint>-endpoint` server row
 
 Notes
 - Servers are created by name and updated in place when `provision.updateExisting=true`
