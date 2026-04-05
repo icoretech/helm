@@ -4111,6 +4111,37 @@ entries:
         url: https://icoretech.github.io/helm/pgp-public-key.asc
     apiVersion: v2
     appVersion: 2.4.22
+    created: "2026-04-05T20:55:59.577463707Z"
+    description: MetaMCP aggregator Helm chart for Kubernetes
+    digest: caba25dd3eb56b4883ab2dd9aefaf5854191f49fa534c0a40952bc42b8ed37f9
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/metamcp/logo.png
+    keywords:
+    - mcp
+    - gateway
+    - aggregator
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: metamcp
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/metamcp
+    - https://github.com/metatool-ai/metamcp
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/metamcp-0.3.7/metamcp-0.3.7.tgz
+    version: 0.3.7
+  - annotations:
+      artifacthub.io/images: |
+        - name: metamcp
+          image: ghcr.io/metatool-ai/metamcp:2.4.22
+      artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 2.4.22
     created: "2026-04-04T10:11:23.276220103Z"
     description: MetaMCP aggregator Helm chart for Kubernetes
     digest: 35a5cc8d4c69fa6fab3b853f004eef6cd5a90740129f413fde01df0dfef76d4d
@@ -7592,4 +7623,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-04-05T01:23:41.354183602Z"
+generated: "2026-04-05T20:55:59.578574899Z"
