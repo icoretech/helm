@@ -7025,6 +7025,44 @@ entries:
   - annotations:
       artifacthub.io/images: |
         - name: tolgee
+          image: tolgee/tolgee:v3.180.1
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v3.180.1
+    created: "2026-04-16T20:45:07.762179769Z"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.17.2
+    description: Tolgee Platform Helm chart for Kubernetes
+    digest: 23199e11b62e64c193f2e83a08efba015be8d2d26cf24b7696e62d2279570f3e
+    home: https://tolgee.io
+    icon: https://icoretech.github.io/helm/charts/tolgee/logo.svg
+    keywords:
+    - tolgee
+    - localization
+    - i18n
+    - l10n
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: tolgee
+    sources:
+    - https://github.com/tolgee/tolgee-platform
+    - https://github.com/icoretech/helm/tree/main/charts/tolgee
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/tolgee-0.15.0/tolgee-0.15.0.tgz
+    version: 0.15.0
+  - annotations:
+      artifacthub.io/images: |
+        - name: tolgee
           image: tolgee/tolgee:v3.179.4
       artifacthub.io/license: Apache-2.0
       artifacthub.io/signKey: |
@@ -8132,4 +8170,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-04-16T15:50:32.855212811Z"
+generated: "2026-04-16T20:45:07.762698253Z"
