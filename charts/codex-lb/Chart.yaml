@@ -2,8 +2,8 @@ apiVersion: v2
 name: codex-lb
 description: Codex LB – load balancer and account pool for ChatGPT / OpenAI proxying
 type: application
-version: 0.6.0
-appVersion: "1.13.0"
+version: 0.6.1
+appVersion: "1.13.1"
 kubeVersion: ">= 1.24.0-0"
 keywords:
   - codex
@@ -27,4 +27,4 @@ annotations:
     url: https://icoretech.github.io/helm/pgp-public-key.asc
   artifacthub.io/images: |
     - name: codex-lb
-      image: ghcr.io/soju06/codex-lb:1.13.0
+      image: ghcr.io/soju06/codex-lb:1.13.1
