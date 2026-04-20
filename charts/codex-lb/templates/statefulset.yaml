@@ -1,15 +1,14 @@
-{{- if eq .Values.topology.mode "standalone" }}
+{{- if eq .Values.topology.mode "replicated" }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: {{ include "codex-lb.fullname" . }}
+  name: {{ include "codex-lb.replicatedWorkloadName" . }}
   labels:
     {{- include "codex-lb.labels" . | nindent 4 }}
 spec:
+  serviceName: {{ include "codex-lb.handoffServiceName" . }}
   replicas: {{ .Values.replicaCount }}
-  progressDeadlineSeconds: {{ .Values.deployment.progressDeadlineSeconds }}
-  strategy:
-    type: {{ .Values.deployment.strategy.type }}
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       {{- include "codex-lb.selectorLabels" . | nindent 6 }}
@@ -25,6 +24,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      terminationGracePeriodSeconds: {{ .Values.replication.gracefulShutdown.terminationGracePeriodSeconds }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -139,25 +139,40 @@ spec:
             - name: CODEX_LB_IMAGE_INLINE_FETCH_ENABLED
               value: {{ printf "%v" .Values.config.imageInlineFetchEnabled | quote }}
             {{- $_ := set $envSeen "CODEX_LB_IMAGE_INLINE_FETCH_ENABLED" true }}
-            {{- with .Values.config.sessionBridgeInstanceId }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- $_ := set $envSeen "POD_NAME" true }}
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- $_ := set $envSeen "POD_NAMESPACE" true }}
+            {{- if .Values.config.sessionBridgeInstanceId }}
             - name: CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID
-              value: {{ . | quote }}
-            {{- $_ := set $envSeen "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID" true }}
+              value: {{ .Values.config.sessionBridgeInstanceId | quote }}
+            {{- else }}
+            - name: CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID
+              value: "$(POD_NAME)"
             {{- end }}
+            {{- $_ := set $envSeen "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID" true }}
             {{- with .Values.config.sessionBridgeInstanceRing }}
             - name: CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_RING
               value: {{ . | quote }}
             {{- $_ := set $envSeen "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_RING" true }}
             {{- end }}
+            - name: CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ADVERTISE_BASE_URL
+              value: {{ include "codex-lb.replication.handoffAdvertiseUrl" . | quote }}
+            {{- $_ := set $envSeen "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ADVERTISE_BASE_URL" true }}
             {{- if and .Values.encryptionKey.existingSecret.name .Values.encryptionKey.existingSecret.key }}
             - name: CODEX_LB_ENCRYPTION_KEY_FILE
               value: /etc/codex-lb/encryption.key
-            {{- $_ := set $envSeen "CODEX_LB_ENCRYPTION_KEY_FILE" true }}
             {{- else }}
             - name: CODEX_LB_ENCRYPTION_KEY_FILE
               value: {{ .Values.encryptionKey.path | quote }}
-            {{- $_ := set $envSeen "CODEX_LB_ENCRYPTION_KEY_FILE" true }}
             {{- end }}
+            {{- $_ := set $envSeen "CODEX_LB_ENCRYPTION_KEY_FILE" true }}
             {{- range .Values.extraEnv }}
             {{- $name := default "" .name }}
             {{- if and (ne $name "") (not (hasKey $envSeen $name)) }}
@@ -183,6 +198,13 @@ spec:
             - name: oauth
               containerPort: {{ .Values.config.oauthCallbackPort }}
               protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 2
+            failureThreshold: 30
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
@@ -205,6 +227,13 @@ spec:
             successThreshold: {{ .Values.readinessProbe.successThreshold }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
           {{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - python
+                  - -c
+                  - "import time, urllib.request; req = urllib.request.Request('http://127.0.0.1:{{ .Values.service.targetPort }}/internal/drain/start', method='POST');\ntry: urllib.request.urlopen(req, timeout=2).read()\nexcept Exception: pass\ntime.sleep({{ .Values.replication.gracefulShutdown.preStopSleepSeconds }})"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
@@ -220,12 +249,7 @@ spec:
             {{- end }}
       volumes:
         - name: data
-          {{- if .Values.persistence.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ include "codex-lb.persistence.claimName" . }}
-          {{- else }}
           emptyDir: {}
-          {{- end }}
         {{- if and .Values.encryptionKey.existingSecret.name .Values.encryptionKey.existingSecret.key }}
         - name: encryption-key
           secret:

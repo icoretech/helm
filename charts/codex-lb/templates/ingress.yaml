@@ -34,6 +34,52 @@ spec:
     {{- end }}
 {{- end }}
 ---
+{{- if and .Values.ingress.enabled (eq .Values.topology.mode "replicated") .Values.replication.continuity.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "codex-lb.continuityRouteName" . }}
+  labels:
+    {{- include "codex-lb.labels" . | nindent 4 }}
+  {{- $continuityAnnotations := dict }}
+  {{- range $key, $value := .Values.ingress.annotations }}
+  {{- $_ := set $continuityAnnotations $key $value }}
+  {{- end }}
+  {{- if .Values.replication.continuity.nginx.enabled }}
+  {{- $_ := set $continuityAnnotations "nginx.ingress.kubernetes.io/upstream-hash-by" .Values.replication.continuity.nginx.hashBy }}
+  {{- $_ := set $continuityAnnotations "nginx.ingress.kubernetes.io/configuration-snippet" .Values.replication.continuity.nginx.configurationSnippet }}
+  {{- $_ := set $continuityAnnotations "nginx.ingress.kubernetes.io/proxy-next-upstream" .Values.replication.continuity.nginx.retryOn }}
+  {{- $_ := set $continuityAnnotations "nginx.ingress.kubernetes.io/proxy-next-upstream-tries" (printf "%v" .Values.replication.continuity.nginx.retryTries) }}
+  {{- end }}
+  {{- if $continuityAnnotations }}
+  annotations:
+    {{- toYaml $continuityAnnotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range $.Values.replication.continuity.paths }}
+          - path: {{ . }}
+            pathType: {{ $.Values.replication.continuity.pathType }}
+            backend:
+              service:
+                name: {{ include "codex-lb.fullname" $ }}
+                port:
+                  number: {{ $.Values.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}
+---
 {{- if and .Values.ingress.oauth.enabled .Values.service.oauth.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress

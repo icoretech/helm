@@ -1,0 +1,24 @@
+topology:
+  mode: replicated
+
+replicaCount: 2
+
+persistence:
+  enabled: false
+
+config:
+  databaseMigrateOnStartup: true
+
+migration:
+  enabled: true
+  schemaGate:
+    enabled: true
+
+envFrom:
+  - secretRef:
+      name: codex-lb-env
+
+encryptionKey:
+  existingSecret:
+    name: codex-lb-encryption
+    key: fernet-key

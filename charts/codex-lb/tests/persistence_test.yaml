@@ -54,3 +54,11 @@ tests:
           content:
             name: data
             mountPath: /home/app/.codex-lb
+
+  - it: does not render pvc in replicated mode
+    values:
+      - values/valid-replicated.yaml
+    template: pvc.yaml
+    asserts:
+      - hasDocuments:
+          count: 0

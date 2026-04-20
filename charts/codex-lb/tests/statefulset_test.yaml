@@ -1,0 +1,58 @@
+suite: replicated workload
+templates:
+  - statefulset.yaml
+tests:
+  - it: does not render statefulset in standalone mode
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders statefulset with stable handoff identity in replicated mode
+    values:
+      - values/valid-replicated.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-codex-lb-replicated
+      - equal:
+          path: spec.serviceName
+          value: RELEASE-NAME-codex-lb-handoff
+      - equal:
+          path: spec.podManagementPolicy
+          value: Parallel
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID
+            value: $(POD_NAME)
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ADVERTISE_BASE_URL
+            value: http://$(POD_NAME).RELEASE-NAME-codex-lb-handoff.$(POD_NAMESPACE).svc.cluster.local:2455
+
+  - it: lets operators override the handoff advertise URL
+    values:
+      - values/valid-replicated.yaml
+    set:
+      replication.handoffAdvertiseUrl: http://codex-lb-internal.default.svc.cluster.local:2455
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ADVERTISE_BASE_URL
+            value: http://codex-lb-internal.default.svc.cluster.local:2455
+
+  - it: adds startup probe and drain hook in replicated mode
+    values:
+      - values/valid-replicated.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: /health/startup
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 60
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command[0]
+          value: python

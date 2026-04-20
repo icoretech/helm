@@ -36,6 +36,8 @@ tests:
             - -m
             - app.db.migrate
             - upgrade
+      - notExists:
+          path: spec.template.spec.serviceAccountName
       - contains:
           path: spec.template.spec.containers[0].envFrom
           content:
@@ -106,3 +108,14 @@ tests:
               secretKeyRef:
                 name: codex-lb-db
                 key: url
+
+  - it: renders a migration job in replicated mode
+    template: hooks/migration-job.yaml
+    values:
+      - values/valid-replicated.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: CODEX_LB_ENCRYPTION_KEY_FILE

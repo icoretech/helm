@@ -4,6 +4,67 @@
   "additionalProperties": false,
   "properties": {
     "replicaCount": { "type": "integer", "minimum": 1 },
+    "topology": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "type": "string", "enum": ["standalone", "replicated"] },
+        "clusterDomain": { "type": "string", "minLength": 1 }
+      },
+      "required": ["mode", "clusterDomain"]
+    },
+    "replication": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "handoffAdvertiseUrl": { "type": "string" },
+        "continuity": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "pathType": { "type": "string", "enum": ["Exact", "Prefix"] },
+            "paths": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "nginx": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "hashBy": { "type": "string", "minLength": 1 },
+                "configurationSnippet": { "type": "string", "minLength": 1 },
+                "retryOn": { "type": "string", "minLength": 1 },
+                "retryTries": { "type": "integer", "minimum": 1 }
+              },
+              "required": ["enabled", "hashBy", "configurationSnippet", "retryOn", "retryTries"]
+            }
+          },
+          "required": ["enabled", "pathType", "paths", "nginx"]
+        },
+        "disruptionBudget": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "maxUnavailable": { "type": ["integer", "string"], "minLength": 1 }
+          },
+          "required": ["enabled", "maxUnavailable"]
+        },
+        "gracefulShutdown": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "terminationGracePeriodSeconds": { "type": "integer", "minimum": 1 },
+            "preStopSleepSeconds": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["terminationGracePeriodSeconds", "preStopSleepSeconds"]
+        }
+      },
+      "required": ["handoffAdvertiseUrl", "continuity", "disruptionBudget", "gracefulShutdown"]
+    },
     "image": {
       "type": "object",
       "additionalProperties": false,
@@ -367,6 +428,109 @@
                     "type": "object",
                     "properties": { "parentRefs": { "minItems": 1 } }
                   }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "topology": {
+            "type": "object",
+            "properties": { "mode": { "const": "standalone" } },
+            "required": ["mode"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "replicaCount": { "maximum": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "topology": {
+            "type": "object",
+            "properties": { "mode": { "const": "replicated" } },
+            "required": ["mode"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "replicaCount": { "minimum": 2 },
+          "persistence": {
+            "type": "object",
+            "properties": {
+              "enabled": { "const": false }
+            }
+          },
+          "config": {
+            "type": "object",
+            "properties": {
+              "databaseMigrateOnStartup": { "const": false }
+            }
+          },
+          "migration": {
+            "type": "object",
+            "properties": {
+              "enabled": { "const": true },
+              "schemaGate": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "const": true }
+                }
+              }
+            }
+          },
+          "encryptionKey": {
+            "type": "object",
+            "properties": {
+              "existingSecret": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "minLength": 1 },
+                  "key": { "type": "string", "minLength": 1 }
+                },
+                "required": ["name", "key"]
+              }
+            }
+          }
+        },
+        "anyOf": [
+          {
+            "properties": {
+              "config": {
+                "type": "object",
+                "properties": {
+                  "databaseUrl": { "minLength": 1 }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "envFrom": {
+                "type": "array",
+                "minItems": 1
+              }
+            }
+          },
+          {
+            "properties": {
+              "extraEnv": {
+                "type": "array",
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "const": "CODEX_LB_DATABASE_URL" }
+                  },
+                  "required": ["name"]
                 }
               }
             }

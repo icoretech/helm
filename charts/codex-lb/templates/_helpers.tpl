@@ -47,6 +47,39 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{- end }}
 
+{{/* Internal handoff headless service name for replicated mode. */}}
+{{- define "codex-lb.handoffServiceName" -}}
+{{- printf "%s-handoff" (include "codex-lb.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end }}
+
+{{/* Replicated workload name. */}}
+{{- define "codex-lb.replicatedWorkloadName" -}}
+{{- printf "%s-replicated" (include "codex-lb.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end }}
+
+{{/* Continuity route name. */}}
+{{- define "codex-lb.continuityRouteName" -}}
+{{- printf "%s-responses" (include "codex-lb.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end }}
+
+{{/* Derived replicated-mode handoff advertise URL. */}}
+{{- define "codex-lb.replication.handoffAdvertiseUrl" -}}
+{{- if .Values.replication.handoffAdvertiseUrl -}}
+{{- .Values.replication.handoffAdvertiseUrl -}}
+{{- else -}}
+{{- printf "http://$(POD_NAME).%s.$(POD_NAMESPACE).svc.%s:%v" (include "codex-lb.handoffServiceName" .) .Values.topology.clusterDomain .Values.service.targetPort -}}
+{{- end -}}
+{{- end }}
+
+{{/* Gateway API path type for continuity rules. */}}
+{{- define "codex-lb.httpRouteContinuityPathType" -}}
+{{- if eq .Values.replication.continuity.pathType "Exact" -}}
+Exact
+{{- else -}}
+PathPrefix
+{{- end -}}
+{{- end }}
+
 {{/* PVC name. */}}
 {{- define "codex-lb.persistence.claimName" -}}
 {{- if .Values.persistence.existingClaim }}

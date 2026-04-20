@@ -7,6 +7,9 @@ Deploy [Codex LB](https://github.com/Soju06/codex-lb) on Kubernetes — a load b
 - SQLite by default (zero-dependency), PostgreSQL optional via `config.databaseUrl`
 - Persistent volume for the SQLite database and Fernet encryption key
 - Encryption key management: auto-generated on PVC or injected via existing Secret
+- Explicit operating modes: standalone `Deployment` and replicated `StatefulSet`
+- Replicated mode adds an internal handoff Service plus automatic response-owner advertise URL wiring
+- Continuity-aware routing for response-owner APIs through both Ingress and Gateway API
 - OAuth callback flow for adding ChatGPT accounts (separate Service + Ingress)
 - Ingress and Gateway API `HTTPRoute` support (main API and OAuth callback)
 - Configurable upstream, firewall, streaming, and model registry settings
@@ -31,6 +34,78 @@ OCI:
 helm upgrade --install codex-lb oci://ghcr.io/icoretech/charts/codex-lb \
   -n codex-lb --create-namespace
 ```
+
+## Operating Modes
+
+### Standalone mode (default)
+
+Standalone mode keeps the current iCoreTech chart identity:
+
+- `topology.mode: standalone`
+- single replica only
+- SQLite by default
+- optional PVC for local data and encryption key persistence
+- `Deployment` with `Recreate` strategy to avoid RWO multi-attach issues
+
+This is the right mode for low-friction installs, local clusters, and simple single-instance deployments.
+
+### Replicated mode
+
+Replicated mode backports the upstream health-critical pieces for multi-pod operation without copying the whole official chart contract:
+
+- `topology.mode: replicated`
+- `StatefulSet` workload
+- internal headless handoff Service for stable pod DNS
+- automatic `CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID=$(POD_NAME)` wiring
+- automatic owner-handoff advertise URL derived from pod DNS unless you override it
+- continuity routes for `/v1/responses` and `/backend-api/codex/responses`
+
+Replicated mode is intentionally stricter:
+
+- external PostgreSQL only
+- `replicaCount >= 2`
+- `persistence.enabled: false`
+- `config.databaseMigrateOnStartup: false`
+- `migration.enabled: true`
+- `migration.schemaGate.enabled: true`
+- `encryptionKey.existingSecret` is required so all pods share the same Fernet key
+
+Example:
+
+```yaml
+topology:
+  mode: replicated
+
+replicaCount: 2
+
+config:
+  databaseMigrateOnStartup: false
+
+migration:
+  enabled: true
+  schemaGate:
+    enabled: true
+
+persistence:
+  enabled: false
+
+envFrom:
+  - secretRef:
+      name: codex-lb-env
+
+encryptionKey:
+  existingSecret:
+    name: codex-lb-encryption
+    key: fernet-key
+```
+
+By default replicated mode derives the owner-handoff base URL from stable pod DNS:
+
+```text
+http://$(POD_NAME).<release>-codex-lb-handoff.$(POD_NAMESPACE).svc.<clusterDomain>:2455
+```
+
+The default `clusterDomain` is `cluster.local`. Only override `replication.handoffAdvertiseUrl` when pods must be reached through a different internal address.
 
 ## Encryption Key via Secret (recommended for production)
 
@@ -64,6 +139,8 @@ persistence:
   enabled: false
 ```
 
+That secret-backed URL injection is the recommended base for replicated mode as well.
+
 ## Database Migrations
 
 By default Codex LB runs Alembic migrations on startup (`config.databaseMigrateOnStartup: true`). On app startup it converts async URLs to a sync driver for Alembic, applies pending revisions, and fails startup if migrations fail.
@@ -88,7 +165,7 @@ What happens:
 
 ### External PostgreSQL / Helm-managed migration
 
-Use this when you want migrations to run once per Helm install or upgrade, instead of in every app pod:
+Use this when you want migrations to run once per Helm install or upgrade, instead of in every app pod. Replicated mode requires this workflow:
 
 ```yaml
 config:
@@ -154,6 +231,18 @@ httpRoute:
     - codex-lb.example.com
 ```
 
+When `topology.mode=replicated`, the chart also renders a dedicated continuity `HTTPRoute` for the response-owner paths unless you disable `replication.continuity.enabled`.
+
+## Continuity-aware response routing
+
+Replicated mode treats long-lived response-owner flows differently from generic `/` traffic.
+
+- the chart renders a dedicated continuity route for `/v1/responses` and `/backend-api/codex/responses`
+- the replicated workload auto-advertises a per-pod internal handoff URL
+- when using nginx ingress, the dedicated continuity ingress adds session-aware hash and retry annotations
+
+Those features are intentionally tied to replicated mode so the chart does not imply multi-replica safety when the underlying topology is still single-pod.
+
 ## Flux Example
 
 ```yaml
@@ -218,9 +307,9 @@ spec:
 | config.upstreamBaseUrl | string | `"https://chatgpt.com/backend-api"` | Upstream ChatGPT API base URL. |
 | config.upstreamStreamTransport | string | `"auto"` | Stream transport mode: auto, http, or websocket. |
 | deployment.progressDeadlineSeconds | int | `600` | Time in seconds for the Deployment controller to wait before marking a rollout failed. |
-| deployment.strategy.type | string | `"Recreate"` | Deployment strategy. Recreate avoids RWO PVC multi-attach deadlocks during single-replica upgrades. |
+| deployment.strategy.type | string | `"Recreate"` | Deployment strategy for standalone mode. Recreate avoids RWO PVC multi-attach deadlocks during single-replica upgrades. |
 | encryptionKey | object | `{"existingSecret":{"key":"","name":""},"path":"/home/app/.codex-lb/encryption.key"}` | Encryption key configuration. |
-| encryptionKey.existingSecret | object | `{"key":"","name":""}` | Use an existing Kubernetes Secret for the encryption key instead of auto-generating. |
+| encryptionKey.existingSecret | object | `{"key":"","name":""}` | Use an existing Kubernetes Secret for the encryption key instead of auto-generating. Replicated mode requires this so every pod shares the same key. |
 | encryptionKey.existingSecret.key | string | `""` | Key within the secret. |
 | encryptionKey.existingSecret.name | string | `""` | Secret name containing the encryption key. |
 | encryptionKey.path | string | `"/home/app/.codex-lb/encryption.key"` | Path inside the container for the Fernet encryption key file. |
@@ -259,7 +348,7 @@ spec:
 | livenessProbe.timeoutSeconds | int | `3` |  |
 | migration.activeDeadlineSeconds | int | `300` | Maximum runtime for the migration Job in seconds. |
 | migration.backoffLimit | int | `1` | Number of retries before the migration Job is marked failed. |
-| migration.enabled | bool | `false` | Intended for PostgreSQL-style deployments where startup migration is disabled. |
+| migration.enabled | bool | `false` | Intended for PostgreSQL-style deployments where startup migration is disabled. Replicated mode requires this. |
 | migration.hook.deletePolicy | string | `"before-hook-creation,hook-failed"` | Hook delete policy for the migration Job. |
 | migration.hook.phases | string | `"pre-install,pre-upgrade"` | Hook phases for the migration Job. |
 | migration.resources | object | `{}` | Resources for the migration Job and schema gate init container. |
@@ -270,7 +359,7 @@ spec:
 | nodeSelector | object | `{}` | Node selector. |
 | persistence.accessModes | list | `["ReadWriteOnce"]` | PVC access modes. |
 | persistence.annotations | object | `{}` | PVC annotations. |
-| persistence.enabled | bool | `true` | Enable data persistence for codex-lb (SQLite DB, encryption key, backups). |
+| persistence.enabled | bool | `true` | Enable data persistence for codex-lb (SQLite DB, encryption key, backups) in standalone mode. |
 | persistence.existingClaim | string | `""` | Existing PVC name to use instead of creating one. |
 | persistence.mountPath | string | `"/home/app/.codex-lb"` | Mount path for codex-lb data. Keep this aligned with codex-lb's default Kubernetes data directory unless you also override the database URL. |
 | persistence.size | string | `"5Gi"` | PVC size. |
@@ -286,7 +375,20 @@ spec:
 | readinessProbe.periodSeconds | int | `10` |  |
 | readinessProbe.successThreshold | int | `1` |  |
 | readinessProbe.timeoutSeconds | int | `3` |  |
-| replicaCount | int | `1` | Number of replicas. codex-lb is effectively single-replica due to in-memory state. |
+| replicaCount | int | `1` | Number of replicas. Standalone mode is intentionally single-replica; replicated mode requires 2+ replicas. |
+| replication.continuity.enabled | bool | `true` | Render a dedicated continuity route for response-owner traffic in replicated mode. |
+| replication.continuity.nginx.configurationSnippet | string | `"set $codex_lb_continuity_key \"$http_authorization:$request_id\";\nif ($http_x_codex_session_id != \"\") {\n  set $codex_lb_continuity_key $http_x_codex_session_id;\n}\n"` | Nginx snippet that prefers x-codex-session-id and otherwise falls back to authorization + request id. |
+| replication.continuity.nginx.enabled | bool | `true` | Add nginx continuity annotations to the dedicated response-owner ingress. |
+| replication.continuity.nginx.hashBy | string | `"$codex_lb_continuity_key"` | Nginx variable used for continuity-aware hashing. |
+| replication.continuity.nginx.retryOn | string | `"error timeout http_502 http_503 http_504 invalid_header"` | Retry policy for transient response-owner handoff failures. |
+| replication.continuity.nginx.retryTries | int | `2` | Retry budget for the continuity ingress. |
+| replication.continuity.pathType | string | `"Exact"` | Path match type for continuity routes. |
+| replication.continuity.paths | list | `["/v1/responses","/backend-api/codex/responses"]` | Response-owner paths that should keep continuity-aware routing in replicated mode. |
+| replication.disruptionBudget.enabled | bool | `true` | Create a PodDisruptionBudget in replicated mode. |
+| replication.disruptionBudget.maxUnavailable | int | `1` | Max unavailable replicas for the replicated-mode PodDisruptionBudget. |
+| replication.gracefulShutdown.preStopSleepSeconds | int | `15` | Seconds to sleep in the replicated-mode preStop hook after requesting drain. |
+| replication.gracefulShutdown.terminationGracePeriodSeconds | int | `60` | Pod termination grace period in replicated mode. |
+| replication.handoffAdvertiseUrl | string | `""` | Optional explicit owner-handoff base URL. Leave empty to auto-derive a per-pod internal address from the headless handoff Service. |
 | resources | object | `{}` | Container resources. |
 | securityContext | object | `{"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000}` | Container security context. Matches the upstream `app` user baked into the image. |
 | service.annotations | object | `{}` | Service annotations. |
@@ -305,5 +407,7 @@ spec:
 | serviceAccount.create | bool | `true` | Create a service account. |
 | serviceAccount.name | string | `""` | Service account name. |
 | tolerations | list | `[]` | Tolerations. |
+| topology.clusterDomain | string | `"cluster.local"` | Kubernetes cluster domain suffix used when deriving per-pod internal handoff addresses in replicated mode. |
+| topology.mode | string | `"standalone"` | Operating mode for this chart. `standalone` keeps the current SQLite/PVC-friendly Deployment path. `replicated` renders a StatefulSet plus an internal handoff Service and assumes external PostgreSQL. |
 | volumeMounts | list | `[]` | Additional volume mounts. |
 | volumes | list | `[]` | Additional volumes. |

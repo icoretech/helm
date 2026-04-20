@@ -46,6 +46,28 @@ tests:
           path: spec.rules[0].http.paths[0].backend.service.port.number
           value: 1455
 
+  - it: renders continuity ingress in replicated mode
+    template: ingress.yaml
+    values:
+      - values/valid-replicated-ingress.yaml
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-codex-lb-responses
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/upstream-hash-by"]
+          value: $codex_lb_continuity_key
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /v1/responses
+      - equal:
+          path: spec.rules[0].http.paths[0].pathType
+          value: Exact
+      - equal:
+          path: spec.rules[0].http.paths[1].path
+          value: /backend-api/codex/responses
+
   - it: renders Gateway API HTTPRoute when enabled
     template: gatewayapi-httproute.yaml
     values:
@@ -58,6 +80,25 @@ tests:
       - equal:
           path: spec.hostnames[0]
           value: codex-lb.example.com
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 80
+
+  - it: renders continuity HTTPRoute in replicated mode
+    template: gatewayapi-httproute.yaml
+    values:
+      - values/valid-replicated-httproute.yaml
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-codex-lb-responses
+      - equal:
+          path: spec.rules[0].matches[0].path.type
+          value: Exact
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /v1/responses
       - equal:
           path: spec.rules[0].backendRefs[0].port
           value: 80

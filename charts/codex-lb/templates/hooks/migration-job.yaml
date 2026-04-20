@@ -24,7 +24,6 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "codex-lb.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -38,16 +37,21 @@ spec:
             - -m
             - app.db.migrate
             - upgrade
-          {{- if or .Values.config.databaseUrl .Values.extraEnv }}
           env:
             {{- with .Values.config.databaseUrl }}
             - name: CODEX_LB_DATABASE_URL
               value: {{ . | quote }}
             {{- end }}
+            {{- if and .Values.encryptionKey.existingSecret.name .Values.encryptionKey.existingSecret.key }}
+            - name: CODEX_LB_ENCRYPTION_KEY_FILE
+              value: /etc/codex-lb/encryption.key
+            {{- else }}
+            - name: CODEX_LB_ENCRYPTION_KEY_FILE
+              value: {{ .Values.encryptionKey.path | quote }}
+            {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- end }}
           {{- with .Values.envFrom }}
           envFrom:
             {{- toYaml . | nindent 12 }}
@@ -57,6 +61,11 @@ spec:
           volumeMounts:
             - name: data
               mountPath: {{ .Values.persistence.mountPath }}
+            {{- if and .Values.encryptionKey.existingSecret.name .Values.encryptionKey.existingSecret.key }}
+            - name: encryption-key
+              mountPath: /etc/codex-lb
+              readOnly: true
+            {{- end }}
       volumes:
         - name: data
           {{- if .Values.persistence.enabled }}
@@ -65,4 +74,12 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+        {{- if and .Values.encryptionKey.existingSecret.name .Values.encryptionKey.existingSecret.key }}
+        - name: encryption-key
+          secret:
+            secretName: {{ .Values.encryptionKey.existingSecret.name }}
+            items:
+              - key: {{ .Values.encryptionKey.existingSecret.key }}
+                path: encryption.key
+        {{- end }}
 {{- end }}

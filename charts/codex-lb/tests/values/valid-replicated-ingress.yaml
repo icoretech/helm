@@ -1,0 +1,33 @@
+topology:
+  mode: replicated
+
+replicaCount: 2
+
+persistence:
+  enabled: false
+
+config:
+  databaseMigrateOnStartup: false
+
+migration:
+  enabled: true
+  schemaGate:
+    enabled: true
+
+envFrom:
+  - secretRef:
+      name: codex-lb-env
+
+encryptionKey:
+  existingSecret:
+    name: codex-lb-encryption
+    key: fernet-key
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: codex-lb.example.com
+      paths:
+        - path: /
+          pathType: Prefix

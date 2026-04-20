@@ -7,6 +7,9 @@ Deploy [Codex LB](https://github.com/Soju06/codex-lb) on Kubernetes — a load b
 - SQLite by default (zero-dependency), PostgreSQL optional via `config.databaseUrl`
 - Persistent volume for the SQLite database and Fernet encryption key
 - Encryption key management: auto-generated on PVC or injected via existing Secret
+- Explicit operating modes: standalone `Deployment` and replicated `StatefulSet`
+- Replicated mode adds an internal handoff Service plus automatic response-owner advertise URL wiring
+- Continuity-aware routing for response-owner APIs through both Ingress and Gateway API
 - OAuth callback flow for adding ChatGPT accounts (separate Service + Ingress)
 - Ingress and Gateway API `HTTPRoute` support (main API and OAuth callback)
 - Configurable upstream, firewall, streaming, and model registry settings
@@ -31,6 +34,78 @@ OCI:
 helm upgrade --install codex-lb oci://ghcr.io/icoretech/charts/codex-lb \
   -n codex-lb --create-namespace
 ```
+
+## Operating Modes
+
+### Standalone mode (default)
+
+Standalone mode keeps the current iCoreTech chart identity:
+
+- `topology.mode: standalone`
+- single replica only
+- SQLite by default
+- optional PVC for local data and encryption key persistence
+- `Deployment` with `Recreate` strategy to avoid RWO multi-attach issues
+
+This is the right mode for low-friction installs, local clusters, and simple single-instance deployments.
+
+### Replicated mode
+
+Replicated mode backports the upstream health-critical pieces for multi-pod operation without copying the whole official chart contract:
+
+- `topology.mode: replicated`
+- `StatefulSet` workload
+- internal headless handoff Service for stable pod DNS
+- automatic `CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID=$(POD_NAME)` wiring
+- automatic owner-handoff advertise URL derived from pod DNS unless you override it
+- continuity routes for `/v1/responses` and `/backend-api/codex/responses`
+
+Replicated mode is intentionally stricter:
+
+- external PostgreSQL only
+- `replicaCount >= 2`
+- `persistence.enabled: false`
+- `config.databaseMigrateOnStartup: false`
+- `migration.enabled: true`
+- `migration.schemaGate.enabled: true`
+- `encryptionKey.existingSecret` is required so all pods share the same Fernet key
+
+Example:
+
+```yaml
+topology:
+  mode: replicated
+
+replicaCount: 2
+
+config:
+  databaseMigrateOnStartup: false
+
+migration:
+  enabled: true
+  schemaGate:
+    enabled: true
+
+persistence:
+  enabled: false
+
+envFrom:
+  - secretRef:
+      name: codex-lb-env
+
+encryptionKey:
+  existingSecret:
+    name: codex-lb-encryption
+    key: fernet-key
+```
+
+By default replicated mode derives the owner-handoff base URL from stable pod DNS:
+
+```text
+http://$(POD_NAME).<release>-codex-lb-handoff.$(POD_NAMESPACE).svc.<clusterDomain>:2455
+```
+
+The default `clusterDomain` is `cluster.local`. Only override `replication.handoffAdvertiseUrl` when pods must be reached through a different internal address.
 
 ## Encryption Key via Secret (recommended for production)
 
@@ -64,6 +139,8 @@ persistence:
   enabled: false
 ```
 
+That secret-backed URL injection is the recommended base for replicated mode as well.
+
 ## Database Migrations
 
 By default Codex LB runs Alembic migrations on startup (`config.databaseMigrateOnStartup: true`). On app startup it converts async URLs to a sync driver for Alembic, applies pending revisions, and fails startup if migrations fail.
@@ -88,7 +165,7 @@ What happens:
 
 ### External PostgreSQL / Helm-managed migration
 
-Use this when you want migrations to run once per Helm install or upgrade, instead of in every app pod:
+Use this when you want migrations to run once per Helm install or upgrade, instead of in every app pod. Replicated mode requires this workflow:
 
 ```yaml
 config:
@@ -153,6 +230,18 @@ httpRoute:
   hostnames:
     - codex-lb.example.com
 ```
+
+When `topology.mode=replicated`, the chart also renders a dedicated continuity `HTTPRoute` for the response-owner paths unless you disable `replication.continuity.enabled`.
+
+## Continuity-aware response routing
+
+Replicated mode treats long-lived response-owner flows differently from generic `/` traffic.
+
+- the chart renders a dedicated continuity route for `/v1/responses` and `/backend-api/codex/responses`
+- the replicated workload auto-advertises a per-pod internal handoff URL
+- when using nginx ingress, the dedicated continuity ingress adds session-aware hash and retry annotations
+
+Those features are intentionally tied to replicated mode so the chart does not imply multi-replica safety when the underlying topology is still single-pod.
 
 ## Flux Example
 

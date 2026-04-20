@@ -1,0 +1,16 @@
+suite: replicated disruption budget
+templates:
+  - pdb.yaml
+tests:
+  - it: does not render pdb in standalone mode
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders pdb in replicated mode
+    values:
+      - values/valid-replicated.yaml
+    asserts:
+      - equal:
+          path: spec.maxUnavailable
+          value: 1

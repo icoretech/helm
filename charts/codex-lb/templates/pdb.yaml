@@ -1,0 +1,13 @@
+{{- if and (eq .Values.topology.mode "replicated") .Values.replication.disruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "codex-lb.fullname" . }}
+  labels:
+    {{- include "codex-lb.labels" . | nindent 4 }}
+spec:
+  maxUnavailable: {{ .Values.replication.disruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "codex-lb.selectorLabels" . | nindent 6 }}
+{{- end }}

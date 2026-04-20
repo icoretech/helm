@@ -2,6 +2,23 @@ suite: deployment configuration
 templates:
   - deployment.yaml
 tests:
+  - it: does not render deployment in replicated mode
+    set:
+      topology.mode: replicated
+      replicaCount: 2
+      persistence.enabled: false
+      config.databaseMigrateOnStartup: false
+      migration.enabled: true
+      migration.schemaGate.enabled: true
+      envFrom:
+        - secretRef:
+            name: codex-lb-env
+      encryptionKey.existingSecret.name: codex-lb-encryption
+      encryptionKey.existingSecret.key: fernet-key
+    asserts:
+      - hasDocuments:
+          count: 0
+
   - it: uses correct default image tag from appVersion
     asserts:
       - matchRegex:

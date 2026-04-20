@@ -36,6 +36,28 @@ spec:
   selector:
     {{- include "codex-lb.selectorLabels" . | nindent 4 }}
 ---
+{{- if eq .Values.topology.mode "replicated" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "codex-lb.handoffServiceName" . }}
+  labels:
+    {{- include "codex-lb.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - name: http
+      port: {{ .Values.service.targetPort }}
+      targetPort: http
+      protocol: TCP
+      {{- if semverCompare ">=1.20-0" .Capabilities.KubeVersion.GitVersion }}
+      appProtocol: http
+      {{- end }}
+  selector:
+    {{- include "codex-lb.selectorLabels" . | nindent 4 }}
+---
+{{- end }}
 {{- if .Values.service.oauth.enabled }}
 apiVersion: v1
 kind: Service

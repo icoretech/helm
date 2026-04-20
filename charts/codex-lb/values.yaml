@@ -1,7 +1,64 @@
 # Default values for codex-lb.
 
-# -- Number of replicas. codex-lb is effectively single-replica due to in-memory state.
+# -- Number of replicas. Standalone mode is intentionally single-replica; replicated mode requires 2+ replicas.
 replicaCount: 1
+
+topology:
+  # -- Operating mode for this chart. `standalone` keeps the current SQLite/PVC-friendly Deployment path. `replicated` renders a StatefulSet plus an internal handoff Service and assumes external PostgreSQL.
+  mode: standalone
+
+  # -- Kubernetes cluster domain suffix used when deriving per-pod internal handoff addresses in replicated mode.
+  clusterDomain: cluster.local
+
+replication:
+  # -- Optional explicit owner-handoff base URL. Leave empty to auto-derive a per-pod internal address from the headless handoff Service.
+  handoffAdvertiseUrl: ""
+
+  continuity:
+    # -- Render a dedicated continuity route for response-owner traffic in replicated mode.
+    enabled: true
+
+    # -- Path match type for continuity routes.
+    pathType: Exact
+
+    # -- Response-owner paths that should keep continuity-aware routing in replicated mode.
+    paths:
+      - /v1/responses
+      - /backend-api/codex/responses
+
+    nginx:
+      # -- Add nginx continuity annotations to the dedicated response-owner ingress.
+      enabled: true
+
+      # -- Nginx variable used for continuity-aware hashing.
+      hashBy: "$codex_lb_continuity_key"
+
+      # -- Nginx snippet that prefers x-codex-session-id and otherwise falls back to authorization + request id.
+      configurationSnippet: |
+        set $codex_lb_continuity_key "$http_authorization:$request_id";
+        if ($http_x_codex_session_id != "") {
+          set $codex_lb_continuity_key $http_x_codex_session_id;
+        }
+
+      # -- Retry policy for transient response-owner handoff failures.
+      retryOn: "error timeout http_502 http_503 http_504 invalid_header"
+
+      # -- Retry budget for the continuity ingress.
+      retryTries: 2
+
+  disruptionBudget:
+    # -- Create a PodDisruptionBudget in replicated mode.
+    enabled: true
+
+    # -- Max unavailable replicas for the replicated-mode PodDisruptionBudget.
+    maxUnavailable: 1
+
+  gracefulShutdown:
+    # -- Pod termination grace period in replicated mode.
+    terminationGracePeriodSeconds: 60
+
+    # -- Seconds to sleep in the replicated-mode preStop hook after requesting drain.
+    preStopSleepSeconds: 15
 
 image:
   # -- Container image repository.
@@ -173,7 +230,7 @@ deployment:
   # -- Time in seconds for the Deployment controller to wait before marking a rollout failed.
   progressDeadlineSeconds: 600
   strategy:
-    # -- Deployment strategy. Recreate avoids RWO PVC multi-attach deadlocks during single-replica upgrades.
+    # -- Deployment strategy for standalone mode. Recreate avoids RWO PVC multi-attach deadlocks during single-replica upgrades.
     type: Recreate
 
 # -- Container resources.
@@ -189,7 +246,7 @@ tolerations: []
 affinity: {}
 
 persistence:
-  # -- Enable data persistence for codex-lb (SQLite DB, encryption key, backups).
+  # -- Enable data persistence for codex-lb (SQLite DB, encryption key, backups) in standalone mode.
   enabled: true
 
   # -- Existing PVC name to use instead of creating one.
@@ -273,7 +330,7 @@ encryptionKey:
   # -- Path inside the container for the Fernet encryption key file.
   path: /home/app/.codex-lb/encryption.key
 
-  # -- Use an existing Kubernetes Secret for the encryption key instead of auto-generating.
+  # -- Use an existing Kubernetes Secret for the encryption key instead of auto-generating. Replicated mode requires this so every pod shares the same key.
   existingSecret:
     # -- Secret name containing the encryption key.
     name: ""
@@ -295,7 +352,7 @@ volumeMounts: []
 
 migration:
   # -- Enable a Helm hook Job that runs `python -m app.db.migrate upgrade` before install/upgrade.
-  # -- Intended for PostgreSQL-style deployments where startup migration is disabled.
+  # -- Intended for PostgreSQL-style deployments where startup migration is disabled. Replicated mode requires this.
   enabled: false
 
   hook:
