@@ -3034,6 +3034,40 @@ entries:
   - annotations:
       artifacthub.io/images: |
         - name: codex-lb
+          image: ghcr.io/soju06/codex-lb:1.14.0
+      artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.14.0
+    created: "2026-04-21T14:30:02.973880604Z"
+    description: Codex LB – load balancer and account pool for ChatGPT / OpenAI proxying
+    digest: 442406b4f13e5cd2437fbc0eec58df0159eb04cf2748aec69440afe74e61e3a1
+    home: https://github.com/icoretech/helm
+    keywords:
+    - codex
+    - codex-lb
+    - chatgpt
+    - openai
+    - load-balancer
+    - proxy
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: codex-lb
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/codex-lb
+    - https://github.com/Soju06/codex-lb
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/codex-lb-0.8.0/codex-lb-0.8.0.tgz
+    version: 0.8.0
+  - annotations:
+      artifacthub.io/images: |
+        - name: codex-lb
           image: ghcr.io/soju06/codex-lb:1.13.1
       artifacthub.io/license: MIT
       artifacthub.io/signKey: |
@@ -8204,4 +8238,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-04-20T22:31:14.910025456Z"
+generated: "2026-04-21T14:30:02.974315929Z"
