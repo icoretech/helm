@@ -175,6 +175,7 @@ spec:
 | database.external.existingSecret.usernameKey | string | `"SPRING_DATASOURCE_USERNAME"` | Key for DB username. |
 | database.external.host | string | `""` | External PostgreSQL host. |
 | database.external.jdbcUrl | string | `""` | Full external JDBC URL override. |
+| database.external.manualEnvs | bool | `false` | Do not generate `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, or `SPRING_DATASOURCE_PASSWORD`. Use this when datasource env vars are supplied manually through `tolgee.extraEnv`. |
 | database.external.name | string | `"tolgee"` | External PostgreSQL database name. |
 | database.external.password | string | `""` | External PostgreSQL password. |
 | database.external.port | int | `5432` | External PostgreSQL port. |

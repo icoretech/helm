@@ -235,7 +235,8 @@
                 "passwordKey": { "type": "string" }
               },
               "required": ["name", "urlKey", "usernameKey", "passwordKey"]
-            }
+            },
+            "manualEnvs": { "type": "boolean" }
           },
           "required": ["enabled", "port", "name", "existingSecret"]
         },
@@ -535,6 +536,22 @@
                       "external": {
                         "type": "object",
                         "properties": {
+                          "manualEnvs": { "const": true }
+                        },
+                        "required": ["manualEnvs"]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "database": {
+                    "type": "object",
+                    "properties": {
+                      "external": {
+                        "type": "object",
+                        "properties": {
                           "existingSecret": {
                             "type": "object",
                             "properties": {
@@ -609,7 +626,8 @@
               "external": {
                 "type": "object",
                 "properties": {
-                  "enabled": { "const": true }
+                  "enabled": { "const": true },
+                  "manualEnvs": { "not": { "const": true } }
                 },
                 "required": ["enabled"]
               },

@@ -86,6 +86,7 @@ spec:
               value: {{ .Values.tolgee.fileStorage.fsDataPath | quote }}
             {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_FS_DATA_PATH" true }}
 
+            {{- if not .Values.database.external.manualEnvs }}
             {{- if and .Values.database.external.enabled .Values.database.external.existingSecret.name }}
             - name: SPRING_DATASOURCE_URL
               valueFrom:
@@ -113,6 +114,7 @@ spec:
             {{- $_ := set $envSeen "SPRING_DATASOURCE_URL" true }}
             {{- $_ := set $envSeen "SPRING_DATASOURCE_USERNAME" true }}
             {{- $_ := set $envSeen "SPRING_DATASOURCE_PASSWORD" true }}
+            {{- end }}
 
             {{- with .Values.tolgee.frontEndUrl }}
             - name: TOLGEE_FRONT_END_URL

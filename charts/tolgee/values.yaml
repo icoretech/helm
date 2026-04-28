@@ -275,6 +275,12 @@ database:
       # -- Key for DB password.
       passwordKey: SPRING_DATASOURCE_PASSWORD
 
+    # -- Do not generate SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME,
+    # -- or SPRING_DATASOURCE_PASSWORD. Use this when datasource env vars are
+    # -- supplied manually through tolgee.extraEnv, for example when composing
+    # -- a JDBC URL from multiple secretKeyRef-backed environment variables.
+    manualEnvs: false
+
   waitForReady:
     # -- Wait for PostgreSQL TCP readiness before starting Tolgee.
     enabled: true
