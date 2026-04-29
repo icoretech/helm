@@ -223,8 +223,34 @@
             "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
             "name": { "type": "string" },
             "username": { "type": "string" },
+            "usernameFrom": { "type": "object" },
             "password": { "type": "string" },
+            "passwordFrom": { "type": "object" },
             "jdbcUrl": { "type": "string" },
+            "jdbcUrlFrom": { "type": "object" },
+            "extraEnv": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "not": {
+                      "enum": [
+                        "SPRING_DATASOURCE_URL",
+                        "SPRING_DATASOURCE_USERNAME",
+                        "SPRING_DATASOURCE_PASSWORD"
+                      ]
+                    }
+                  },
+                  "value": { "type": ["string", "number", "boolean"] },
+                  "valueFrom": { "type": "object" }
+                },
+                "additionalProperties": true
+              }
+            },
             "existingSecret": {
               "type": "object",
               "additionalProperties": false,
@@ -237,7 +263,16 @@
               "required": ["name", "urlKey", "usernameKey", "passwordKey"]
             }
           },
-          "required": ["enabled", "port", "name", "existingSecret"]
+          "required": [
+            "enabled",
+            "port",
+            "name",
+            "usernameFrom",
+            "passwordFrom",
+            "jdbcUrlFrom",
+            "extraEnv",
+            "existingSecret"
+          ]
         },
         "waitForReady": {
           "type": "object",
@@ -554,13 +589,109 @@
                     "properties": {
                       "external": {
                         "type": "object",
-                        "required": ["host", "name", "username", "password"],
+                        "required": ["host", "name"],
                         "properties": {
                           "host": { "type": "string", "minLength": 1 },
                           "name": { "type": "string", "minLength": 1 },
-                          "username": { "type": "string", "minLength": 1 },
-                          "password": { "type": "string", "minLength": 1 }
-                        }
+                          "username": { "type": "string" },
+                          "usernameFrom": { "type": "object" },
+                          "password": { "type": "string" },
+                          "passwordFrom": { "type": "object" }
+                        },
+                        "allOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "properties": {
+                                  "username": { "type": "string", "minLength": 1 }
+                                }
+                              },
+                              {
+                                "properties": {
+                                  "usernameFrom": { "type": "object", "minProperties": 1 }
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "anyOf": [
+                              {
+                                "properties": {
+                                  "password": { "type": "string", "minLength": 1 }
+                                }
+                              },
+                              {
+                                "properties": {
+                                  "passwordFrom": { "type": "object", "minProperties": 1 }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "database": {
+                    "type": "object",
+                    "properties": {
+                      "external": {
+                        "type": "object",
+                        "properties": {
+                          "jdbcUrl": { "type": "string", "minLength": 1 },
+                          "jdbcUrlFrom": { "type": "object" },
+                          "username": { "type": "string" },
+                          "usernameFrom": { "type": "object" },
+                          "password": { "type": "string" },
+                          "passwordFrom": { "type": "object" }
+                        },
+                        "allOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "properties": {
+                                  "jdbcUrl": { "type": "string", "minLength": 1 }
+                                }
+                              },
+                              {
+                                "properties": {
+                                  "jdbcUrlFrom": { "type": "object", "minProperties": 1 }
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "anyOf": [
+                              {
+                                "properties": {
+                                  "username": { "type": "string", "minLength": 1 }
+                                }
+                              },
+                              {
+                                "properties": {
+                                  "usernameFrom": { "type": "object", "minProperties": 1 }
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "anyOf": [
+                              {
+                                "properties": {
+                                  "password": { "type": "string", "minLength": 1 }
+                                }
+                              },
+                              {
+                                "properties": {
+                                  "passwordFrom": { "type": "object", "minProperties": 1 }
+                                }
+                              }
+                            ]
+                          }
+                        ]
                       }
                     }
                   }

@@ -1,0 +1,30 @@
+postgres:
+  enabled: false
+database:
+  external:
+    enabled: true
+    jdbcUrl: "jdbc:postgresql://$(AURORA_HOSTNAME):5432/$(TOLGEE_DB_NAME)?sslmode=require&reWriteBatchedInserts=true"
+    usernameFrom:
+      secretKeyRef:
+        name: tolgee-db-creds
+        key: username
+    passwordFrom:
+      secretKeyRef:
+        name: tolgee-db-creds
+        key: password
+    extraEnv:
+      - name: AURORA_HOSTNAME
+        valueFrom:
+          secretKeyRef:
+            name: tolgee-aurora
+            key: hostname
+      - name: TOLGEE_DB_NAME
+        valueFrom:
+          secretKeyRef:
+            name: tolgee-db-creds
+            key: database
+  waitForReady:
+    enabled: false
+tolgee:
+  authentication:
+    jwtSecret: "replace-with-a-strong-secret-at-least-32-characters"

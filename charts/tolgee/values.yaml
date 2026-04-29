@@ -256,11 +256,23 @@ database:
     # -- External PostgreSQL username.
     username: ""
 
+    # -- Kubernetes valueFrom source for SPRING_DATASOURCE_USERNAME.
+    usernameFrom: {}
+
     # -- External PostgreSQL password.
     password: ""
 
+    # -- Kubernetes valueFrom source for SPRING_DATASOURCE_PASSWORD.
+    passwordFrom: {}
+
     # -- Full external JDBC URL override.
     jdbcUrl: ""
+
+    # -- Kubernetes valueFrom source for SPRING_DATASOURCE_URL.
+    jdbcUrlFrom: {}
+
+    # -- Extra env vars rendered before SPRING_DATASOURCE_* for external DB URL expansion.
+    extraEnv: []
 
     existingSecret:
       # -- Existing secret containing SPRING_DATASOURCE_* values.

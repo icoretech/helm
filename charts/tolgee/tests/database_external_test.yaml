@@ -21,3 +21,25 @@ tests:
       - equal:
           path: spec.template.spec.initContainers[0].env[?(@.name=="DB_HOST")].value
           value: postgres.example.com
+
+  - it: supports datasource values sourced from multiple secrets
+    values:
+      - values/valid-external-valuefrom.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="AURORA_HOSTNAME")].valueFrom.secretKeyRef.name
+          value: tolgee-aurora
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_DB_NAME")].valueFrom.secretKeyRef.key
+          value: database
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SPRING_DATASOURCE_URL")].value
+          value: jdbc:postgresql://$(AURORA_HOSTNAME):5432/$(TOLGEE_DB_NAME)?sslmode=require&reWriteBatchedInserts=true
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SPRING_DATASOURCE_USERNAME")].valueFrom.secretKeyRef.key
+          value: username
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SPRING_DATASOURCE_PASSWORD")].valueFrom.secretKeyRef.key
+          value: password
+      - notExists:
+          path: spec.template.spec.initContainers

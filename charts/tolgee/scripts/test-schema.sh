@@ -12,6 +12,7 @@ for f in \
   tests/values/valid-minimal.yaml \
   tests/values/valid-external.yaml \
   tests/values/valid-external-secret.yaml \
+  tests/values/valid-external-valuefrom.yaml \
   tests/values/valid-metrics-servicemonitor.yaml \
   tests/values/valid-s3-secretrefs.yaml
   do
@@ -41,6 +42,7 @@ echo "==> Invalid fixtures must fail"
 for f in \
   tests/values/invalid-both-db-modes.yaml \
   tests/values/invalid-external-missing-creds.yaml \
+  tests/values/invalid-external-reserved-extraenv.yaml \
   tests/values/invalid-external-wait-missing-host.yaml \
   tests/values/invalid-http-route-parents.yaml \
   tests/values/invalid-jwt-secretref-missing-key.yaml \

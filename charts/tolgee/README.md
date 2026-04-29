@@ -80,6 +80,44 @@ database:
 
 or set `database.external.host` so the initContainer can probe DB readiness.
 
+## External PostgreSQL Values from Multiple Secrets
+
+Use `database.external.extraEnv` for helper values that must be available before
+Kubernetes expands `database.external.jdbcUrl`. Keep the `SPRING_DATASOURCE_*`
+names owned by the chart through `jdbcUrl`/`jdbcUrlFrom`, `username`/`usernameFrom`,
+and `password`/`passwordFrom`.
+
+```yaml
+postgres:
+  enabled: false
+
+database:
+  external:
+    enabled: true
+    extraEnv:
+      - name: AURORA_HOSTNAME
+        valueFrom:
+          secretKeyRef:
+            name: tolgee-aurora
+            key: hostname
+      - name: TOLGEE_DB_NAME
+        valueFrom:
+          secretKeyRef:
+            name: tolgee-db-creds
+            key: database
+    jdbcUrl: "jdbc:postgresql://$(AURORA_HOSTNAME):5432/$(TOLGEE_DB_NAME)?sslmode=require"
+    usernameFrom:
+      secretKeyRef:
+        name: tolgee-db-creds
+        key: username
+    passwordFrom:
+      secretKeyRef:
+        name: tolgee-db-creds
+        key: password
+  waitForReady:
+    enabled: false
+```
+
 ## Sensitive Values via Secret Refs
 
 Use the built-in `*Ref` fields when you want chart-managed env wiring without storing clear-text values in Helm values:
@@ -173,12 +211,16 @@ spec:
 | database.external.existingSecret.passwordKey | string | `"SPRING_DATASOURCE_PASSWORD"` | Key for DB password. |
 | database.external.existingSecret.urlKey | string | `"SPRING_DATASOURCE_URL"` | Key for JDBC URL. |
 | database.external.existingSecret.usernameKey | string | `"SPRING_DATASOURCE_USERNAME"` | Key for DB username. |
+| database.external.extraEnv | list | `[]` | Extra env vars rendered before SPRING_DATASOURCE_* for external DB URL expansion. |
 | database.external.host | string | `""` | External PostgreSQL host. |
 | database.external.jdbcUrl | string | `""` | Full external JDBC URL override. |
+| database.external.jdbcUrlFrom | object | `{}` | Kubernetes valueFrom source for SPRING_DATASOURCE_URL. |
 | database.external.name | string | `"tolgee"` | External PostgreSQL database name. |
 | database.external.password | string | `""` | External PostgreSQL password. |
+| database.external.passwordFrom | object | `{}` | Kubernetes valueFrom source for SPRING_DATASOURCE_PASSWORD. |
 | database.external.port | int | `5432` | External PostgreSQL port. |
 | database.external.username | string | `""` | External PostgreSQL username. |
+| database.external.usernameFrom | object | `{}` | Kubernetes valueFrom source for SPRING_DATASOURCE_USERNAME. |
 | database.internal.port | int | `5432` | Internal PostgreSQL service port. |
 | database.internal.serviceName | string | `""` | Override internal PostgreSQL service name (defaults to <release>-postgres). |
 | database.jdbcParameters | string | `"reWriteBatchedInserts=true"` | Extra JDBC query parameters (without leading ?), e.g. key1=value1&key2=value2. |
