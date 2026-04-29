@@ -1,0 +1,8 @@
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: shared-gateway
+      namespace: infra
+      sectionName: https
+  hostnames:
+    - multica.example.com

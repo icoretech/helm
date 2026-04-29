@@ -1,0 +1,8 @@
+postgres:
+  enabled: true
+database:
+  external:
+    enabled: true
+    host: postgres.example.com
+    username: multica
+    password: multica

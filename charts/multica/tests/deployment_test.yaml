@@ -1,0 +1,56 @@
+suite: deployment rendering
+templates:
+  - backend-deployment.yaml
+  - frontend-deployment.yaml
+tests:
+  - it: renders backend image from chart appVersion
+    template: backend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/multica-ai/multica-backend:v0.2.19
+
+  - it: renders frontend image from chart appVersion
+    template: frontend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/multica-ai/multica-web:v0.2.19
+
+  - it: wires backend health probes and local upload PVC
+    template: backend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /health
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /readyz
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].mountPath
+          value: /app/data/uploads
+
+  - it: sets privacy-preserving analytics defaults
+    template: backend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="ANALYTICS_DISABLED")].value
+          value: "true"
+
+  - it: supports backend image tag override
+    template: backend-deployment.yaml
+    set:
+      backend.image.tag: v9.9.9
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/multica-ai/multica-backend:v9.9.9
+
+  - it: supports frontend image tag override
+    template: frontend-deployment.yaml
+    set:
+      frontend.image.tag: v9.9.9
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/multica-ai/multica-web:v9.9.9

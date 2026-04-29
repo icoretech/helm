@@ -1,0 +1,32 @@
+suite: storage rendering
+templates:
+  - backend-deployment.yaml
+  - pvc.yaml
+tests:
+  - it: renders upload PVC by default
+    template: pvc.yaml
+    asserts:
+      - equal:
+          path: spec.resources.requests.storage
+          value: 10Gi
+
+  - it: allows multi-replica backend with S3 storage
+    set:
+      backend.replicaCount: 2
+      storage.s3.bucket: multica-uploads
+    template: backend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="S3_BUCKET")].value
+          value: multica-uploads
+
+  - it: rejects multi-replica backend on local upload persistence without S3
+    values:
+      - values/invalid-replicated-local-storage.yaml
+    template: backend-deployment.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.replicaCount > 1 requires S3 storage or disabling local upload persistence"

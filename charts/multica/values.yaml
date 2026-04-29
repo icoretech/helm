@@ -1,0 +1,423 @@
+# -- Shared image pull secrets.
+imagePullSecrets: []
+
+# -- Override chart name.
+nameOverride: ""
+
+# -- Override fully-qualified release name.
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Create a service account for Multica pods.
+  create: true
+  # -- Service account annotations.
+  annotations: {}
+  # -- Service account name.
+  name: ""
+
+backend:
+  # -- Number of backend replicas.
+  replicaCount: 1
+
+  image:
+    # -- Backend image repository.
+    repository: ghcr.io/multica-ai/multica-backend
+    # -- Backend image pull policy.
+    pullPolicy: IfNotPresent
+    # -- Backend image tag override. Defaults to chart appVersion.
+    tag: ""
+
+  # -- Pod annotations for backend pods.
+  podAnnotations: {}
+  # -- Pod labels for backend pods.
+  podLabels: {}
+  # -- Pod security context for backend pods.
+  podSecurityContext: {}
+  # -- Container security context for the backend container.
+  securityContext: {}
+
+  deployment:
+    # -- Time in seconds for the Deployment controller to wait before marking a rollout failed.
+    progressDeadlineSeconds: 600
+    strategy:
+      # -- Deployment strategy. `Recreate` avoids RWO upload PVC multi-attach deadlocks.
+      type: Recreate
+
+  service:
+    # -- Backend Service annotations.
+    annotations: {}
+    # -- Backend Service type.
+    type: ClusterIP
+    # -- Backend Service port.
+    port: 8080
+    # -- Backend container port.
+    targetPort: 8080
+    # -- Optional nodePort when service.type is NodePort/LoadBalancer.
+    nodePort:
+
+  config:
+    # -- Runtime environment. Keep `production` on public deployments.
+    appEnv: production
+    # -- Backend bind port.
+    port: 8080
+    # -- Public frontend origin. Required for production links, cookies, CORS, and WebSocket origin checks.
+    frontendOrigin: http://localhost:3000
+    # -- Additional CORS origins, comma-separated.
+    corsAllowedOrigins: ""
+    # -- Additional WebSocket origins, comma-separated.
+    allowedOrigins: ""
+    # -- Prometheus metrics listener, e.g. `127.0.0.1:9090`. Empty disables it.
+    metricsAddr: ""
+    # -- Token required to expose `/health/realtime` through a proxy.
+    realtimeMetricsToken: ""
+    realtimeMetricsTokenRef:
+      # -- Existing secret containing REALTIME_METRICS_TOKEN.
+      name: ""
+      # -- Secret key for REALTIME_METRICS_TOKEN.
+      key: ""
+    # -- JWT signing secret. Replace in production or use jwtSecretRef.
+    jwtSecret: change-me-in-production
+    jwtSecretRef:
+      # -- Existing secret containing JWT_SECRET.
+      name: ""
+      # -- Secret key for JWT_SECRET.
+      key: ""
+    # -- Fixed local test verification code. Keep empty in production.
+    devVerificationCode: ""
+    # -- Signup master switch.
+    allowSignup: true
+    # -- Explicit signup email allowlist, comma-separated.
+    allowedEmails: ""
+    # -- Signup domain allowlist, comma-separated.
+    allowedEmailDomains: ""
+    # -- Optional cookie Domain attribute. Leave empty for single-host deployments.
+    cookieDomain: ""
+    # -- Disable backend/frontend analytics. Defaults to true for self-host privacy.
+    analyticsDisabled: true
+    # -- PostHog API key when analytics are enabled.
+    posthogApiKey: ""
+    posthogHost: https://us.i.posthog.com
+
+  email:
+    # -- Resend API key. When empty, Multica prints verification codes to stdout.
+    resendApiKey: ""
+    resendApiKeyRef:
+      # -- Existing secret containing RESEND_API_KEY.
+      name: ""
+      # -- Secret key for RESEND_API_KEY.
+      key: ""
+    # -- Sender address for verification emails.
+    resendFromEmail: noreply@multica.ai
+
+  google:
+    # -- Google OAuth client ID.
+    clientId: ""
+    clientIdRef:
+      # -- Existing secret containing GOOGLE_CLIENT_ID.
+      name: ""
+      # -- Secret key for GOOGLE_CLIENT_ID.
+      key: ""
+    # -- Google OAuth client secret.
+    clientSecret: ""
+    clientSecretRef:
+      # -- Existing secret containing GOOGLE_CLIENT_SECRET.
+      name: ""
+      # -- Secret key for GOOGLE_CLIENT_SECRET.
+      key: ""
+    # -- Google OAuth redirect URI.
+    redirectUri: http://localhost:3000/auth/callback
+
+  # -- Extra backend env vars. Managed env names are rejected to avoid silent overrides.
+  extraEnv: []
+  # -- Extra backend envFrom refs.
+  envFrom: []
+  # -- Additional backend volumes.
+  volumes: []
+  # -- Additional backend volume mounts.
+  volumeMounts: []
+  # -- Backend resources.
+  resources: {}
+  # -- Backend node selector.
+  nodeSelector: {}
+  # -- Backend tolerations.
+  tolerations: []
+  # -- Backend affinity.
+  affinity: {}
+
+  autoscaling:
+    # -- Enable backend HPA.
+    enabled: false
+    # -- Minimum backend replicas.
+    minReplicas: 1
+    # -- Maximum backend replicas.
+    maxReplicas: 5
+    # -- Target CPU utilization percentage.
+    targetCPUUtilizationPercentage: 80
+    # -- Target memory utilization percentage.
+    targetMemoryUtilizationPercentage:
+
+frontend:
+  # -- Number of frontend replicas.
+  replicaCount: 1
+
+  image:
+    # -- Frontend image repository.
+    repository: ghcr.io/multica-ai/multica-web
+    # -- Frontend image pull policy.
+    pullPolicy: IfNotPresent
+    # -- Frontend image tag override. Defaults to chart appVersion.
+    tag: ""
+
+  # -- Pod annotations for frontend pods.
+  podAnnotations: {}
+  # -- Pod labels for frontend pods.
+  podLabels: {}
+  # -- Pod security context for frontend pods.
+  podSecurityContext: {}
+  # -- Container security context for the frontend container.
+  securityContext: {}
+
+  service:
+    # -- Frontend Service annotations.
+    annotations: {}
+    # -- Frontend Service type.
+    type: ClusterIP
+    # -- Frontend Service port.
+    port: 80
+    # -- Frontend container port.
+    targetPort: 3000
+    # -- Optional nodePort when service.type is NodePort/LoadBalancer.
+    nodePort:
+    # -- Optional LoadBalancer IP.
+    loadBalancerIP:
+    # -- Optional CIDRs allowed via LoadBalancer.
+    loadBalancerSourceRanges: []
+    # -- External traffic policy.
+    externalTrafficPolicy:
+
+  backendServiceAlias:
+    # -- Create a Service named `backend` because upstream multica-web images bake Next.js rewrites to `http://backend:8080`.
+    enabled: true
+    # -- Compatibility Service name.
+    name: backend
+    # -- Compatibility Service annotations.
+    annotations: {}
+
+  # -- Extra frontend env vars. The official image bakes API rewrites at build time; use these only for custom images or generic runtime config.
+  extraEnv: []
+  # -- Extra frontend envFrom refs.
+  envFrom: []
+  # -- Frontend resources.
+  resources: {}
+  # -- Frontend node selector.
+  nodeSelector: {}
+  # -- Frontend tolerations.
+  tolerations: []
+  # -- Frontend affinity.
+  affinity: {}
+
+  autoscaling:
+    # -- Enable frontend HPA.
+    enabled: false
+    # -- Minimum frontend replicas.
+    minReplicas: 1
+    # -- Maximum frontend replicas.
+    maxReplicas: 5
+    # -- Target CPU utilization percentage.
+    targetCPUUtilizationPercentage: 80
+    # -- Target memory utilization percentage.
+    targetMemoryUtilizationPercentage:
+
+database:
+  internal:
+    # -- Override internal PostgreSQL service name. Defaults to `<release>-postgres`.
+    serviceName: ""
+    # -- Internal PostgreSQL service port.
+    port: 5432
+  external:
+    # -- Enable external PostgreSQL mode. When enabled, set postgres.enabled=false.
+    enabled: false
+    # -- Full PostgreSQL connection URL.
+    url: ""
+    urlFrom:
+      # -- Existing secret containing DATABASE_URL.
+      secretKeyRef:
+        name: ""
+        key: ""
+    # -- External PostgreSQL host. Required for waitForReady when using urlFrom; optional with url because the chart can derive the host from the URL.
+    host: ""
+    # -- External PostgreSQL port.
+    port: 5432
+    # -- External PostgreSQL database name.
+    name: multica
+    # -- External PostgreSQL username.
+    username: ""
+    # -- External PostgreSQL password.
+    password: ""
+    # -- SSL mode appended to generated DATABASE_URL.
+    sslMode: disable
+  waitForReady:
+    # -- Wait for PostgreSQL TCP readiness before starting the backend.
+    enabled: true
+    # -- Init container image used for DB readiness checks.
+    image: busybox:1.37
+    # -- Init container image pull policy.
+    imagePullPolicy: IfNotPresent
+    # -- Max seconds to wait for DB readiness.
+    timeoutSeconds: 180
+    # -- Poll interval in seconds.
+    periodSeconds: 2
+
+storage:
+  local:
+    # -- Local upload directory inside the backend container.
+    uploadDir: /app/data/uploads
+    # -- Public base URL for local uploads. Empty returns relative `/uploads/...` paths.
+    baseUrl: ""
+    persistence:
+      # -- Persist local uploads with a PVC. Use S3 for multi-replica production deployments.
+      enabled: true
+      # -- Existing PVC name.
+      existingClaim: ""
+      # -- PVC storage class.
+      storageClass: ""
+      # -- PVC annotations.
+      annotations: {}
+      # -- PVC access modes.
+      accessModes:
+        - ReadWriteOnce
+      # -- PVC size.
+      size: 10Gi
+  s3:
+    # -- S3 bucket. When set, Multica uses S3-compatible storage instead of local disk for uploads.
+    bucket: ""
+    # -- S3 region.
+    region: us-west-2
+    # -- S3-compatible endpoint URL, e.g. MinIO/R2/Wasabi.
+    endpointUrl: ""
+    # -- AWS access key ID.
+    accessKeyId: ""
+    accessKeyIdRef:
+      # -- Existing secret containing AWS_ACCESS_KEY_ID.
+      name: ""
+      # -- Secret key for AWS_ACCESS_KEY_ID.
+      key: ""
+    # -- AWS secret access key.
+    secretAccessKey: ""
+    secretAccessKeyRef:
+      # -- Existing secret containing AWS_SECRET_ACCESS_KEY.
+      name: ""
+      # -- Secret key for AWS_SECRET_ACCESS_KEY.
+      key: ""
+    # -- CloudFront domain for signed/download URLs.
+    cloudfrontDomain: ""
+    # -- CloudFront key pair ID.
+    cloudfrontKeyPairId: ""
+    # -- CloudFront private key.
+    cloudfrontPrivateKey: ""
+    cloudfrontPrivateKeyRef:
+      # -- Existing secret containing CLOUDFRONT_PRIVATE_KEY.
+      name: ""
+      # -- Secret key for CLOUDFRONT_PRIVATE_KEY.
+      key: ""
+    # -- AWS Secrets Manager secret name for CLOUDFRONT_PRIVATE_KEY.
+    cloudfrontPrivateKeySecret: ""
+
+ingress:
+  # -- Enable Ingress for the frontend.
+  enabled: false
+  # -- IngressClass name.
+  className: ""
+  # -- Ingress annotations.
+  annotations: {}
+  # -- Ingress hosts and paths.
+  hosts: []
+  # - host: multica.example.com
+  #   paths:
+  #     - path: /
+  #       pathType: Prefix
+  # -- Ingress TLS entries.
+  tls: []
+
+httpRoute:
+  # -- Enable Gateway API HTTPRoute for the frontend.
+  enabled: false
+  # -- HTTPRoute annotations.
+  annotations: {}
+  # -- ParentRefs for HTTPRoute. Required when enabled.
+  parentRefs: []
+  # - name: shared-gateway
+  #   namespace: infra
+  #   sectionName: https
+  # -- Optional HTTPRoute hostnames.
+  hostnames: []
+  # -- Match rules for HTTPRoute.
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+
+livenessProbe:
+  backend:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 6
+  frontend:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 6
+
+readinessProbe:
+  backend:
+    httpGet:
+      path: /readyz
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 6
+  frontend:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 6
+
+tests:
+  # -- Enable Helm test pod.
+  enabled: true
+  image:
+    # -- Test image repository.
+    repository: busybox
+    # -- Test image tag.
+    tag: "1.37"
+    # -- Test image pull policy.
+    pullPolicy: IfNotPresent
+
+postgres:
+  enabled: true
+  image:
+    repository: pgvector/pgvector
+    tag: pg17
+    imagePullPolicy: IfNotPresent
+  auth:
+    username: multica
+    password: multica
+    database: multica
+  persistence:
+    enabled: true
+    size: 8Gi

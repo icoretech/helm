@@ -1,0 +1,40 @@
+suite: ingress and httproute templates
+templates:
+  - serviceaccount.yaml
+  - ingress.yaml
+  - gatewayapi-httproute.yaml
+tests:
+  - it: renders ingress rules when enabled
+    template: ingress.yaml
+    values:
+      - values/valid-ingress.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: multica.example.com
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.port.number
+          value: 80
+
+  - it: renders Gateway API HTTPRoute when enabled
+    template: gatewayapi-httproute.yaml
+    values:
+      - values/valid-httproute.yaml
+    asserts:
+      - equal:
+          path: spec.parentRefs[0].name
+          value: shared-gateway
+      - equal:
+          path: spec.hostnames[0]
+          value: multica.example.com
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 80
+
+  - it: rejects HTTPRoute without parentRefs
+    template: serviceaccount.yaml
+    values:
+      - values/invalid-http-route-parents.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: httpRoute.parentRefs is required when httpRoute.enabled=true"

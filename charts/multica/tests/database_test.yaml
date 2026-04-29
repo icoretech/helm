@@ -1,0 +1,54 @@
+suite: database wiring
+templates:
+  - backend-deployment.yaml
+tests:
+  - it: renders internal postgres DATABASE_URL by default
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].value
+          value: postgres://multica:multica@RELEASE-NAME-postgres:5432/multica?sslmode=disable
+      - equal:
+          path: spec.template.spec.initContainers[0].env[?(@.name=="DB_HOST")].value
+          value: RELEASE-NAME-postgres
+
+  - it: uses external DATABASE_URL secret when provided
+    values:
+      - values/valid-external-secret.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.name
+          value: multica-db
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.key
+          value: DATABASE_URL
+      - equal:
+          path: spec.template.spec.initContainers[0].env[?(@.name=="DB_HOST")].value
+          value: postgres.example.com
+
+  - it: derives wait host and port from external DATABASE_URL
+    values:
+      - values/valid-external-url.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].value
+          value: postgres://multica:secret@db.example.com:6543/multica?sslmode=require
+      - equal:
+          path: spec.template.spec.initContainers[0].env[?(@.name=="DB_HOST")].value
+          value: db.example.com
+      - equal:
+          path: spec.template.spec.initContainers[0].env[?(@.name=="DB_PORT")].value
+          value: "6543"
+
+  - it: rejects external DATABASE_URL secret without wait host
+    values:
+      - values/invalid-external-secret-missing-host.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: database.external.host or database.external.url is required when database.waitForReady.enabled=true and database.external.enabled=true"
+
+  - it: fails when internal and external databases are both enabled
+    values:
+      - values/invalid-both-db-modes.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: postgres.enabled and database.external.enabled cannot both be true"

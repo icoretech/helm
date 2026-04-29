@@ -1,0 +1,8 @@
+backend:
+  replicaCount: 2
+storage:
+  local:
+    persistence:
+      enabled: true
+  s3:
+    bucket: ""

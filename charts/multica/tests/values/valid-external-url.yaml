@@ -1,0 +1,6 @@
+postgres:
+  enabled: false
+database:
+  external:
+    enabled: true
+    url: postgres://multica:secret@db.example.com:6543/multica?sslmode=require

@@ -1,0 +1,4 @@
+backend:
+  extraEnv:
+    - name: DATABASE_URL
+      value: postgres://example

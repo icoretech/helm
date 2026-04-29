@@ -1,0 +1,23 @@
+suite: service rendering
+templates:
+  - backend-service.yaml
+  - backend-compat-service.yaml
+  - frontend-service.yaml
+tests:
+  - it: renders official web image backend compatibility service by default
+    template: backend-compat-service.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: backend
+      - equal:
+          path: spec.ports[0].port
+          value: 8080
+
+  - it: can disable the backend compatibility service for custom frontend images
+    template: backend-compat-service.yaml
+    set:
+      frontend.backendServiceAlias.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

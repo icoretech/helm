@@ -15,6 +15,7 @@ For detailed information on the individual charts and their usage, please naviga
 - [Browserless](https://icoretech.github.io/helm/charts/browserless): Browserless v2 chart with token enforcement and multi-browser image presets for browser automation workloads.
 - [Codex LB](https://icoretech.github.io/helm/charts/codex-lb): ChatGPT / OpenAI account-pool proxy with PostgreSQL support, OAuth onboarding flow, and dashboard/API routing.
 - [Tolgee](https://icoretech.github.io/helm/charts/tolgee): Tolgee Platform chart with optional bundled PostgreSQL, external DB mode, and Gateway API/Ingress support.
+- [Multica](https://icoretech.github.io/helm/charts/multica): Managed agents platform chart with backend/frontend services, PostgreSQL wiring, upload storage, and Gateway API/Ingress support.
 
 ## Deprecated Charts
 

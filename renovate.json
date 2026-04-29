@@ -95,6 +95,30 @@
       "depNameTemplate": "Soju06/codex-lb",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/multica\\/Chart\\.yaml$/"],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
+      "depNameTemplate": "multica-ai/multica",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/multica\\/Chart\\.yaml$/"],
+      "matchStrings": ["image:\\s*ghcr\\.io\\/multica-ai\\/multica-backend:(?<currentValue>[^\\s]+)"],
+      "depNameTemplate": "multica-ai/multica",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/multica\\/Chart\\.yaml$/"],
+      "matchStrings": ["image:\\s*ghcr\\.io\\/multica-ai\\/multica-web:(?<currentValue>[^\\s]+)"],
+      "depNameTemplate": "multica-ai/multica",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
     }
   ],
   "packageRules": [
@@ -206,6 +230,18 @@
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["Soju06/codex-lb"],
+      "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["multica-ai/multica"],
+      "groupName": "multica chart software updates"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["multica-ai/multica"],
       "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
       "automerge": true,
       "platformAutomerge": true

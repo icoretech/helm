@@ -1,0 +1,7 @@
+ingress:
+  enabled: true
+  hosts:
+    - host: multica.example.com
+      paths:
+        - path: /
+          pathType: Prefix
