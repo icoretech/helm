@@ -100,6 +100,28 @@ spec:
               value: {{ include "multica.databaseUrl" . | trim | quote }}
             {{- end }}
             {{- $_ := set $managed "DATABASE_URL" true }}
+            {{- if .Values.realtime.redisUrlRef.name }}
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.realtime.redisUrlRef.name | quote }}
+                  key: {{ required "multica: realtime.redisUrlRef.key is required" .Values.realtime.redisUrlRef.key | quote }}
+            {{- else if .Values.realtime.redisUrl }}
+            - name: REDIS_URL
+              value: {{ .Values.realtime.redisUrl | quote }}
+            {{- else if .Values.redis.enabled }}
+              {{- if .Values.redis.auth.enabled }}
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "multica.redis.fullname" . | quote }}
+                  key: uri
+              {{- else }}
+            - name: REDIS_URL
+              value: {{ include "multica.redis.unauthenticatedUrl" . | quote }}
+              {{- end }}
+            {{- end }}
+            {{- $_ := set $managed "REDIS_URL" true }}
             {{- if .Values.backend.config.jwtSecretRef.name }}
             - name: JWT_SECRET
               valueFrom:

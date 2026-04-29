@@ -7,9 +7,10 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - Separate backend and frontend Deployments using upstream GHCR images
 - Optional bundled PostgreSQL for evaluation and chart-testing
 - External PostgreSQL mode for production deployments
+- Optional bundled Redis for multi-backend realtime fanout
 - Local upload PVC support and S3-compatible storage configuration
 - Secret references for JWT, email, Google OAuth, metrics, database URL, and S3 credentials
-- Ingress and Gateway API HTTPRoute support
+- Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
 - Helm unit tests and install-safe CI values
 
 ## Important Runtime Note
@@ -84,7 +85,16 @@ storage:
   s3:
     bucket: multica-uploads
     region: eu-west-1
+
+redis:
+  enabled: true
+  persistence:
+    size: 8Gi
 ```
+
+When using the chart-managed Ingress or HTTPRoute, backend-owned paths such as `/health`, `/api`, `/auth`, `/uploads`, and `/ws` are routed directly to the backend Service by default. This is required by `multica setup self-host`, which probes `<server-url>/health`. If you manage Traefik `IngressRoute`, nginx snippets, or another external router outside the chart, mirror the same path split.
+
+When using S3-compatible storage without `storage.s3.cloudfrontDomain`, Multica stores reader-facing URLs using the configured bucket endpoint. Configure the bucket with public `s3:GetObject` access for uploaded objects, or set `storage.s3.cloudfrontDomain` with CloudFront signing support.
 
 ## Agent Execution Model
 
@@ -205,14 +215,18 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | frontend.tolerations | list | `[]` | Frontend tolerations. |
 | fullnameOverride | string | `""` | Override fully-qualified release name. |
 | httpRoute.annotations | object | `{}` | HTTPRoute annotations. |
-| httpRoute.enabled | bool | `false` | Enable Gateway API HTTPRoute for the frontend. |
+| httpRoute.backendMatches.enabled | bool | `true` | Route backend-owned paths directly to the backend Service. Required for CLI `multica setup self-host`, which probes `/health`. |
+| httpRoute.backendMatches.matches | list | `[{"path":{"type":"Exact","value":"/health"}},{"path":{"type":"PathPrefix","value":"/health/"}},{"path":{"type":"Exact","value":"/ws"}},{"path":{"type":"Exact","value":"/api"}},{"path":{"type":"PathPrefix","value":"/api/"}},{"path":{"type":"Exact","value":"/auth"}},{"path":{"type":"PathPrefix","value":"/auth/"}},{"path":{"type":"Exact","value":"/uploads"}},{"path":{"type":"PathPrefix","value":"/uploads/"}}]` | Backend HTTPRoute matches emitted before frontend matches. |
+| httpRoute.enabled | bool | `false` | Enable Gateway API HTTPRoute for Multica. |
 | httpRoute.hostnames | list | `[]` | Optional HTTPRoute hostnames. |
 | httpRoute.matches | list | `[{"path":{"type":"PathPrefix","value":"/"}}]` | Match rules for HTTPRoute. |
 | httpRoute.parentRefs | list | `[]` | ParentRefs for HTTPRoute. Required when enabled. |
 | imagePullSecrets | list | `[]` | Shared image pull secrets. |
 | ingress.annotations | object | `{}` | Ingress annotations. |
+| ingress.backendPaths.enabled | bool | `true` | Route backend-owned paths directly to the backend Service. Required for CLI `multica setup self-host`, which probes `/health`. |
+| ingress.backendPaths.paths | list | `[{"path":"/health","pathType":"Prefix"},{"path":"/ws","pathType":"Exact"},{"path":"/api","pathType":"Prefix"},{"path":"/auth","pathType":"Prefix"},{"path":"/uploads","pathType":"Prefix"}]` | Backend paths to expose through Ingress before frontend catch-all paths. |
 | ingress.className | string | `""` | IngressClass name. |
-| ingress.enabled | bool | `false` | Enable Ingress for the frontend. |
+| ingress.enabled | bool | `false` | Enable Ingress for Multica. |
 | ingress.hosts | list | `[]` | Ingress hosts and paths. |
 | ingress.tls | list | `[]` | Ingress TLS entries. |
 | livenessProbe.backend.failureThreshold | int | `6` |  |
@@ -240,7 +254,7 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | postgres.persistence.enabled | bool | `true` |  |
 | postgres.persistence.size | string | `"8Gi"` |  |
 | readinessProbe.backend.failureThreshold | int | `6` |  |
-| readinessProbe.backend.httpGet.path | string | `"/readyz"` |  |
+| readinessProbe.backend.httpGet.path | string | `"/health"` |  |
 | readinessProbe.backend.httpGet.port | string | `"http"` |  |
 | readinessProbe.backend.initialDelaySeconds | int | `10` |  |
 | readinessProbe.backend.periodSeconds | int | `10` |  |
@@ -253,6 +267,14 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | readinessProbe.frontend.periodSeconds | int | `10` |  |
 | readinessProbe.frontend.successThreshold | int | `1` |  |
 | readinessProbe.frontend.timeoutSeconds | int | `3` |  |
+| realtime.redisUrl | string | `""` | Redis connection URL for multi-backend realtime fanout. Leave empty for single-backend in-memory mode or when using bundled Redis. |
+| realtime.redisUrlRef.key | string | `""` | Secret key for REDIS_URL. |
+| realtime.redisUrlRef.name | string | `""` | Existing secret containing REDIS_URL. |
+| redis.architecture | string | `"standalone"` |  |
+| redis.auth.enabled | bool | `true` |  |
+| redis.enabled | bool | `false` | Enable bundled Redis for multi-backend realtime fanout. |
+| redis.persistence.enabled | bool | `true` |  |
+| redis.persistence.size | string | `"8Gi"` |  |
 | serviceAccount.annotations | object | `{}` | Service account annotations. |
 | serviceAccount.create | bool | `true` | Create a service account for Multica pods. |
 | serviceAccount.name | string | `""` | Service account name. |

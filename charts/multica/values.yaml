@@ -268,6 +268,15 @@ database:
     # -- Poll interval in seconds.
     periodSeconds: 2
 
+realtime:
+  # -- Redis connection URL for multi-backend realtime fanout. Leave empty for single-backend in-memory mode or when using bundled Redis.
+  redisUrl: ""
+  redisUrlRef:
+    # -- Existing secret containing REDIS_URL.
+    name: ""
+    # -- Secret key for REDIS_URL.
+    key: ""
+
 storage:
   local:
     # -- Local upload directory inside the backend container.
@@ -324,12 +333,27 @@ storage:
     cloudfrontPrivateKeySecret: ""
 
 ingress:
-  # -- Enable Ingress for the frontend.
+  # -- Enable Ingress for Multica.
   enabled: false
   # -- IngressClass name.
   className: ""
   # -- Ingress annotations.
   annotations: {}
+  backendPaths:
+    # -- Route backend-owned paths directly to the backend Service. Required for CLI `multica setup self-host`, which probes `/health`.
+    enabled: true
+    # -- Backend paths to expose through Ingress before frontend catch-all paths.
+    paths:
+      - path: /health
+        pathType: Prefix
+      - path: /ws
+        pathType: Exact
+      - path: /api
+        pathType: Prefix
+      - path: /auth
+        pathType: Prefix
+      - path: /uploads
+        pathType: Prefix
   # -- Ingress hosts and paths.
   hosts: []
   # - host: multica.example.com
@@ -340,7 +364,7 @@ ingress:
   tls: []
 
 httpRoute:
-  # -- Enable Gateway API HTTPRoute for the frontend.
+  # -- Enable Gateway API HTTPRoute for Multica.
   enabled: false
   # -- HTTPRoute annotations.
   annotations: {}
@@ -351,6 +375,38 @@ httpRoute:
   #   sectionName: https
   # -- Optional HTTPRoute hostnames.
   hostnames: []
+  backendMatches:
+    # -- Route backend-owned paths directly to the backend Service. Required for CLI `multica setup self-host`, which probes `/health`.
+    enabled: true
+    # -- Backend HTTPRoute matches emitted before frontend matches.
+    matches:
+      - path:
+          type: Exact
+          value: /health
+      - path:
+          type: PathPrefix
+          value: /health/
+      - path:
+          type: Exact
+          value: /ws
+      - path:
+          type: Exact
+          value: /api
+      - path:
+          type: PathPrefix
+          value: /api/
+      - path:
+          type: Exact
+          value: /auth
+      - path:
+          type: PathPrefix
+          value: /auth/
+      - path:
+          type: Exact
+          value: /uploads
+      - path:
+          type: PathPrefix
+          value: /uploads/
   # -- Match rules for HTTPRoute.
   matches:
     - path:
@@ -380,7 +436,7 @@ livenessProbe:
 readinessProbe:
   backend:
     httpGet:
-      path: /readyz
+      path: /health
       port: http
     initialDelaySeconds: 10
     periodSeconds: 10
@@ -418,6 +474,16 @@ postgres:
     username: multica
     password: multica
     database: multica
+  persistence:
+    enabled: true
+    size: 8Gi
+
+redis:
+  # -- Enable bundled Redis for multi-backend realtime fanout.
+  enabled: false
+  architecture: standalone
+  auth:
+    enabled: true
   persistence:
     enabled: true
     size: 8Gi

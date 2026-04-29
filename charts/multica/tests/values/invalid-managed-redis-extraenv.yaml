@@ -1,0 +1,4 @@
+backend:
+  extraEnv:
+    - name: REDIS_URL
+      value: redis://example

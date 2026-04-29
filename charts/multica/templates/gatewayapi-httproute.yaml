@@ -18,6 +18,13 @@ spec:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   rules:
+    {{- if .Values.httpRoute.backendMatches.enabled }}
+    - matches:
+        {{- toYaml .Values.httpRoute.backendMatches.matches | nindent 8 }}
+      backendRefs:
+        - name: {{ include "multica.backendServiceName" . }}
+          port: {{ .Values.backend.service.port }}
+    {{- end }}
     - matches:
         {{- toYaml .Values.httpRoute.matches | nindent 8 }}
       backendRefs:

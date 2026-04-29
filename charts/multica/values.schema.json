@@ -170,6 +170,14 @@
         }
       }
     },
+    "realtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "redisUrl": { "type": "string" },
+        "redisUrlRef": { "$ref": "#/definitions/secretRef" }
+      }
+    },
     "storage": {
       "type": "object",
       "additionalProperties": false,
@@ -234,7 +242,8 @@
         }
       }
     },
-    "postgres": { "type": "object" }
+    "postgres": { "type": "object" },
+    "redis": { "type": "object" }
   },
   "definitions": {
     "image": {
@@ -310,6 +319,25 @@
         "enabled": { "type": "boolean" },
         "className": { "type": "string" },
         "annotations": { "type": "object" },
+        "backendPaths": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "paths": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["path"],
+                "properties": {
+                  "path": { "type": "string", "minLength": 1 },
+                  "pathType": { "type": "string", "enum": ["Exact", "Prefix", "ImplementationSpecific"] }
+                }
+              }
+            }
+          }
+        },
         "hosts": { "type": "array", "items": { "type": "object" } },
         "tls": { "type": "array", "items": { "type": "object" } }
       }
@@ -322,6 +350,14 @@
         "annotations": { "type": "object" },
         "parentRefs": { "type": "array", "items": { "type": "object" } },
         "hostnames": { "type": "array", "items": { "type": "string" } },
+        "backendMatches": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "matches": { "type": "array", "items": { "type": "object" } }
+          }
+        },
         "matches": { "type": "array", "items": { "type": "object" } }
       }
     }

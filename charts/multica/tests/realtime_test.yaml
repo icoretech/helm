@@ -1,0 +1,68 @@
+suite: realtime Redis wiring
+templates:
+  - backend-deployment.yaml
+tests:
+  - it: leaves REDIS_URL unset by default for single-backend mode
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="REDIS_URL")]
+
+  - it: uses explicit REDIS_URL when provided
+    set:
+      realtime.redisUrl: redis://redis.example.com:6379/0
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="REDIS_URL")].value
+          value: redis://redis.example.com:6379/0
+
+  - it: uses REDIS_URL secret ref when provided
+    values:
+      - values/valid-redis-secret-ref.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="REDIS_URL")].valueFrom.secretKeyRef.name
+          value: multica-redis
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="REDIS_URL")].valueFrom.secretKeyRef.key
+          value: REDIS_URL
+
+  - it: uses bundled Redis generated URI secret when enabled
+    set:
+      redis.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="REDIS_URL")].valueFrom.secretKeyRef.name
+          value: RELEASE-NAME-redis
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="REDIS_URL")].valueFrom.secretKeyRef.key
+          value: uri
+
+  - it: uses bundled unauthenticated Redis URL when auth is disabled
+    set:
+      redis.enabled: true
+      redis.auth.enabled: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="REDIS_URL")].value
+          value: redis://RELEASE-NAME-redis.NAMESPACE.svc:6379
+
+  - it: rejects managed REDIS_URL overrides through extraEnv
+    values:
+      - values/invalid-managed-redis-extraenv.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=REDIS_URL is managed by the chart; use the dedicated value instead"
+
+  - it: rejects REDIS_URL secret ref without a key
+    values:
+      - values/invalid-redis-secret-ref-missing-key.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: realtime.redisUrlRef.key is required when realtime.redisUrlRef.name is set"
+
+  - it: rejects bundled Redis with an arbitrary existing secret unless REDIS_URL is provided
+    values:
+      - values/invalid-bundled-redis-existing-secret.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: realtime.redisUrl or realtime.redisUrlRef is required when redis.enabled=true with redis.auth.existingSecret or redis.auth.acl.enabled"

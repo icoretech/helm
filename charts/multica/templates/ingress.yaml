@@ -23,6 +23,17 @@ spec:
     - host: {{ .host | quote }}
       http:
         paths:
+          {{- if $.Values.ingress.backendPaths.enabled }}
+          {{- range $.Values.ingress.backendPaths.paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType | default "Prefix" }}
+            backend:
+              service:
+                name: {{ include "multica.backendServiceName" $ }}
+                port:
+                  number: {{ $.Values.backend.service.port }}
+          {{- end }}
+          {{- end }}
           {{- range .paths }}
           - path: {{ .path }}
             pathType: {{ .pathType | default "Prefix" }}

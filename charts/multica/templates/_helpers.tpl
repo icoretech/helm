@@ -81,6 +81,32 @@ app.kubernetes.io/component: {{ .component }}
 {{- end -}}
 {{- end }}
 
+{{/* Default full name of the bundled Redis dependency. */}}
+{{- define "multica.redis.fullname" -}}
+{{- if .Values.redis.fullnameOverride -}}
+{{- .Values.redis.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- $name := default "redis" .Values.redis.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/* Default namespace of the bundled Redis dependency. */}}
+{{- define "multica.redis.namespace" -}}
+{{- default .Release.Namespace .Values.redis.namespaceOverride | trunc 63 | trimSuffix "-" -}}
+{{- end }}
+
+{{/* Plain bundled Redis URL used when Redis auth is disabled. */}}
+{{- define "multica.redis.unauthenticatedUrl" -}}
+{{- $scheme := ternary "rediss" "redis" .Values.redis.tls.enabled -}}
+{{- $port := ternary .Values.redis.tls.port .Values.redis.service.port .Values.redis.tls.enabled -}}
+{{- printf "%s://%s.%s.svc:%v" $scheme (include "multica.redis.fullname" .) (include "multica.redis.namespace" .) $port -}}
+{{- end }}
+
 {{/* Generated DATABASE_URL for internal or simple external mode. */}}
 {{- define "multica.databaseUrl" -}}
 {{- if .Values.database.external.enabled -}}
@@ -143,6 +169,15 @@ app.kubernetes.io/component: {{ .component }}
 {{- end -}}
 {{- if and .Values.database.external.enabled (not .Values.database.external.url) (not .Values.database.external.urlFrom.secretKeyRef.name) (or (not .Values.database.external.username) (not .Values.database.external.password)) -}}
 {{- fail "multica: database.external.username and database.external.password are required when generating DATABASE_URL" -}}
+{{- end -}}
+{{- if and .Values.realtime.redisUrl .Values.realtime.redisUrlRef.name -}}
+{{- fail "multica: realtime.redisUrl and realtime.redisUrlRef.name cannot both be set" -}}
+{{- end -}}
+{{- if and .Values.realtime.redisUrlRef.name (not .Values.realtime.redisUrlRef.key) -}}
+{{- fail "multica: realtime.redisUrlRef.key is required when realtime.redisUrlRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.redis.enabled (not .Values.realtime.redisUrl) (not .Values.realtime.redisUrlRef.name) .Values.redis.auth.enabled (or .Values.redis.auth.existingSecret .Values.redis.auth.acl.enabled) -}}
+{{- fail "multica: realtime.redisUrl or realtime.redisUrlRef is required when redis.enabled=true with redis.auth.existingSecret or redis.auth.acl.enabled" -}}
 {{- end -}}
 {{- if and .Values.httpRoute.enabled (eq (len .Values.httpRoute.parentRefs) 0) -}}
 {{- fail "multica: httpRoute.parentRefs is required when httpRoute.enabled=true" -}}

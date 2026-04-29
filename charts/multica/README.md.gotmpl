@@ -7,9 +7,10 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - Separate backend and frontend Deployments using upstream GHCR images
 - Optional bundled PostgreSQL for evaluation and chart-testing
 - External PostgreSQL mode for production deployments
+- Optional bundled Redis for multi-backend realtime fanout
 - Local upload PVC support and S3-compatible storage configuration
 - Secret references for JWT, email, Google OAuth, metrics, database URL, and S3 credentials
-- Ingress and Gateway API HTTPRoute support
+- Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
 - Helm unit tests and install-safe CI values
 
 ## Important Runtime Note
@@ -84,7 +85,16 @@ storage:
   s3:
     bucket: multica-uploads
     region: eu-west-1
+
+redis:
+  enabled: true
+  persistence:
+    size: 8Gi
 ```
+
+When using the chart-managed Ingress or HTTPRoute, backend-owned paths such as `/health`, `/api`, `/auth`, `/uploads`, and `/ws` are routed directly to the backend Service by default. This is required by `multica setup self-host`, which probes `<server-url>/health`. If you manage Traefik `IngressRoute`, nginx snippets, or another external router outside the chart, mirror the same path split.
+
+When using S3-compatible storage without `storage.s3.cloudfrontDomain`, Multica stores reader-facing URLs using the configured bucket endpoint. Configure the bucket with public `s3:GetObject` access for uploaded objects, or set `storage.s3.cloudfrontDomain` with CloudFront signing support.
 
 ## Agent Execution Model
 
