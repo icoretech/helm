@@ -1,0 +1,14 @@
+postgres:
+  enabled: false
+database:
+  external:
+    enabled: true
+    jdbcUrl: "jdbc:postgresql://postgres.example.com:5432/tolgee"
+    username: ext_user
+    password: ext_password
+    extraEnv:
+      - name: SPRING_DATASOURCE_URL
+        value: "jdbc:postgresql://other.example.com:5432/tolgee"
+tolgee:
+  authentication:
+    jwtSecret: "replace-with-a-strong-secret-at-least-32-characters"

@@ -86,6 +86,26 @@ spec:
               value: {{ .Values.tolgee.fileStorage.fsDataPath | quote }}
             {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_FS_DATA_PATH" true }}
 
+            {{- if .Values.database.external.enabled }}
+            {{- range $index, $env := .Values.database.external.extraEnv }}
+            {{- $name := default "" $env.name }}
+            {{- if or (eq $name "SPRING_DATASOURCE_URL") (eq $name "SPRING_DATASOURCE_USERNAME") (eq $name "SPRING_DATASOURCE_PASSWORD") }}
+            {{- fail (printf "tolgee: database.external.extraEnv[%d].name=%s is reserved; use database.external.jdbcUrl/jdbcUrlFrom, username/usernameFrom, or password/passwordFrom instead" $index $name) }}
+            {{- end }}
+            {{- if and (ne $name "") (not (hasKey $envSeen $name)) }}
+            - name: {{ $name | quote }}
+              {{- if hasKey $env "value" }}
+              value: {{ $env.value | quote }}
+              {{- end }}
+              {{- if hasKey $env "valueFrom" }}
+              valueFrom:
+                {{- toYaml $env.valueFrom | nindent 16 }}
+              {{- end }}
+            {{- $_ := set $envSeen $name true }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+
             {{- if and .Values.database.external.enabled .Values.database.external.existingSecret.name }}
             - name: SPRING_DATASOURCE_URL
               valueFrom:
@@ -104,11 +124,26 @@ spec:
                   key: {{ .Values.database.external.existingSecret.passwordKey | quote }}
             {{- else }}
             - name: SPRING_DATASOURCE_URL
+              {{- if and .Values.database.external.enabled .Values.database.external.jdbcUrlFrom }}
+              valueFrom:
+                {{- toYaml .Values.database.external.jdbcUrlFrom | nindent 16 }}
+              {{- else }}
               value: {{ include "tolgee.database.jdbcUrl" . | quote }}
+              {{- end }}
             - name: SPRING_DATASOURCE_USERNAME
+              {{- if and .Values.database.external.enabled .Values.database.external.usernameFrom }}
+              valueFrom:
+                {{- toYaml .Values.database.external.usernameFrom | nindent 16 }}
+              {{- else }}
               value: {{ include "tolgee.database.username" . | quote }}
+              {{- end }}
             - name: SPRING_DATASOURCE_PASSWORD
+              {{- if and .Values.database.external.enabled .Values.database.external.passwordFrom }}
+              valueFrom:
+                {{- toYaml .Values.database.external.passwordFrom | nindent 16 }}
+              {{- else }}
               value: {{ include "tolgee.database.password" . | quote }}
+              {{- end }}
             {{- end }}
             {{- $_ := set $envSeen "SPRING_DATASOURCE_URL" true }}
             {{- $_ := set $envSeen "SPRING_DATASOURCE_USERNAME" true }}
