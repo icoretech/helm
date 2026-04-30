@@ -99,7 +99,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/multica\\/Chart\\.yaml$/"],
-      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
+      "matchStrings": ["appVersion:\\s*\\\"?v?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "multica-ai/multica",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^v?(?<version>.+)$",
@@ -108,7 +108,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/multica\\/Chart\\.yaml$/"],
-      "matchStrings": ["image:\\s*ghcr\\.io\\/multica-ai\\/multica-backend:(?<currentValue>[^\\s]+)"],
+      "matchStrings": ["image:\\s*ghcr\\.io\\/multica-ai\\/multica-backend:v?(?<currentValue>[^\\s]+)"],
       "depNameTemplate": "multica-ai/multica",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^v?(?<version>.+)$",
@@ -117,7 +117,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/multica\\/Chart\\.yaml$/"],
-      "matchStrings": ["image:\\s*ghcr\\.io\\/multica-ai\\/multica-web:(?<currentValue>[^\\s]+)"],
+      "matchStrings": ["image:\\s*ghcr\\.io\\/multica-ai\\/multica-web:v?(?<currentValue>[^\\s]+)"],
       "depNameTemplate": "multica-ai/multica",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^v?(?<version>.+)$",
