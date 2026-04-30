@@ -102,6 +102,8 @@ The backend readiness probe uses `/readyz`, which checks PostgreSQL connectivity
 
 Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you explicitly want `DATABASE_MAX_CONNS` / `DATABASE_MIN_CONNS` env vars to override Multica's own defaults and any `pool_max_conns` / `pool_min_conns` query parameters already embedded in `DATABASE_URL`.
 
+Signup restrictions only apply to first-time signup. Existing users can always sign in again. To restrict first-time signup to explicit addresses or domains, keep `backend.config.allowSignup=true` and set `backend.config.allowedEmails` or `backend.config.allowedEmailDomains`. Setting `backend.config.allowSignup=false` blocks every new signup even when an email allowlist is present.
+
 ## Agent Execution Model
 
 This chart deploys the Multica server layer only: backend, frontend, database wiring, and upload storage. Agent execution still happens through Multica daemons running on separate machines where Codex, Claude Code, OpenCode, or another supported coding tool is installed.

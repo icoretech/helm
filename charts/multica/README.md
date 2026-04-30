@@ -102,6 +102,8 @@ The backend readiness probe uses `/readyz`, which checks PostgreSQL connectivity
 
 Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you explicitly want `DATABASE_MAX_CONNS` / `DATABASE_MIN_CONNS` env vars to override Multica's own defaults and any `pool_max_conns` / `pool_min_conns` query parameters already embedded in `DATABASE_URL`.
 
+Signup restrictions only apply to first-time signup. Existing users can always sign in again. To restrict first-time signup to explicit addresses or domains, keep `backend.config.allowSignup=true` and set `backend.config.allowedEmails` or `backend.config.allowedEmailDomains`. Setting `backend.config.allowSignup=false` blocks every new signup even when an email allowlist is present.
+
 ## Agent Execution Model
 
 This chart deploys the Multica server layer only: backend, frontend, database wiring, and upload storage. Agent execution still happens through Multica daemons running on separate machines where Codex, Claude Code, OpenCode, or another supported coding tool is installed.
@@ -120,9 +122,9 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | backend.autoscaling.minReplicas | int | `1` | Minimum backend replicas. |
 | backend.autoscaling.targetCPUUtilizationPercentage | int | `80` | Target CPU utilization percentage. |
 | backend.autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Target memory utilization percentage. |
-| backend.config.allowSignup | bool | `true` | Signup master switch. |
-| backend.config.allowedEmailDomains | string | `""` | Signup domain allowlist, comma-separated. |
-| backend.config.allowedEmails | string | `""` | Explicit signup email allowlist, comma-separated. |
+| backend.config.allowSignup | bool | `true` | Signup master switch. Keep true when using allowedEmails or allowedEmailDomains; set false only to block all first-time signup. |
+| backend.config.allowedEmailDomains | string | `""` | First-time signup domain allowlist, comma-separated. Existing users can still sign in even if their domain is removed from the allowlist. |
+| backend.config.allowedEmails | string | `""` | Explicit first-time signup email allowlist, comma-separated. Existing users can still sign in even if removed from the allowlist. |
 | backend.config.allowedOrigins | string | `""` | Additional WebSocket origins, comma-separated. |
 | backend.config.analyticsDisabled | bool | `true` | Disable backend/frontend analytics. Defaults to true for self-host privacy. |
 | backend.config.appEnv | string | `"production"` | Runtime environment. Keep `production` on public deployments. |

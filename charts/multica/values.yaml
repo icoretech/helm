@@ -84,11 +84,11 @@ backend:
       key: ""
     # -- Fixed local test verification code. Keep empty in production.
     devVerificationCode: ""
-    # -- Signup master switch.
+    # -- Signup master switch. Keep true when using allowedEmails or allowedEmailDomains; set false only to block all first-time signup.
     allowSignup: true
-    # -- Explicit signup email allowlist, comma-separated.
+    # -- Explicit first-time signup email allowlist, comma-separated. Existing users can still sign in even if removed from the allowlist.
     allowedEmails: ""
-    # -- Signup domain allowlist, comma-separated.
+    # -- First-time signup domain allowlist, comma-separated. Existing users can still sign in even if their domain is removed from the allowlist.
     allowedEmailDomains: ""
     # -- Optional cookie Domain attribute. Leave empty for single-host deployments.
     cookieDomain: ""
