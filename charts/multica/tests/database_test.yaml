@@ -7,9 +7,25 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].value
           value: postgres://multica:multica@RELEASE-NAME-postgres:5432/multica?sslmode=disable
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_MAX_CONNS")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_MIN_CONNS")]
       - equal:
           path: spec.template.spec.initContainers[0].env[?(@.name=="DB_HOST")].value
           value: RELEASE-NAME-postgres
+
+  - it: supports database pool tuning
+    set:
+      database.pool.maxConns: 50
+      database.pool.minConns: 10
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_MAX_CONNS")].value
+          value: "50"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_MIN_CONNS")].value
+          value: "10"
 
   - it: uses external DATABASE_URL secret when provided
     values:
@@ -24,6 +40,10 @@ tests:
       - equal:
           path: spec.template.spec.initContainers[0].env[?(@.name=="DB_HOST")].value
           value: postgres.example.com
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_MAX_CONNS")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_MIN_CONNS")]
 
   - it: derives wait host and port from external DATABASE_URL
     values:
@@ -38,6 +58,10 @@ tests:
       - equal:
           path: spec.template.spec.initContainers[0].env[?(@.name=="DB_PORT")].value
           value: "6543"
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_MAX_CONNS")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_MIN_CONNS")]
 
   - it: rejects external DATABASE_URL secret without wait host
     values:

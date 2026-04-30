@@ -229,6 +229,11 @@ frontend:
     targetMemoryUtilizationPercentage:
 
 database:
+  pool:
+    # -- Optional DATABASE_MAX_CONNS env override. Leave empty to honor DATABASE_URL pool_max_conns or Multica defaults.
+    maxConns:
+    # -- Optional DATABASE_MIN_CONNS env override. Leave empty to honor DATABASE_URL pool_min_conns or Multica defaults.
+    minConns:
   internal:
     # -- Override internal PostgreSQL service name. Defaults to `<release>-postgres`.
     serviceName: ""

@@ -61,6 +61,8 @@ postgres:
 database:
   external:
     enabled: true
+    # Required by the wait-for-Postgres init container when DATABASE_URL comes from a Secret.
+    host: postgres.example.com
     urlFrom:
       secretKeyRef:
         name: multica-db
@@ -95,6 +97,8 @@ redis:
 When using the chart-managed Ingress or HTTPRoute, backend-owned paths such as `/health`, `/api`, `/auth`, `/uploads`, and `/ws` are routed directly to the backend Service by default. This is required by `multica setup self-host`, which probes `<server-url>/health`. If you manage Traefik `IngressRoute`, nginx snippets, or another external router outside the chart, mirror the same path split.
 
 When using S3-compatible storage without `storage.s3.cloudfrontDomain`, Multica stores reader-facing URLs using the configured bucket endpoint. Configure the bucket with public `s3:GetObject` access for uploaded objects, or set `storage.s3.cloudfrontDomain` with CloudFront signing support.
+
+Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you explicitly want `DATABASE_MAX_CONNS` / `DATABASE_MIN_CONNS` env vars to override Multica's own defaults and any `pool_max_conns` / `pool_min_conns` query parameters already embedded in `DATABASE_URL`.
 
 ## Agent Execution Model
 
@@ -178,6 +182,8 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | database.external.username | string | `""` | External PostgreSQL username. |
 | database.internal.port | int | `5432` | Internal PostgreSQL service port. |
 | database.internal.serviceName | string | `""` | Override internal PostgreSQL service name. Defaults to `<release>-postgres`. |
+| database.pool.maxConns | string | `nil` | Optional DATABASE_MAX_CONNS env override. Leave empty to honor DATABASE_URL pool_max_conns or Multica defaults. |
+| database.pool.minConns | string | `nil` | Optional DATABASE_MIN_CONNS env override. Leave empty to honor DATABASE_URL pool_min_conns or Multica defaults. |
 | database.waitForReady.enabled | bool | `true` | Wait for PostgreSQL TCP readiness before starting the backend. |
 | database.waitForReady.image | string | `"busybox:1.37"` | Init container image used for DB readiness checks. |
 | database.waitForReady.imagePullPolicy | string | `"IfNotPresent"` | Init container image pull policy. |

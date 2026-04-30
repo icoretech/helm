@@ -100,6 +100,16 @@ spec:
               value: {{ include "multica.databaseUrl" . | trim | quote }}
             {{- end }}
             {{- $_ := set $managed "DATABASE_URL" true }}
+            {{- if .Values.database.pool.maxConns }}
+            - name: DATABASE_MAX_CONNS
+              value: {{ printf "%v" .Values.database.pool.maxConns | quote }}
+            {{- end }}
+            {{- $_ := set $managed "DATABASE_MAX_CONNS" true }}
+            {{- if .Values.database.pool.minConns }}
+            - name: DATABASE_MIN_CONNS
+              value: {{ printf "%v" .Values.database.pool.minConns | quote }}
+            {{- end }}
+            {{- $_ := set $managed "DATABASE_MIN_CONNS" true }}
             {{- if .Values.realtime.redisUrlRef.name }}
             - name: REDIS_URL
               valueFrom:
