@@ -7,7 +7,7 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - Separate backend and frontend Deployments using upstream GHCR images
 - Optional bundled PostgreSQL for evaluation and chart-testing
 - External PostgreSQL mode for production deployments
-- Optional bundled Redis for multi-backend realtime fanout
+- Optional bundled Redis for multi-backend realtime fanout, auth-token caches, and runtime-local skill queues
 - Local upload PVC support and S3-compatible storage configuration
 - Secret references for JWT, email, Google OAuth, metrics, database URL, and S3 credentials
 - Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
@@ -97,6 +97,8 @@ redis:
 When using the chart-managed Ingress or HTTPRoute, backend-owned paths such as `/health`, `/api`, `/auth`, `/uploads`, and `/ws` are routed directly to the backend Service by default. This is required by `multica setup self-host`, which probes `<server-url>/health`. If you manage Traefik `IngressRoute`, nginx snippets, or another external router outside the chart, mirror the same path split.
 
 When using S3-compatible storage without `storage.s3.cloudfrontDomain`, Multica stores reader-facing URLs using the configured bucket endpoint. Configure the bucket with public `s3:GetObject` access for uploaded objects, or set `storage.s3.cloudfrontDomain` with CloudFront signing support.
+
+The backend readiness probe uses `/readyz`, which checks PostgreSQL connectivity and the latest server migration. Liveness stays on `/health`, which only confirms the process is alive.
 
 Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you explicitly want `DATABASE_MAX_CONNS` / `DATABASE_MIN_CONNS` env vars to override Multica's own defaults and any `pool_max_conns` / `pool_min_conns` query parameters already embedded in `DATABASE_URL`.
 
@@ -260,7 +262,7 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | postgres.persistence.enabled | bool | `true` |  |
 | postgres.persistence.size | string | `"8Gi"` |  |
 | readinessProbe.backend.failureThreshold | int | `6` |  |
-| readinessProbe.backend.httpGet.path | string | `"/health"` |  |
+| readinessProbe.backend.httpGet.path | string | `"/readyz"` |  |
 | readinessProbe.backend.httpGet.port | string | `"http"` |  |
 | readinessProbe.backend.initialDelaySeconds | int | `10` |  |
 | readinessProbe.backend.periodSeconds | int | `10` |  |
@@ -273,12 +275,12 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | readinessProbe.frontend.periodSeconds | int | `10` |  |
 | readinessProbe.frontend.successThreshold | int | `1` |  |
 | readinessProbe.frontend.timeoutSeconds | int | `3` |  |
-| realtime.redisUrl | string | `""` | Redis connection URL for multi-backend realtime fanout. Leave empty for single-backend in-memory mode or when using bundled Redis. |
+| realtime.redisUrl | string | `""` | Redis connection URL for multi-backend realtime fanout, auth-token caches, and runtime-local skill queues. Leave empty for single-backend in-memory mode or when using bundled Redis. |
 | realtime.redisUrlRef.key | string | `""` | Secret key for REDIS_URL. |
 | realtime.redisUrlRef.name | string | `""` | Existing secret containing REDIS_URL. |
 | redis.architecture | string | `"standalone"` |  |
 | redis.auth.enabled | bool | `true` |  |
-| redis.enabled | bool | `false` | Enable bundled Redis for multi-backend realtime fanout. |
+| redis.enabled | bool | `false` | Enable bundled Redis for multi-backend realtime fanout, auth-token caches, and runtime-local skill queues. |
 | redis.persistence.enabled | bool | `true` |  |
 | redis.persistence.size | string | `"8Gi"` |  |
 | serviceAccount.annotations | object | `{}` | Service account annotations. |

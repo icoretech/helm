@@ -274,7 +274,7 @@ database:
     periodSeconds: 2
 
 realtime:
-  # -- Redis connection URL for multi-backend realtime fanout. Leave empty for single-backend in-memory mode or when using bundled Redis.
+  # -- Redis connection URL for multi-backend realtime fanout, auth-token caches, and runtime-local skill queues. Leave empty for single-backend in-memory mode or when using bundled Redis.
   redisUrl: ""
   redisUrlRef:
     # -- Existing secret containing REDIS_URL.
@@ -441,7 +441,7 @@ livenessProbe:
 readinessProbe:
   backend:
     httpGet:
-      path: /health
+      path: /readyz
       port: http
     initialDelaySeconds: 10
     periodSeconds: 10
@@ -484,7 +484,7 @@ postgres:
     size: 8Gi
 
 redis:
-  # -- Enable bundled Redis for multi-backend realtime fanout.
+  # -- Enable bundled Redis for multi-backend realtime fanout, auth-token caches, and runtime-local skill queues.
   enabled: false
   architecture: standalone
   auth:

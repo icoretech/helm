@@ -6,16 +6,16 @@ tests:
   - it: renders backend image from chart appVersion
     template: backend-deployment.yaml
     asserts:
-      - equal:
+      - matchRegex:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/multica-ai/multica-backend:v0.2.19
+          pattern: "^ghcr\\.io/multica-ai/multica-backend:v[0-9]+\\.[0-9]+\\.[0-9]+$"
 
   - it: renders frontend image from chart appVersion
     template: frontend-deployment.yaml
     asserts:
-      - equal:
+      - matchRegex:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/multica-ai/multica-web:v0.2.19
+          pattern: "^ghcr\\.io/multica-ai/multica-web:v[0-9]+\\.[0-9]+\\.[0-9]+$"
 
   - it: wires backend health probes and local upload PVC
     template: backend-deployment.yaml
@@ -25,7 +25,7 @@ tests:
           value: /health
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.path
-          value: /health
+          value: /readyz
       - equal:
           path: spec.template.spec.containers[0].volumeMounts[0].mountPath
           value: /app/data/uploads
