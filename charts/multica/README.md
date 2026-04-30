@@ -7,7 +7,7 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - Separate backend and frontend Deployments using upstream GHCR images
 - Optional bundled PostgreSQL for evaluation and chart-testing
 - External PostgreSQL mode for production deployments
-- Optional bundled Redis for multi-backend realtime fanout, auth-token caches, and runtime-local skill queues
+- Optional bundled Redis for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues
 - Local upload PVC support and S3-compatible storage configuration
 - Secret references for JWT, email, Google OAuth, metrics, database URL, and S3 credentials
 - Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
@@ -107,8 +107,6 @@ Signup restrictions only apply to first-time signup. Existing users can always s
 ## Agent Execution Model
 
 This chart deploys the Multica server layer only: backend, frontend, database wiring, and upload storage. Agent execution still happens through Multica daemons running on separate machines where Codex, Claude Code, OpenCode, or another supported coding tool is installed.
-
-Do not run arbitrary coding-agent daemons inside this chart by default. Treat runners as separately managed compute with their own filesystem, credentials, and security boundary.
 
 ## Configuration Reference
 
@@ -277,12 +275,12 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | readinessProbe.frontend.periodSeconds | int | `10` |  |
 | readinessProbe.frontend.successThreshold | int | `1` |  |
 | readinessProbe.frontend.timeoutSeconds | int | `3` |  |
-| realtime.redisUrl | string | `""` | Redis connection URL for multi-backend realtime fanout, auth-token caches, and runtime-local skill queues. Leave empty for single-backend in-memory mode or when using bundled Redis. |
+| realtime.redisUrl | string | `""` | Redis connection URL for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues. Leave empty for single-backend in-memory mode or when using bundled Redis. |
 | realtime.redisUrlRef.key | string | `""` | Secret key for REDIS_URL. |
 | realtime.redisUrlRef.name | string | `""` | Existing secret containing REDIS_URL. |
 | redis.architecture | string | `"standalone"` |  |
 | redis.auth.enabled | bool | `true` |  |
-| redis.enabled | bool | `false` | Enable bundled Redis for multi-backend realtime fanout, auth-token caches, and runtime-local skill queues. |
+| redis.enabled | bool | `false` | Enable bundled Redis for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues. |
 | redis.persistence.enabled | bool | `true` |  |
 | redis.persistence.size | string | `"8Gi"` |  |
 | serviceAccount.annotations | object | `{}` | Service account annotations. |
