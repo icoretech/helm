@@ -2,8 +2,8 @@ apiVersion: v2
 name: multica
 description: Multica managed agents platform for Kubernetes
 type: application
-version: 0.2.7
-appVersion: "v0.2.24"
+version: 0.2.8
+appVersion: "v0.2.25"
 kubeVersion: ">= 1.24.0-0"
 icon: https://raw.githubusercontent.com/multica-ai/multica/main/docs/assets/logo-light.svg
 keywords:
@@ -27,9 +27,9 @@ annotations:
     url: https://icoretech.github.io/helm/pgp-public-key.asc
   artifacthub.io/images: |
     - name: multica-backend
-      image: ghcr.io/multica-ai/multica-backend:v0.2.24
+      image: ghcr.io/multica-ai/multica-backend:v0.2.25
     - name: multica-web
-      image: ghcr.io/multica-ai/multica-web:v0.2.24
+      image: ghcr.io/multica-ai/multica-web:v0.2.25
 dependencies:
   - name: postgres
     version: "0.19.3"
