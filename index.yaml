@@ -5726,6 +5726,51 @@ entries:
   - annotations:
       artifacthub.io/images: |
         - name: multica-backend
+          image: ghcr.io/multica-ai/multica-backend:v0.2.25
+        - name: multica-web
+          image: ghcr.io/multica-ai/multica-web:v0.2.25
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v0.2.25
+    created: "2026-05-04T22:48:18.061771695Z"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.19.3
+    - condition: redis.enabled
+      name: redis
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.27.4
+    description: Multica managed agents platform for Kubernetes
+    digest: 3f411e309cf233cd8c26037d813532fd8a571caf6eaacd1d4d7f2f01a0189c34
+    home: https://github.com/multica-ai/multica
+    icon: https://raw.githubusercontent.com/multica-ai/multica/main/docs/assets/logo-light.svg
+    keywords:
+    - multica
+    - agents
+    - codex
+    - claude-code
+    - ai
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: multica
+    sources:
+    - https://github.com/multica-ai/multica
+    - https://github.com/icoretech/helm/tree/main/charts/multica
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/multica-0.2.8/multica-0.2.8.tgz
+    version: 0.2.8
+  - annotations:
+      artifacthub.io/images: |
+        - name: multica-backend
           image: ghcr.io/multica-ai/multica-backend:v0.2.24
         - name: multica-web
           image: ghcr.io/multica-ai/multica-web:v0.2.24
@@ -9264,4 +9309,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-05-04T02:01:46.54696181Z"
+generated: "2026-05-04T22:48:18.062143719Z"
