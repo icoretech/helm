@@ -322,10 +322,3 @@ provision:
 | tolerations | list | `[]` |  |
 | users | list | `[]` |  |
 <!-- markdownlint-enable MD013 -->
-
-## Design highlights
-
-- Single source of truth: `provision.servers` drives both deployment (optional) and registration.
-- Internal Postgres only; external DBs supported by overriding `env.DATABASE_URL`.
-- Endpoint transports validated to `SSE` or `STREAMABLE_HTTP`.
-- Secrets/configmaps are checksum‑annotated to trigger rollouts when they change.
