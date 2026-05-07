@@ -105,6 +105,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | shareProcessNamespace | bool | `false` | Allow containers in the pod to share the same process namespace. |
 | terminationGracePeriodSeconds | int | `30` | Time (in seconds) to allow graceful shutdown before force-terminating the container. |
 | tolerations | list | `[]` | See Kubernetes docs on taints and tolerations. |
+| topologySpreadConstraints | list | `[]` | See Kubernetes docs on topology spread constraints. |
 | updateStrategy | object | `{}` | The update strategy to apply to the Deployment (e.g. Recreate or RollingUpdate). |
 
 ## Example using Flux
