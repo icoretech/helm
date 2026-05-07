@@ -48,6 +48,9 @@ spec:
       {{ if .Values.tolerations -}}
       tolerations: {{ toYaml .Values.tolerations | trimSuffix "\n" | nindent 6 }}
       {{ end -}}
+      {{ if .Values.topologySpreadConstraints -}}
+      topologySpreadConstraints:{{ toYaml .Values.topologySpreadConstraints | trimSuffix "\n" | nindent 8 }}
+      {{ end -}}
       {{ if .Values.affinity -}}
       affinity: {{ toYaml .Values.affinity | trimSuffix "\n" | nindent 8 }}
       {{ end -}}
