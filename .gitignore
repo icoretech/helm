@@ -20,3 +20,4 @@ AGENTS.md
 /signing/secring.gpg
 /signing/secring.gpg.base64
 /signing/fingerprint.txt
+.sisyphus/
