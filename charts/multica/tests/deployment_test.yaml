@@ -36,6 +36,18 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="ANALYTICS_DISABLED")].value
           value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="ANALYTICS_ENVIRONMENT")].value
+          value: ""
+
+  - it: supports analytics environment override
+    template: backend-deployment.yaml
+    set:
+      backend.config.analyticsEnvironment: staging
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="ANALYTICS_ENVIRONMENT")].value
+          value: staging
 
   - it: supports backend image tag override
     template: backend-deployment.yaml

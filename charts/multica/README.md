@@ -125,6 +125,7 @@ This chart deploys the Multica server layer only: backend, frontend, database wi
 | backend.config.allowedEmails | string | `""` | Explicit first-time signup email allowlist, comma-separated. Existing users can still sign in even if removed from the allowlist. |
 | backend.config.allowedOrigins | string | `""` | Additional WebSocket origins, comma-separated. |
 | backend.config.analyticsDisabled | bool | `true` | Disable backend/frontend analytics. Defaults to true for self-host privacy. |
+| backend.config.analyticsEnvironment | string | `""` | Optional PostHog environment property override. Empty lets Multica derive it from APP_ENV. |
 | backend.config.appEnv | string | `"production"` | Runtime environment. Keep `production` on public deployments. |
 | backend.config.cookieDomain | string | `""` | Optional cookie Domain attribute. Leave empty for single-host deployments. |
 | backend.config.corsAllowedOrigins | string | `""` | Additional CORS origins, comma-separated. |

@@ -94,6 +94,8 @@ backend:
     cookieDomain: ""
     # -- Disable backend/frontend analytics. Defaults to true for self-host privacy.
     analyticsDisabled: true
+    # -- Optional PostHog environment property override. Empty lets Multica derive it from APP_ENV.
+    analyticsEnvironment: ""
     # -- PostHog API key when analytics are enabled.
     posthogApiKey: ""
     posthogHost: https://us.i.posthog.com

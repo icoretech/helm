@@ -60,6 +60,7 @@
             "allowedEmailDomains": { "type": "string" },
             "cookieDomain": { "type": "string" },
             "analyticsDisabled": { "type": "boolean" },
+            "analyticsEnvironment": { "type": "string" },
             "posthogApiKey": { "type": "string" },
             "posthogHost": { "type": "string" }
           }

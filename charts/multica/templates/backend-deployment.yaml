@@ -181,6 +181,9 @@ spec:
             - name: ANALYTICS_DISABLED
               value: {{ printf "%v" .Values.backend.config.analyticsDisabled | quote }}
             {{- $_ := set $managed "ANALYTICS_DISABLED" true }}
+            - name: ANALYTICS_ENVIRONMENT
+              value: {{ .Values.backend.config.analyticsEnvironment | quote }}
+            {{- $_ := set $managed "ANALYTICS_ENVIRONMENT" true }}
             - name: POSTHOG_API_KEY
               value: {{ .Values.backend.config.posthogApiKey | quote }}
             {{- $_ := set $managed "POSTHOG_API_KEY" true }}
