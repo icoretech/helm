@@ -204,6 +204,47 @@ spec:
             - name: RESEND_FROM_EMAIL
               value: {{ .Values.backend.email.resendFromEmail | quote }}
             {{- $_ := set $managed "RESEND_FROM_EMAIL" true }}
+            {{- if .Values.backend.email.smtp.host }}
+            - name: SMTP_HOST
+              value: {{ .Values.backend.email.smtp.host | quote }}
+            {{- end }}
+            {{- $_ := set $managed "SMTP_HOST" true }}
+            {{- if .Values.backend.email.smtp.host }}
+            - name: SMTP_PORT
+              value: {{ printf "%v" .Values.backend.email.smtp.port | quote }}
+            {{- end }}
+            {{- $_ := set $managed "SMTP_PORT" true }}
+            {{- if .Values.backend.email.smtp.host }}
+            {{- if .Values.backend.email.smtp.usernameRef.name }}
+            - name: SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.email.smtp.usernameRef.name | quote }}
+                  key: {{ required "multica: backend.email.smtp.usernameRef.key is required" .Values.backend.email.smtp.usernameRef.key | quote }}
+            {{- else if .Values.backend.email.smtp.username }}
+            - name: SMTP_USERNAME
+              value: {{ .Values.backend.email.smtp.username | quote }}
+            {{- end }}
+            {{- end }}
+            {{- $_ := set $managed "SMTP_USERNAME" true }}
+            {{- if .Values.backend.email.smtp.host }}
+            {{- if .Values.backend.email.smtp.passwordRef.name }}
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.email.smtp.passwordRef.name | quote }}
+                  key: {{ required "multica: backend.email.smtp.passwordRef.key is required" .Values.backend.email.smtp.passwordRef.key | quote }}
+            {{- else if .Values.backend.email.smtp.password }}
+            - name: SMTP_PASSWORD
+              value: {{ .Values.backend.email.smtp.password | quote }}
+            {{- end }}
+            {{- end }}
+            {{- $_ := set $managed "SMTP_PASSWORD" true }}
+            {{- if .Values.backend.email.smtp.host }}
+            - name: SMTP_TLS_INSECURE
+              value: {{ printf "%v" .Values.backend.email.smtp.tlsInsecure | quote }}
+            {{- end }}
+            {{- $_ := set $managed "SMTP_TLS_INSECURE" true }}
             {{- if .Values.backend.google.clientIdRef.name }}
             - name: GOOGLE_CLIENT_ID
               valueFrom:
@@ -229,6 +270,32 @@ spec:
             - name: GOOGLE_REDIRECT_URI
               value: {{ .Values.backend.google.redirectUri | quote }}
             {{- $_ := set $managed "GOOGLE_REDIRECT_URI" true }}
+            {{- if .Values.backend.github.appSlug }}
+            - name: GITHUB_APP_SLUG
+              value: {{ .Values.backend.github.appSlug | quote }}
+            {{- end }}
+            {{- $_ := set $managed "GITHUB_APP_SLUG" true }}
+            {{- if .Values.backend.github.webhookSecretRef.name }}
+            - name: GITHUB_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.github.webhookSecretRef.name | quote }}
+                  key: {{ required "multica: backend.github.webhookSecretRef.key is required when backend.github.webhookSecretRef.name is set" .Values.backend.github.webhookSecretRef.key | quote }}
+            {{- else if .Values.backend.github.webhookSecret }}
+            - name: GITHUB_WEBHOOK_SECRET
+              value: {{ .Values.backend.github.webhookSecret | quote }}
+            {{- end }}
+            {{- $_ := set $managed "GITHUB_WEBHOOK_SECRET" true }}
+            {{- if .Values.backend.usageRollups.dailyEnabled }}
+            - name: USAGE_DAILY_ROLLUP_ENABLED
+              value: {{ printf "%v" .Values.backend.usageRollups.dailyEnabled | quote }}
+            {{- end }}
+            {{- $_ := set $managed "USAGE_DAILY_ROLLUP_ENABLED" true }}
+            {{- if .Values.backend.usageRollups.dashboardEnabled }}
+            - name: USAGE_DASHBOARD_ROLLUP_ENABLED
+              value: {{ printf "%v" .Values.backend.usageRollups.dashboardEnabled | quote }}
+            {{- end }}
+            {{- $_ := set $managed "USAGE_DASHBOARD_ROLLUP_ENABLED" true }}
             - name: LOCAL_UPLOAD_DIR
               value: {{ .Values.storage.local.uploadDir | quote }}
             {{- $_ := set $managed "LOCAL_UPLOAD_DIR" true }}

@@ -110,6 +110,27 @@ backend:
       key: ""
     # -- Sender address for verification emails.
     resendFromEmail: noreply@multica.ai
+    smtp:
+      # -- SMTP relay host. When empty, Multica uses Resend or stdout fallback.
+      host: ""
+      # -- SMTP relay port. Multica uses plain SMTP with optional STARTTLS, so implicit TLS port 465 is not supported.
+      port: 25
+      # -- Optional SMTP auth username.
+      username: ""
+      usernameRef:
+        # -- Existing secret containing SMTP_USERNAME.
+        name: ""
+        # -- Secret key for SMTP_USERNAME.
+        key: ""
+      # -- Optional SMTP auth password.
+      password: ""
+      passwordRef:
+        # -- Existing secret containing SMTP_PASSWORD.
+        name: ""
+        # -- Secret key for SMTP_PASSWORD.
+        key: ""
+      # -- Skip TLS certificate verification for SMTP STARTTLS.
+      tlsInsecure: false
 
   google:
     # -- Google OAuth client ID.
@@ -128,6 +149,23 @@ backend:
       key: ""
     # -- Google OAuth redirect URI.
     redirectUri: http://localhost:3000/auth/callback
+
+  github:
+    # -- GitHub App slug.
+    appSlug: ""
+    # -- GitHub App webhook secret. Prefer webhookSecretRef for production deployments.
+    webhookSecret: ""
+    webhookSecretRef:
+      # -- Existing secret containing GITHUB_WEBHOOK_SECRET.
+      name: ""
+      # -- Secret key for GITHUB_WEBHOOK_SECRET.
+      key: ""
+
+  usageRollups:
+    # -- Enable runtime usage reads from the daily rollup table after external backfill/scheduler setup is complete.
+    dailyEnabled: false
+    # -- Enable dashboard usage reads from the dashboard rollup table after external backfill/scheduler setup is complete.
+    dashboardEnabled: false
 
   # -- Extra backend env vars. Managed env names are rejected to avoid silent overrides.
   extraEnv: []

@@ -71,7 +71,43 @@
           "properties": {
             "resendApiKey": { "type": "string" },
             "resendApiKeyRef": { "$ref": "#/definitions/secretRef" },
-            "resendFromEmail": { "type": "string" }
+            "resendFromEmail": { "type": "string" },
+            "smtp": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "host": { "type": "string" },
+                "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+                "username": { "type": "string" },
+                "usernameRef": { "$ref": "#/definitions/secretRef" },
+                "password": { "type": "string" },
+                "passwordRef": { "$ref": "#/definitions/secretRef" },
+                "tlsInsecure": { "type": "boolean" }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "allOf": [
+                      {
+                        "properties": {
+                          "host": { "minLength": 1 }
+                        },
+                        "required": ["host"]
+                      },
+                      {
+                        "properties": {
+                          "port": { "const": 465 }
+                        },
+                        "required": ["port"]
+                      }
+                    ]
+                  },
+                  "then": {
+                    "required": ["unsupported SMTP port 465"]
+                  }
+                }
+              ]
+            }
           }
         },
         "google": {
@@ -83,6 +119,133 @@
             "clientSecret": { "type": "string" },
             "clientSecretRef": { "$ref": "#/definitions/secretRef" },
             "redirectUri": { "type": "string" }
+          }
+        },
+        "github": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "appSlug": { "type": "string" },
+            "webhookSecret": { "type": "string" },
+            "webhookSecretRef": { "$ref": "#/definitions/secretRef" }
+          },
+          "allOf": [
+            {
+              "if": {
+                "allOf": [
+                  {
+                    "properties": {
+                      "appSlug": { "minLength": 1 }
+                    }
+                  },
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "properties": {
+                            "webhookSecret": { "minLength": 1 }
+                          },
+                          "required": ["webhookSecret"]
+                        },
+                        {
+                          "properties": {
+                            "webhookSecretRef": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "minLength": 1 }
+                              },
+                              "required": ["name"]
+                            }
+                          },
+                          "required": ["webhookSecretRef"]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "required": ["backend.github.webhookSecret or backend.github.webhookSecretRef is required when backend.github.appSlug is set"]
+              }
+            },
+            {
+              "if": {
+                "allOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "properties": {
+                          "webhookSecret": { "minLength": 1 }
+                        },
+                        "required": ["webhookSecret"]
+                      },
+                      {
+                        "properties": {
+                          "webhookSecretRef": {
+                            "type": "object",
+                            "properties": {
+                              "name": { "minLength": 1 }
+                            },
+                            "required": ["name"]
+                          }
+                        },
+                        "required": ["webhookSecretRef"]
+                      }
+                    ]
+                  },
+                  {
+                    "not": {
+                      "properties": {
+                        "appSlug": { "minLength": 1 }
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "required": ["backend.github.appSlug is required when backend.github.webhookSecret or backend.github.webhookSecretRef.name is set"]
+              }
+            },
+            {
+              "if": {
+                "allOf": [
+                  {
+                    "properties": {
+                      "webhookSecretRef": {
+                        "type": "object",
+                        "properties": {
+                          "name": { "minLength": 1 }
+                        },
+                        "required": ["name"]
+                      }
+                    }
+                  },
+                  {
+                    "not": {
+                      "properties": {
+                        "webhookSecretRef": {
+                          "type": "object",
+                          "properties": {
+                            "key": { "minLength": 1 }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "required": ["backend.github.webhookSecretRef.key is required when backend.github.webhookSecretRef.name is set"]
+              }
+            }
+          ]
+        },
+        "usageRollups": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dailyEnabled": { "type": "boolean" },
+            "dashboardEnabled": { "type": "boolean" }
           }
         },
         "extraEnv": { "$ref": "#/definitions/envList" },
