@@ -1,0 +1,6 @@
+backend:
+  usageRollups:
+    dailyEnabled: true
+  extraEnv:
+    - name: USAGE_DAILY_ROLLUP_ENABLED
+      value: "true"

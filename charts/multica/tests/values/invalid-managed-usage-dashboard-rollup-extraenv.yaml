@@ -1,0 +1,6 @@
+backend:
+  usageRollups:
+    dashboardEnabled: true
+  extraEnv:
+    - name: USAGE_DASHBOARD_ROLLUP_ENABLED
+      value: "true"

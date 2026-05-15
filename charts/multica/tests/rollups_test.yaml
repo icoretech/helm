@@ -1,0 +1,36 @@
+suite: usage rollup flags
+templates:
+  - backend-deployment.yaml
+tests:
+  - it: leaves usage rollup envs unset by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="USAGE_DAILY_ROLLUP_ENABLED")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="USAGE_DASHBOARD_ROLLUP_ENABLED")]
+
+  - it: renders usage rollup envs when enabled
+    set:
+      backend.usageRollups.dailyEnabled: true
+      backend.usageRollups.dashboardEnabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="USAGE_DAILY_ROLLUP_ENABLED")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="USAGE_DASHBOARD_ROLLUP_ENABLED")].value
+          value: "true"
+
+  - it: rejects managed USAGE_DAILY_ROLLUP_ENABLED overrides through extraEnv
+    values:
+      - values/invalid-managed-usage-daily-rollup-extraenv.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=USAGE_DAILY_ROLLUP_ENABLED is managed by the chart; use the dedicated value instead"
+
+  - it: rejects managed USAGE_DASHBOARD_ROLLUP_ENABLED overrides through extraEnv
+    values:
+      - values/invalid-managed-usage-dashboard-rollup-extraenv.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=USAGE_DASHBOARD_ROLLUP_ENABLED is managed by the chart; use the dedicated value instead"
