@@ -66,3 +66,16 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].image
           value: ghcr.io/multica-ai/multica-web:v9.9.9
+
+  - it: renders GitHub App env values from inline config
+    template: backend-deployment.yaml
+    set:
+      backend.github.appSlug: multica-example-app
+      backend.github.webhookSecret: webhook-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_APP_SLUG")].value
+          value: multica-example-app
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_WEBHOOK_SECRET")].value
+          value: webhook-secret
