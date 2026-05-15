@@ -5921,6 +5921,51 @@ entries:
         url: https://icoretech.github.io/helm/pgp-public-key.asc
     apiVersion: v2
     appVersion: v0.3.1
+    created: "2026-05-15T16:40:24.377137098Z"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.19.3
+    - condition: redis.enabled
+      name: redis
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.27.4
+    description: Multica managed agents platform for Kubernetes
+    digest: 3513f90b1869980c56836035cc1c43dd81b7e7e229834714728a1d1f2f736575
+    home: https://github.com/multica-ai/multica
+    icon: https://raw.githubusercontent.com/multica-ai/multica/main/docs/assets/logo-light.svg
+    keywords:
+    - multica
+    - agents
+    - codex
+    - claude-code
+    - ai
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: multica
+    sources:
+    - https://github.com/multica-ai/multica
+    - https://github.com/icoretech/helm/tree/main/charts/multica
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/multica-0.3.2/multica-0.3.2.tgz
+    version: 0.3.2
+  - annotations:
+      artifacthub.io/images: |
+        - name: multica-backend
+          image: ghcr.io/multica-ai/multica-backend:v0.3.1
+        - name: multica-web
+          image: ghcr.io/multica-ai/multica-web:v0.3.1
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v0.3.1
     created: "2026-05-15T16:32:31.056476251Z"
     dependencies:
     - condition: postgres.enabled
@@ -10230,4 +10275,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-05-15T16:32:31.056953772Z"
+generated: "2026-05-15T16:40:24.377562745Z"
