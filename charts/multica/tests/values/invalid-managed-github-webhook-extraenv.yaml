@@ -1,0 +1,7 @@
+backend:
+  github:
+    appSlug: multica-example-app
+    webhookSecret: webhook-secret
+  extraEnv:
+    - name: GITHUB_WEBHOOK_SECRET
+      value: override

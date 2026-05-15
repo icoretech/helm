@@ -1,0 +1,4 @@
+backend:
+  github:
+    appSlug: multica-example-app
+    webhookSecret: webhook-secret

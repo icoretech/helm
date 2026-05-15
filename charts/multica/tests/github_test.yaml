@@ -1,0 +1,48 @@
+suite: github app wiring
+templates:
+  - backend-deployment.yaml
+tests:
+  - it: leaves GitHub App envs unset by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_APP_SLUG")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_WEBHOOK_SECRET")]
+
+  - it: renders GitHub App env values from secret refs
+    values:
+      - values/valid-github-secret-ref.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_APP_SLUG")].value
+          value: multica-example-app
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_WEBHOOK_SECRET")].valueFrom.secretKeyRef.name
+          value: multica-github
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_WEBHOOK_SECRET")].valueFrom.secretKeyRef.key
+          value: GITHUB_WEBHOOK_SECRET
+
+  - it: rejects slug-only GitHub App config
+    values:
+      - values/invalid-github-appslug-only.yaml
+    asserts:
+      - failedTemplate: {}
+
+  - it: rejects webhook secret-only GitHub App config
+    values:
+      - values/invalid-github-webhook-only.yaml
+    asserts:
+      - failedTemplate: {}
+
+  - it: rejects GitHub App secret-ref-only config
+    values:
+      - values/invalid-github-secret-ref-only.yaml
+    asserts:
+      - failedTemplate: {}
+
+  - it: rejects GitHub App secret refs without a key
+    values:
+      - values/invalid-github-secret-ref-missing-key.yaml
+    asserts:
+      - failedTemplate: {}
