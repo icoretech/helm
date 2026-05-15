@@ -30,7 +30,7 @@ frontend:
 - Kubernetes 1.24+
 - Helm 3.10+
 - For production: external PostgreSQL and a real `JWT_SECRET`
-- For email delivery: Resend API credentials
+- For email delivery: Resend API credentials or an SMTP relay
 
 ## Install
 
@@ -79,6 +79,15 @@ backend:
       name: multica-email
       key: RESEND_API_KEY
     resendFromEmail: noreply@example.com
+    smtp:
+      host: smtp.example.com
+      port: 587
+      usernameRef:
+        name: multica-smtp
+        key: SMTP_USERNAME
+      passwordRef:
+        name: multica-smtp
+        key: SMTP_PASSWORD
 
 storage:
   local:
@@ -104,9 +113,26 @@ Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you exp
 
 Signup restrictions only apply to first-time signup. Existing users can always sign in again. To restrict first-time signup to explicit addresses or domains, keep `backend.config.allowSignup=true` and set `backend.config.allowedEmails` or `backend.config.allowedEmailDomains`. Setting `backend.config.allowSignup=false` blocks every new signup even when an email allowlist is present.
 
+Email delivery can use Resend or an SMTP relay. SMTP is enabled when `backend.email.smtp.host` is set, and upstream Multica checks `SMTP_HOST` before Resend, so SMTP takes priority when both are configured. For production SMTP auth, prefer `backend.email.smtp.passwordRef` instead of inline `backend.email.smtp.password`.
+
+GitHub App integration only needs the app slug and webhook secret for this chart scope. Store the webhook secret in an existing Kubernetes Secret:
+
+```yaml
+backend:
+  github:
+    appSlug: multica-example
+    webhookSecretRef:
+      name: multica-github
+      key: GITHUB_WEBHOOK_SECRET
+```
+
+Usage rollup flags are read-path switches only. Set `backend.usageRollups.dailyEnabled` or `backend.usageRollups.dashboardEnabled` only after the external scheduler and historical backfill are in place. This chart doesn't create the scheduler, run backfill jobs, or make rollup data complete by itself.
+
 ## Agent Execution Model
 
 This chart deploys the Multica server layer only: backend, frontend, database wiring, and upload storage. Agent execution still happens through Multica daemons running on separate machines where Codex, Claude Code, OpenCode, or another supported coding tool is installed.
+
+Daemon-only environment variables don't belong in this server-layer chart. Keep values such as `MULTICA_CLAUDE_ARGS`, `MULTICA_CODEX_ARGS`, and `MULTICA_TASK_SLOT` on daemon hosts or daemon workloads, not in backend or frontend pod configuration.
 
 ## Configuration Reference
 

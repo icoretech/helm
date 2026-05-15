@@ -30,7 +30,7 @@ frontend:
 - Kubernetes 1.24+
 - Helm 3.10+
 - For production: external PostgreSQL and a real `JWT_SECRET`
-- For email delivery: Resend API credentials
+- For email delivery: Resend API credentials or an SMTP relay
 
 ## Install
 
@@ -79,6 +79,15 @@ backend:
       name: multica-email
       key: RESEND_API_KEY
     resendFromEmail: noreply@example.com
+    smtp:
+      host: smtp.example.com
+      port: 587
+      usernameRef:
+        name: multica-smtp
+        key: SMTP_USERNAME
+      passwordRef:
+        name: multica-smtp
+        key: SMTP_PASSWORD
 
 storage:
   local:
@@ -104,9 +113,26 @@ Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you exp
 
 Signup restrictions only apply to first-time signup. Existing users can always sign in again. To restrict first-time signup to explicit addresses or domains, keep `backend.config.allowSignup=true` and set `backend.config.allowedEmails` or `backend.config.allowedEmailDomains`. Setting `backend.config.allowSignup=false` blocks every new signup even when an email allowlist is present.
 
+Email delivery can use Resend or an SMTP relay. SMTP is enabled when `backend.email.smtp.host` is set, and upstream Multica checks `SMTP_HOST` before Resend, so SMTP takes priority when both are configured. For production SMTP auth, prefer `backend.email.smtp.passwordRef` instead of inline `backend.email.smtp.password`.
+
+GitHub App integration only needs the app slug and webhook secret for this chart scope. Store the webhook secret in an existing Kubernetes Secret:
+
+```yaml
+backend:
+  github:
+    appSlug: multica-example
+    webhookSecretRef:
+      name: multica-github
+      key: GITHUB_WEBHOOK_SECRET
+```
+
+Usage rollup flags are read-path switches only. Set `backend.usageRollups.dailyEnabled` or `backend.usageRollups.dashboardEnabled` only after the external scheduler and historical backfill are in place. This chart doesn't create the scheduler, run backfill jobs, or make rollup data complete by itself.
+
 ## Agent Execution Model
 
 This chart deploys the Multica server layer only: backend, frontend, database wiring, and upload storage. Agent execution still happens through Multica daemons running on separate machines where Codex, Claude Code, OpenCode, or another supported coding tool is installed.
+
+Daemon-only environment variables don't belong in this server-layer chart. Keep values such as `MULTICA_CLAUDE_ARGS`, `MULTICA_CODEX_ARGS`, and `MULTICA_TASK_SLOT` on daemon hosts or daemon workloads, not in backend or frontend pod configuration.
 
 ## Configuration Reference
 
@@ -147,8 +173,21 @@ This chart deploys the Multica server layer only: backend, frontend, database wi
 | backend.email.resendApiKeyRef.key | string | `""` | Secret key for RESEND_API_KEY. |
 | backend.email.resendApiKeyRef.name | string | `""` | Existing secret containing RESEND_API_KEY. |
 | backend.email.resendFromEmail | string | `"noreply@multica.ai"` | Sender address for verification emails. |
+| backend.email.smtp.host | string | `""` | SMTP relay host. When empty, Multica uses Resend or stdout fallback. |
+| backend.email.smtp.password | string | `""` | Optional SMTP auth password. |
+| backend.email.smtp.passwordRef.key | string | `""` | Secret key for SMTP_PASSWORD. |
+| backend.email.smtp.passwordRef.name | string | `""` | Existing secret containing SMTP_PASSWORD. |
+| backend.email.smtp.port | int | `25` | SMTP relay port. Multica uses plain SMTP with optional STARTTLS, so implicit TLS port 465 is not supported. |
+| backend.email.smtp.tlsInsecure | bool | `false` | Skip TLS certificate verification for SMTP STARTTLS. |
+| backend.email.smtp.username | string | `""` | Optional SMTP auth username. |
+| backend.email.smtp.usernameRef.key | string | `""` | Secret key for SMTP_USERNAME. |
+| backend.email.smtp.usernameRef.name | string | `""` | Existing secret containing SMTP_USERNAME. |
 | backend.envFrom | list | `[]` | Extra backend envFrom refs. |
 | backend.extraEnv | list | `[]` | Extra backend env vars. Managed env names are rejected to avoid silent overrides. |
+| backend.github.appSlug | string | `""` | GitHub App slug. |
+| backend.github.webhookSecret | string | `""` | GitHub App webhook secret. Prefer webhookSecretRef for production deployments. |
+| backend.github.webhookSecretRef.key | string | `""` | Secret key for GITHUB_WEBHOOK_SECRET. |
+| backend.github.webhookSecretRef.name | string | `""` | Existing secret containing GITHUB_WEBHOOK_SECRET. |
 | backend.google.clientId | string | `""` | Google OAuth client ID. |
 | backend.google.clientIdRef.key | string | `""` | Secret key for GOOGLE_CLIENT_ID. |
 | backend.google.clientIdRef.name | string | `""` | Existing secret containing GOOGLE_CLIENT_ID. |
@@ -172,6 +211,8 @@ This chart deploys the Multica server layer only: backend, frontend, database wi
 | backend.service.targetPort | int | `8080` | Backend container port. |
 | backend.service.type | string | `"ClusterIP"` | Backend Service type. |
 | backend.tolerations | list | `[]` | Backend tolerations. |
+| backend.usageRollups.dailyEnabled | bool | `false` | Enable runtime usage reads from the daily rollup table after external backfill/scheduler setup is complete. |
+| backend.usageRollups.dashboardEnabled | bool | `false` | Enable dashboard usage reads from the dashboard rollup table after external backfill/scheduler setup is complete. |
 | backend.volumeMounts | list | `[]` | Additional backend volume mounts. |
 | backend.volumes | list | `[]` | Additional backend volumes. |
 | database.external.enabled | bool | `false` | Enable external PostgreSQL mode. When enabled, set postgres.enabled=false. |
