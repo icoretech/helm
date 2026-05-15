@@ -1,0 +1,80 @@
+suite: smtp relay wiring
+templates:
+  - backend-deployment.yaml
+tests:
+  - it: leaves SMTP envs unset by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_HOST")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PORT")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_USERNAME")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PASSWORD")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_TLS_INSECURE")]
+
+  - it: renders SMTP relay values when configured directly
+    set:
+      backend.email.smtp.host: smtp.example.com
+      backend.email.smtp.port: 587
+      backend.email.smtp.username: multica
+      backend.email.smtp.password: secret
+      backend.email.smtp.tlsInsecure: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_HOST")].value
+          value: smtp.example.com
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PORT")].value
+          value: "587"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_USERNAME")].value
+          value: multica
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PASSWORD")].value
+          value: secret
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_TLS_INSECURE")].value
+          value: "true"
+
+  - it: uses SMTP secret refs when provided
+    values:
+      - values/valid-secret-refs.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_HOST")].value
+          value: smtp.example.com
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PORT")].value
+          value: "587"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_USERNAME")].valueFrom.secretKeyRef.name
+          value: multica-email
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_USERNAME")].valueFrom.secretKeyRef.key
+          value: SMTP_USERNAME
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PASSWORD")].valueFrom.secretKeyRef.name
+          value: multica-email
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PASSWORD")].valueFrom.secretKeyRef.key
+          value: SMTP_PASSWORD
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_TLS_INSECURE")].value
+          value: "true"
+
+  - it: rejects unsupported SMTP port 465
+    set:
+      backend.email.smtp.host: smtp.example.com
+      backend.email.smtp.port: 465
+    asserts:
+      - failedTemplate: {}
+
+  - it: rejects managed SMTP_HOST overrides through extraEnv
+    values:
+      - values/invalid-managed-smtp-extraenv.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=SMTP_HOST is managed by the chart; use the dedicated value instead"

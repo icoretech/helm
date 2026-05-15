@@ -1,0 +1,4 @@
+backend:
+  extraEnv:
+    - name: SMTP_HOST
+      value: smtp.example.com
