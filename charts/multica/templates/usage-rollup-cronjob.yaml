@@ -40,18 +40,7 @@ spec:
               command:
                 - /bin/sh
                 - -ec
-                - |
-                  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
-                  DO $$
-                  BEGIN
-                    IF to_regprocedure('public.rollup_task_usage_hourly()') IS NULL THEN
-                      RAISE NOTICE 'rollup_task_usage_hourly() is not installed yet; skipping';
-                      RETURN;
-                    END IF;
-                    PERFORM public.rollup_task_usage_hourly();
-                  END
-                  $$;
-                  SQL
+                - psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'SELECT public.rollup_task_usage_hourly();'
               env:
                 {{- if .Values.database.external.urlFrom.secretKeyRef.name }}
                 - name: DATABASE_URL

@@ -30,7 +30,10 @@ tests:
           value: multica-db
       - matchRegex:
           path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
-          pattern: "rollup_task_usage_hourly"
+          pattern: "SELECT public\\.rollup_task_usage_hourly\\(\\);"
+      - notMatchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: "DO \\$\\$"
 
   - it: can disable the Kubernetes scheduler for installations that use pg_cron
     set:
