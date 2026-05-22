@@ -34,6 +34,34 @@ migrations:
     # -- Migration Job resources.
     resources: {}
 
+usageRollups:
+  cronJob:
+    # -- Run rollup_task_usage_hourly() on a Kubernetes CronJob instead of requiring pg_cron in PostgreSQL.
+    enabled: true
+    # -- Cron schedule for the hourly usage rollup worker.
+    schedule: "*/5 * * * *"
+    # -- CronJob concurrency policy. Forbid pairs with the database advisory lock to avoid overlapping rollups.
+    concurrencyPolicy: Forbid
+    # -- Seconds after a missed schedule when the job may still start. Set null to omit.
+    startingDeadlineSeconds: 300
+    # -- Successful Job history limit.
+    successfulJobsHistoryLimit: 3
+    # -- Failed Job history limit.
+    failedJobsHistoryLimit: 3
+    # -- Job backoff limit.
+    backoffLimit: 1
+    image:
+      # -- PostgreSQL client image repository used to call the rollup SQL function.
+      repository: postgres
+      # -- PostgreSQL client image tag.
+      tag: 17-alpine
+      # -- PostgreSQL client image pull policy.
+      pullPolicy: IfNotPresent
+    # -- Pod annotations for the rollup CronJob.
+    podAnnotations: {}
+    # -- Rollup CronJob resources.
+    resources: {}
+
 backend:
   # -- Number of backend replicas.
   replicaCount: 1

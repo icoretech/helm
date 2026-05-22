@@ -1,0 +1,40 @@
+suite: usage rollup CronJob rendering
+templates:
+  - usage-rollup-cronjob.yaml
+tests:
+  - it: renders a Kubernetes scheduler for hourly usage rollups by default
+    set:
+      database.external.enabled: true
+      database.external.urlFrom.secretKeyRef.name: multica-db
+      database.external.urlFrom.secretKeyRef.key: DATABASE_URL
+      database.external.host: db.example.com
+      postgres.enabled: false
+    asserts:
+      - equal:
+          path: kind
+          value: CronJob
+      - equal:
+          path: spec.schedule
+          value: "*/5 * * * *"
+      - equal:
+          path: spec.concurrencyPolicy
+          value: Forbid
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.restartPolicy
+          value: Never
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].image
+          value: postgres:17-alpine
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.name
+          value: multica-db
+      - matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: "rollup_task_usage_hourly"
+
+  - it: can disable the Kubernetes scheduler for installations that use pg_cron
+    set:
+      usageRollups.cronJob.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

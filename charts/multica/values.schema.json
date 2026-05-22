@@ -35,6 +35,28 @@
         }
       }
     },
+    "usageRollups": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cronJob": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "schedule": { "type": "string", "minLength": 1 },
+            "concurrencyPolicy": { "type": "string", "enum": ["Allow", "Forbid", "Replace"] },
+            "startingDeadlineSeconds": { "type": ["integer", "null"], "minimum": 0 },
+            "successfulJobsHistoryLimit": { "type": "integer", "minimum": 0 },
+            "failedJobsHistoryLimit": { "type": "integer", "minimum": 0 },
+            "backoffLimit": { "type": "integer", "minimum": 0 },
+            "image": { "$ref": "#/definitions/imageWithRequiredTag" },
+            "podAnnotations": { "type": "object" },
+            "resources": { "type": "object" }
+          }
+        }
+      }
+    },
     "backend": {
       "type": "object",
       "additionalProperties": false,
@@ -445,6 +467,15 @@
         "repository": { "type": "string", "minLength": 1 },
         "pullPolicy": { "type": "string", "enum": ["Always", "IfNotPresent", "Never"] },
         "tag": { "type": "string" }
+      }
+    },
+    "imageWithRequiredTag": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "pullPolicy": { "type": "string", "enum": ["Always", "IfNotPresent", "Never"] },
+        "tag": { "type": "string", "minLength": 1 }
       }
     },
     "secretRef": {
