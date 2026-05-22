@@ -126,7 +126,11 @@ backend:
       key: GITHUB_WEBHOOK_SECRET
 ```
 
-Usage rollup flags are read-path switches only. Set `backend.usageRollups.dailyEnabled` or `backend.usageRollups.dashboardEnabled` only after the external scheduler and historical backfill are in place. This chart doesn't create the scheduler, run backfill jobs, or make rollup data complete by itself.
+Usage rollup flags are read-path switches only. Set `backend.usageRollups.dailyEnabled` or `backend.usageRollups.dashboardEnabled` only after the external scheduler and historical backfill are in place.
+
+For upgrades, `migrations.preUpgradeJob.enabled` runs the backend image as a Helm `pre-upgrade` hook before the Deployment rolls. It first runs `./migrate up`; if Multica refuses to drop legacy daily rollups because `task_usage_hourly` has not been seeded yet, the hook runs `./backfill_task_usage_hourly` and retries `./migrate up`. This matches the upstream `v0.3.5` self-host upgrade order while keeping the regular backend entrypoint unchanged.
+
+The hook does not create or manage the ongoing `pg_cron` scheduler for usage rollups. Keep that as an operator-managed database concern.
 
 ## Agent Execution Model
 
@@ -293,6 +297,14 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | livenessProbe.frontend.periodSeconds | int | `10` |  |
 | livenessProbe.frontend.successThreshold | int | `1` |  |
 | livenessProbe.frontend.timeoutSeconds | int | `3` |  |
+| migrations.preUpgradeJob.backfillTaskUsageHourlyOnFailure | bool | `true` | Retry `migrate up` after running `backfill_task_usage_hourly` when the first migration pass fails. |
+| migrations.preUpgradeJob.backoffLimit | int | `1` | Job backoff limit. |
+| migrations.preUpgradeJob.enabled | bool | `true` | Run a Helm pre-upgrade Job with the backend image before rolling the Deployment. |
+| migrations.preUpgradeJob.hookDeletePolicy | string | `"before-hook-creation,hook-succeeded"` | Hook delete policy for the migration Job. |
+| migrations.preUpgradeJob.hookWeight | int | `-5` | Helm hook weight for the migration Job. |
+| migrations.preUpgradeJob.podAnnotations | object | `{}` | Pod annotations for the migration Job. |
+| migrations.preUpgradeJob.resources | object | `{}` | Migration Job resources. |
+| migrations.preUpgradeJob.ttlSecondsAfterFinished | int | `300` | Seconds to keep the finished Job. Set null to omit. |
 | nameOverride | string | `""` | Override chart name. |
 | postgres.auth.database | string | `"multica"` |  |
 | postgres.auth.password | string | `"multica"` |  |

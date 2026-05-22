@@ -15,6 +15,25 @@ serviceAccount:
   # -- Service account name.
   name: ""
 
+migrations:
+  preUpgradeJob:
+    # -- Run a Helm pre-upgrade Job with the backend image before rolling the Deployment.
+    enabled: true
+    # -- Retry `migrate up` after running `backfill_task_usage_hourly` when the first migration pass fails.
+    backfillTaskUsageHourlyOnFailure: true
+    # -- Helm hook weight for the migration Job.
+    hookWeight: -5
+    # -- Hook delete policy for the migration Job.
+    hookDeletePolicy: before-hook-creation,hook-succeeded
+    # -- Job backoff limit.
+    backoffLimit: 1
+    # -- Seconds to keep the finished Job. Set null to omit.
+    ttlSecondsAfterFinished: 300
+    # -- Pod annotations for the migration Job.
+    podAnnotations: {}
+    # -- Migration Job resources.
+    resources: {}
+
 backend:
   # -- Number of backend replicas.
   replicaCount: 1

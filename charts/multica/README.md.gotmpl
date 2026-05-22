@@ -126,7 +126,11 @@ backend:
       key: GITHUB_WEBHOOK_SECRET
 ```
 
-Usage rollup flags are read-path switches only. Set `backend.usageRollups.dailyEnabled` or `backend.usageRollups.dashboardEnabled` only after the external scheduler and historical backfill are in place. This chart doesn't create the scheduler, run backfill jobs, or make rollup data complete by itself.
+Usage rollup flags are read-path switches only. Set `backend.usageRollups.dailyEnabled` or `backend.usageRollups.dashboardEnabled` only after the external scheduler and historical backfill are in place.
+
+For upgrades, `migrations.preUpgradeJob.enabled` runs the backend image as a Helm `pre-upgrade` hook before the Deployment rolls. It first runs `./migrate up`; if Multica refuses to drop legacy daily rollups because `task_usage_hourly` has not been seeded yet, the hook runs `./backfill_task_usage_hourly` and retries `./migrate up`. This matches the upstream `v0.3.5` self-host upgrade order while keeping the regular backend entrypoint unchanged.
+
+The hook does not create or manage the ongoing `pg_cron` scheduler for usage rollups. Keep that as an operator-managed database concern.
 
 ## Agent Execution Model
 

@@ -1,0 +1,40 @@
+suite: migration job rendering
+templates:
+  - migration-job.yaml
+tests:
+  - it: renders a pre-upgrade migration job that can run the hourly usage backfill before retrying migrations
+    set:
+      database.external.enabled: true
+      database.external.urlFrom.secretKeyRef.name: multica-db
+      database.external.urlFrom.secretKeyRef.key: DATABASE_URL
+      database.external.host: db.example.com
+      postgres.enabled: false
+    asserts:
+      - equal:
+          path: kind
+          value: Job
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: pre-upgrade
+      - equal:
+          path: metadata.annotations["helm.sh/hook-delete-policy"]
+          value: before-hook-creation,hook-succeeded
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Never
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/multica-ai/multica-backend:v0.3.5
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.name
+          value: multica-db
+      - matchRegex:
+          path: spec.template.spec.containers[0].command[2]
+          pattern: "\\./backfill_task_usage_hourly"
+
+  - it: can disable the pre-upgrade migration job
+    set:
+      migrations.preUpgradeJob.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
