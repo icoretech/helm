@@ -379,7 +379,7 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | usageRollups.cronJob.failedJobsHistoryLimit | int | `3` | Failed Job history limit. |
 | usageRollups.cronJob.image.pullPolicy | string | `"IfNotPresent"` | PostgreSQL client image pull policy. |
 | usageRollups.cronJob.image.repository | string | `"postgres"` | PostgreSQL client image repository used to call the rollup SQL function. |
-| usageRollups.cronJob.image.tag | string | `"17-alpine"` | PostgreSQL client image tag. |
+| usageRollups.cronJob.image.tag | string | `"18-alpine"` | PostgreSQL client image tag. |
 | usageRollups.cronJob.podAnnotations | object | `{}` | Pod annotations for the rollup CronJob. |
 | usageRollups.cronJob.resources | object | `{}` | Rollup CronJob resources. |
 | usageRollups.cronJob.schedule | string | `"*/5 * * * *"` | Cron schedule for the hourly usage rollup worker. |

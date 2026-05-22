@@ -54,7 +54,7 @@ usageRollups:
       # -- PostgreSQL client image repository used to call the rollup SQL function.
       repository: postgres
       # -- PostgreSQL client image tag.
-      tag: 17-alpine
+      tag: 18-alpine
       # -- PostgreSQL client image pull policy.
       pullPolicy: IfNotPresent
     # -- Pod annotations for the rollup CronJob.
