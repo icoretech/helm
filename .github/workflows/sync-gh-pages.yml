@@ -7,6 +7,10 @@ on:
       - README.md
       - artifacthub-repo.yml
       - signing/**
+      - charts/**/README.md
+      - charts/**/README.md.gotmpl
+      - charts/**/Readme.md
+      - charts/**/Readme.md.gotmpl
       - charts/**/logo.*
   workflow_dispatch:
 
