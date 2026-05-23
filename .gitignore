@@ -21,3 +21,4 @@ AGENTS.md
 /signing/secring.gpg.base64
 /signing/fingerprint.txt
 .sisyphus/
+.omo/
