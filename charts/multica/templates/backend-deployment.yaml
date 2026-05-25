@@ -378,6 +378,10 @@ spec:
               containerPort: {{ .Values.backend.service.targetPort }}
               protocol: TCP
           {{- with .Values.livenessProbe.backend }}
+          {{- with .Values.startupProbe.backend }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}

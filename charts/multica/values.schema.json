@@ -438,6 +438,7 @@
     },
     "ingress": { "$ref": "#/definitions/ingress" },
     "httpRoute": { "$ref": "#/definitions/httpRoute" },
+    "startupProbe": { "type": "object" },
     "livenessProbe": { "type": "object" },
     "readinessProbe": { "type": "object" },
     "tests": {

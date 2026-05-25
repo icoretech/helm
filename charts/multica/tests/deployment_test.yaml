@@ -21,6 +21,12 @@ tests:
     template: backend-deployment.yaml
     asserts:
       - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: /health
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.failureThreshold
+          value: 30
+      - equal:
           path: spec.template.spec.containers[0].livenessProbe.httpGet.path
           value: /health
       - equal:

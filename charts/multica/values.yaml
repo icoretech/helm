@@ -505,6 +505,16 @@ httpRoute:
         type: PathPrefix
         value: /
 
+startupProbe:
+  backend:
+    httpGet:
+      path: /health
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 30
+
 livenessProbe:
   backend:
     httpGet:
