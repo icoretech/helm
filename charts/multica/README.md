@@ -15,7 +15,7 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 
 ## Important Runtime Note
 
-The upstream `multica-web` image currently bakes its Next.js rewrites to `http://backend:8080` at build time. This chart creates a compatibility Service named `backend` by default so the official image works in Kubernetes.
+The upstream `multica-web` image currently bakes its Next.js rewrites to `http://backend:8080` at build time. This chart creates a compatibility Service named `backend` by default so the official image works in Kubernetes. Because that Service name is intentionally unprefixed, run only one Multica release per namespace unless you disable the alias for a custom frontend image.
 
 If you build a custom frontend image with a different `REMOTE_API_URL`, disable it:
 
@@ -107,7 +107,9 @@ When using the chart-managed Ingress or HTTPRoute, backend-owned paths such as `
 
 When using S3-compatible storage without `storage.s3.cloudfrontDomain`, Multica stores reader-facing URLs using the configured bucket endpoint. Configure the bucket with public `s3:GetObject` access for uploaded objects, or set `storage.s3.cloudfrontDomain` with CloudFront signing support.
 
-The backend readiness probe uses `/readyz`, which checks PostgreSQL connectivity and the latest server migration. Liveness stays on `/health`, which only confirms the process is alive.
+The backend startup probe gives cold installs time to wait for PostgreSQL and run migrations before liveness starts. Readiness uses `/readyz`, which checks PostgreSQL connectivity and the latest server migration. Liveness stays on `/health`, which only confirms the process is alive.
+
+Backend pod annotations include a checksum of referenced Kubernetes Secret data so out-of-band rotations of `jwtSecretRef`, database URL, email, OAuth, Redis, GitHub, and S3 secrets roll the Deployment on the next `helm upgrade`. `helm template` and dry-run renders cannot read live Secrets, so they emit a stable placeholder checksum.
 
 Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you explicitly want `DATABASE_MAX_CONNS` / `DATABASE_MIN_CONNS` env vars to override Multica's own defaults and any `pool_max_conns` / `pool_min_conns` query parameters already embedded in `DATABASE_URL`.
 
@@ -250,7 +252,7 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | frontend.autoscaling.targetCPUUtilizationPercentage | int | `80` | Target CPU utilization percentage. |
 | frontend.autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Target memory utilization percentage. |
 | frontend.backendServiceAlias.annotations | object | `{}` | Compatibility Service annotations. |
-| frontend.backendServiceAlias.enabled | bool | `true` | Create a Service named `backend` because upstream multica-web images bake Next.js rewrites to `http://backend:8080`. |
+| frontend.backendServiceAlias.enabled | bool | `true` | Create a Service named `backend` because upstream multica-web images bake Next.js rewrites to `http://backend:8080`. The unprefixed name means one Multica release per namespace unless you disable this for a custom frontend image. |
 | frontend.backendServiceAlias.name | string | `"backend"` | Compatibility Service name. |
 | frontend.envFrom | list | `[]` | Extra frontend envFrom refs. |
 | frontend.extraEnv | list | `[]` | Extra frontend env vars. The official image bakes API rewrites at build time; use these only for custom images or generic runtime config. |
@@ -346,6 +348,12 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | serviceAccount.annotations | object | `{}` | Service account annotations. |
 | serviceAccount.create | bool | `true` | Create a service account for Multica pods. |
 | serviceAccount.name | string | `""` | Service account name. |
+| startupProbe.backend.failureThreshold | int | `30` |  |
+| startupProbe.backend.httpGet.path | string | `"/health"` |  |
+| startupProbe.backend.httpGet.port | string | `"http"` |  |
+| startupProbe.backend.periodSeconds | int | `10` |  |
+| startupProbe.backend.successThreshold | int | `1` |  |
+| startupProbe.backend.timeoutSeconds | int | `3` |  |
 | storage.local.baseUrl | string | `""` | Public base URL for local uploads. Empty returns relative `/uploads/...` paths. |
 | storage.local.persistence.accessModes | list | `["ReadWriteOnce"]` | PVC access modes. |
 | storage.local.persistence.annotations | object | `{}` | PVC annotations. |

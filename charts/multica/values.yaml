@@ -283,7 +283,7 @@ frontend:
     externalTrafficPolicy:
 
   backendServiceAlias:
-    # -- Create a Service named `backend` because upstream multica-web images bake Next.js rewrites to `http://backend:8080`.
+    # -- Create a Service named `backend` because upstream multica-web images bake Next.js rewrites to `http://backend:8080`. The unprefixed name means one Multica release per namespace unless you disable this for a custom frontend image.
     enabled: true
     # -- Compatibility Service name.
     name: backend
