@@ -378,11 +378,11 @@ spec:
             - name: http
               containerPort: {{ .Values.backend.service.targetPort }}
               protocol: TCP
-          {{- with .Values.livenessProbe.backend }}
           {{- with .Values.startupProbe.backend }}
           startupProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .Values.livenessProbe.backend }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
