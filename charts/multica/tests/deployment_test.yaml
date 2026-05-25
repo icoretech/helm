@@ -36,6 +36,23 @@ tests:
           path: spec.template.spec.containers[0].volumeMounts[0].mountPath
           value: /app/data/uploads
 
+  - it: rolls backend when referenced secret data changes
+    template: backend-deployment.yaml
+    values:
+      - values/valid-secret-refs.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret-refs"]
+          pattern: "^[a-f0-9]{64}$"
+
+  - it: omits empty volumeMounts when local uploads and extra mounts are disabled
+    template: backend-deployment.yaml
+    set:
+      storage.local.persistence.enabled: false
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].volumeMounts
+
   - it: sets privacy-preserving analytics defaults
     template: backend-deployment.yaml
     asserts:

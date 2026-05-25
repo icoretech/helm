@@ -153,6 +153,36 @@ app.kubernetes.io/component: {{ .component }}
 {{- end -}}
 {{- end }}
 
+{{- define "multica.backendSecretChecksumInput" -}}
+{{- $root := . -}}
+{{- $refs := list -}}
+{{- with .Values.database.external.urlFrom.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.realtime.redisUrlRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- if and .Values.redis.enabled .Values.redis.auth.enabled (not .Values.realtime.redisUrl) (not .Values.realtime.redisUrlRef.name) }}{{- $refs = append $refs (dict "name" (include "multica.redis.fullname" .) "key" "uri") }}{{- end }}
+{{- with .Values.backend.config.jwtSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.config.realtimeMetricsTokenRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.email.resendApiKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.email.smtp.usernameRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.email.smtp.passwordRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.google.clientIdRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.google.clientSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.github.webhookSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.storage.s3.accessKeyIdRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.storage.s3.secretAccessKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.storage.s3.cloudfrontPrivateKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- range $refs }}
+- name: {{ .name | quote }}
+  key: {{ .key | quote }}
+  data:
+    {{- $secret := lookup "v1" "Secret" $root.Release.Namespace .name }}
+    {{- if $secret }}
+    {{- toYaml $secret.data | nindent 4 }}
+    {{- else }}
+    {}
+    {{- end }}
+{{- end }}
+{{- end }}
+
 {{/* Validate cross-field chart contracts. */}}
 {{- define "multica.validate" -}}
 {{- if and .Values.postgres.enabled .Values.database.external.enabled -}}

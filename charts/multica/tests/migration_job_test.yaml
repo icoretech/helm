@@ -24,7 +24,7 @@ tests:
           value: Never
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/multica-ai/multica-backend:v0.3.5
+          value: ghcr.io/multica-ai/multica-backend:v0.3.6
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.name
           value: multica-db
