@@ -12,14 +12,15 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - Separate backend and frontend Deployments using upstream GHCR images
 - Optional bundled PostgreSQL for evaluation and chart-testing
 - External PostgreSQL mode for production deployments
+- Optional bundled Redis for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues
 - Local upload PVC support and S3-compatible storage configuration
 - Secret references for JWT, email, Google OAuth, metrics, database URL, and S3 credentials
-- Ingress and Gateway API HTTPRoute support
+- Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
 - Helm unit tests and install-safe CI values
 
 ## Important Runtime Note
 
-The upstream `multica-web` image currently bakes its Next.js rewrites to `http://backend:8080` at build time. This chart creates a compatibility Service named `backend` by default so the official image works in Kubernetes.
+The upstream `multica-web` image currently bakes its Next.js rewrites to `http://backend:8080` at build time. This chart creates a compatibility Service named `backend` by default so the official image works in Kubernetes. Because that Service name is intentionally unprefixed, run only one Multica release per namespace unless you disable the alias for a custom frontend image.
 
 If you build a custom frontend image with a different `REMOTE_API_URL`, disable it:
 
@@ -34,7 +35,7 @@ frontend:
 - Kubernetes 1.24+
 - Helm 3.10+
 - For production: external PostgreSQL and a real `JWT_SECRET`
-- For email delivery: Resend API credentials
+- For email delivery: Resend API credentials or an SMTP relay
 
 ## Install
 
@@ -65,6 +66,8 @@ postgres:
 database:
   external:
     enabled: true
+    # Required by the wait-for-Postgres init container when DATABASE_URL comes from a Secret.
+    host: postgres.example.com
     urlFrom:
       secretKeyRef:
         name: multica-db
@@ -81,6 +84,15 @@ backend:
       name: multica-email
       key: RESEND_API_KEY
     resendFromEmail: noreply@example.com
+    smtp:
+      host: smtp.example.com
+      port: 587
+      usernameRef:
+        name: multica-smtp
+        key: SMTP_USERNAME
+      passwordRef:
+        name: multica-smtp
+        key: SMTP_PASSWORD
 
 storage:
   local:
@@ -89,13 +101,55 @@ storage:
   s3:
     bucket: multica-uploads
     region: eu-west-1
+
+redis:
+  enabled: true
+  persistence:
+    size: 8Gi
+```
+
+When using the chart-managed Ingress or HTTPRoute, backend-owned paths such as `/health`, `/api`, `/auth`, `/uploads`, and `/ws` are routed directly to the backend Service by default. This is required by `multica setup self-host`, which probes `<server-url>/health`. If you manage Traefik `IngressRoute`, nginx snippets, or another external router outside the chart, mirror the same path split.
+
+When using S3-compatible storage without `storage.s3.cloudfrontDomain`, Multica stores reader-facing URLs using the configured bucket endpoint. Configure the bucket with public `s3:GetObject` access for uploaded objects, or set `storage.s3.cloudfrontDomain` with CloudFront signing support.
+
+The backend startup probe gives cold installs time to wait for PostgreSQL and run migrations before liveness starts. Readiness uses `/readyz`, which checks PostgreSQL connectivity and the latest server migration. Liveness stays on `/health`, which only confirms the process is alive.
+
+Backend pod annotations include a checksum of referenced Kubernetes Secret data so out-of-band rotations of `jwtSecretRef`, database URL, email, OAuth, Redis, GitHub, and S3 secrets roll the Deployment on the next `helm upgrade`. `helm template` and dry-run renders cannot read live Secrets, so they emit a stable placeholder checksum.
+
+Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you explicitly want `DATABASE_MAX_CONNS` / `DATABASE_MIN_CONNS` env vars to override Multica's own defaults and any `pool_max_conns` / `pool_min_conns` query parameters already embedded in `DATABASE_URL`.
+
+Signup restrictions only apply to first-time signup. Existing users can always sign in again. To restrict first-time signup to explicit addresses or domains, keep `backend.config.allowSignup=true` and set `backend.config.allowedEmails` or `backend.config.allowedEmailDomains`. Setting `backend.config.allowSignup=false` blocks every new signup even when an email allowlist is present.
+
+Email delivery can use Resend or an SMTP relay. SMTP is enabled when `backend.email.smtp.host` is set, and upstream Multica checks `SMTP_HOST` before Resend, so SMTP takes priority when both are configured. For production SMTP auth, prefer `backend.email.smtp.passwordRef` instead of inline `backend.email.smtp.password`.
+
+GitHub App integration only needs the app slug and webhook secret for this chart scope. Store the webhook secret in an existing Kubernetes Secret:
+
+```yaml
+backend:
+  github:
+    appSlug: multica-example
+    webhookSecretRef:
+      name: multica-github
+      key: GITHUB_WEBHOOK_SECRET
+```
+
+Usage rollup flags are read-path switches only. Set `backend.usageRollups.dailyEnabled` or `backend.usageRollups.dashboardEnabled` only after the external scheduler and historical backfill are in place.
+
+For upgrades, `migrations.preUpgradeJob.enabled` runs the backend image as a Helm `pre-upgrade` hook before the Deployment rolls. It first runs `./migrate up`; if Multica refuses to drop legacy daily rollups because `task_usage_hourly` has not been seeded yet, the hook runs `./backfill_task_usage_hourly` and retries `./migrate up`. This matches the upstream `v0.3.5` self-host upgrade order while keeping the regular backend entrypoint unchanged.
+
+By default, `usageRollups.cronJob.enabled` creates a Kubernetes CronJob that calls `rollup_task_usage_hourly()` every five minutes. This keeps the ongoing scheduler in Kubernetes instead of requiring the PostgreSQL `pg_cron` extension. If your database already runs the upstream `pg_cron` entry, disable the chart CronJob to avoid duplicate work:
+
+```yaml
+usageRollups:
+  cronJob:
+    enabled: false
 ```
 
 ## Agent Execution Model
 
 This chart deploys the Multica server layer only: backend, frontend, database wiring, and upload storage. Agent execution still happens through Multica daemons running on separate machines where Codex, Claude Code, OpenCode, or another supported coding tool is installed.
 
-Do not run arbitrary coding-agent daemons inside this chart by default. Treat runners as separately managed compute with their own filesystem, credentials, and security boundary.
+Daemon-only environment variables don't belong in this server-layer chart. Keep values such as `MULTICA_CLAUDE_ARGS`, `MULTICA_CODEX_ARGS`, and `MULTICA_TASK_SLOT` on daemon hosts or daemon workloads, not in backend or frontend pod configuration.
 
 ## Configuration Reference
 
@@ -109,11 +163,12 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | backend.autoscaling.minReplicas | int | `1` | Minimum backend replicas. |
 | backend.autoscaling.targetCPUUtilizationPercentage | int | `80` | Target CPU utilization percentage. |
 | backend.autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Target memory utilization percentage. |
-| backend.config.allowSignup | bool | `true` | Signup master switch. |
-| backend.config.allowedEmailDomains | string | `""` | Signup domain allowlist, comma-separated. |
-| backend.config.allowedEmails | string | `""` | Explicit signup email allowlist, comma-separated. |
+| backend.config.allowSignup | bool | `true` | Signup master switch. Keep true when using allowedEmails or allowedEmailDomains; set false only to block all first-time signup. |
+| backend.config.allowedEmailDomains | string | `""` | First-time signup domain allowlist, comma-separated. Existing users can still sign in even if their domain is removed from the allowlist. |
+| backend.config.allowedEmails | string | `""` | Explicit first-time signup email allowlist, comma-separated. Existing users can still sign in even if removed from the allowlist. |
 | backend.config.allowedOrigins | string | `""` | Additional WebSocket origins, comma-separated. |
 | backend.config.analyticsDisabled | bool | `true` | Disable backend/frontend analytics. Defaults to true for self-host privacy. |
+| backend.config.analyticsEnvironment | string | `""` | Optional PostHog environment property override. Empty lets Multica derive it from APP_ENV. |
 | backend.config.appEnv | string | `"production"` | Runtime environment. Keep `production` on public deployments. |
 | backend.config.cookieDomain | string | `""` | Optional cookie Domain attribute. Leave empty for single-host deployments. |
 | backend.config.corsAllowedOrigins | string | `""` | Additional CORS origins, comma-separated. |
@@ -135,8 +190,21 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | backend.email.resendApiKeyRef.key | string | `""` | Secret key for RESEND_API_KEY. |
 | backend.email.resendApiKeyRef.name | string | `""` | Existing secret containing RESEND_API_KEY. |
 | backend.email.resendFromEmail | string | `"noreply@multica.ai"` | Sender address for verification emails. |
+| backend.email.smtp.host | string | `""` | SMTP relay host. When empty, Multica uses Resend or stdout fallback. |
+| backend.email.smtp.password | string | `""` | Optional SMTP auth password. |
+| backend.email.smtp.passwordRef.key | string | `""` | Secret key for SMTP_PASSWORD. |
+| backend.email.smtp.passwordRef.name | string | `""` | Existing secret containing SMTP_PASSWORD. |
+| backend.email.smtp.port | int | `25` | SMTP relay port. Multica uses plain SMTP with optional STARTTLS, so implicit TLS port 465 is not supported. |
+| backend.email.smtp.tlsInsecure | bool | `false` | Skip TLS certificate verification for SMTP STARTTLS. |
+| backend.email.smtp.username | string | `""` | Optional SMTP auth username. |
+| backend.email.smtp.usernameRef.key | string | `""` | Secret key for SMTP_USERNAME. |
+| backend.email.smtp.usernameRef.name | string | `""` | Existing secret containing SMTP_USERNAME. |
 | backend.envFrom | list | `[]` | Extra backend envFrom refs. |
 | backend.extraEnv | list | `[]` | Extra backend env vars. Managed env names are rejected to avoid silent overrides. |
+| backend.github.appSlug | string | `""` | GitHub App slug. |
+| backend.github.webhookSecret | string | `""` | GitHub App webhook secret. Prefer webhookSecretRef for production deployments. |
+| backend.github.webhookSecretRef.key | string | `""` | Secret key for GITHUB_WEBHOOK_SECRET. |
+| backend.github.webhookSecretRef.name | string | `""` | Existing secret containing GITHUB_WEBHOOK_SECRET. |
 | backend.google.clientId | string | `""` | Google OAuth client ID. |
 | backend.google.clientIdRef.key | string | `""` | Secret key for GOOGLE_CLIENT_ID. |
 | backend.google.clientIdRef.name | string | `""` | Existing secret containing GOOGLE_CLIENT_ID. |
@@ -160,6 +228,8 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | backend.service.targetPort | int | `8080` | Backend container port. |
 | backend.service.type | string | `"ClusterIP"` | Backend Service type. |
 | backend.tolerations | list | `[]` | Backend tolerations. |
+| backend.usageRollups.dailyEnabled | bool | `false` | Enable runtime usage reads from the daily rollup table after external backfill/scheduler setup is complete. |
+| backend.usageRollups.dashboardEnabled | bool | `false` | Enable dashboard usage reads from the dashboard rollup table after external backfill/scheduler setup is complete. |
 | backend.volumeMounts | list | `[]` | Additional backend volume mounts. |
 | backend.volumes | list | `[]` | Additional backend volumes. |
 | database.external.enabled | bool | `false` | Enable external PostgreSQL mode. When enabled, set postgres.enabled=false. |
@@ -173,6 +243,8 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | database.external.username | string | `""` | External PostgreSQL username. |
 | database.internal.port | int | `5432` | Internal PostgreSQL service port. |
 | database.internal.serviceName | string | `""` | Override internal PostgreSQL service name. Defaults to `<release>-postgres`. |
+| database.pool.maxConns | string | `nil` | Optional DATABASE_MAX_CONNS env override. Leave empty to honor DATABASE_URL pool_max_conns or Multica defaults. |
+| database.pool.minConns | string | `nil` | Optional DATABASE_MIN_CONNS env override. Leave empty to honor DATABASE_URL pool_min_conns or Multica defaults. |
 | database.waitForReady.enabled | bool | `true` | Wait for PostgreSQL TCP readiness before starting the backend. |
 | database.waitForReady.image | string | `"busybox:1.37"` | Init container image used for DB readiness checks. |
 | database.waitForReady.imagePullPolicy | string | `"IfNotPresent"` | Init container image pull policy. |
@@ -185,7 +257,7 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | frontend.autoscaling.targetCPUUtilizationPercentage | int | `80` | Target CPU utilization percentage. |
 | frontend.autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Target memory utilization percentage. |
 | frontend.backendServiceAlias.annotations | object | `{}` | Compatibility Service annotations. |
-| frontend.backendServiceAlias.enabled | bool | `true` | Create a Service named `backend` because upstream multica-web images bake Next.js rewrites to `http://backend:8080`. |
+| frontend.backendServiceAlias.enabled | bool | `true` | Create a Service named `backend` because upstream multica-web images bake Next.js rewrites to `http://backend:8080`. The unprefixed name means one Multica release per namespace unless you disable this for a custom frontend image. |
 | frontend.backendServiceAlias.name | string | `"backend"` | Compatibility Service name. |
 | frontend.envFrom | list | `[]` | Extra frontend envFrom refs. |
 | frontend.extraEnv | list | `[]` | Extra frontend env vars. The official image bakes API rewrites at build time; use these only for custom images or generic runtime config. |
@@ -210,14 +282,18 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | frontend.tolerations | list | `[]` | Frontend tolerations. |
 | fullnameOverride | string | `""` | Override fully-qualified release name. |
 | httpRoute.annotations | object | `{}` | HTTPRoute annotations. |
-| httpRoute.enabled | bool | `false` | Enable Gateway API HTTPRoute for the frontend. |
+| httpRoute.backendMatches.enabled | bool | `true` | Route backend-owned paths directly to the backend Service. Required for CLI `multica setup self-host`, which probes `/health`. |
+| httpRoute.backendMatches.matches | list | `[{"path":{"type":"Exact","value":"/health"}},{"path":{"type":"PathPrefix","value":"/health/"}},{"path":{"type":"Exact","value":"/ws"}},{"path":{"type":"Exact","value":"/api"}},{"path":{"type":"PathPrefix","value":"/api/"}},{"path":{"type":"Exact","value":"/auth"}},{"path":{"type":"PathPrefix","value":"/auth/"}},{"path":{"type":"Exact","value":"/uploads"}},{"path":{"type":"PathPrefix","value":"/uploads/"}}]` | Backend HTTPRoute matches emitted before frontend matches. |
+| httpRoute.enabled | bool | `false` | Enable Gateway API HTTPRoute for Multica. |
 | httpRoute.hostnames | list | `[]` | Optional HTTPRoute hostnames. |
 | httpRoute.matches | list | `[{"path":{"type":"PathPrefix","value":"/"}}]` | Match rules for HTTPRoute. |
 | httpRoute.parentRefs | list | `[]` | ParentRefs for HTTPRoute. Required when enabled. |
 | imagePullSecrets | list | `[]` | Shared image pull secrets. |
 | ingress.annotations | object | `{}` | Ingress annotations. |
+| ingress.backendPaths.enabled | bool | `true` | Route backend-owned paths directly to the backend Service. Required for CLI `multica setup self-host`, which probes `/health`. |
+| ingress.backendPaths.paths | list | `[{"path":"/health","pathType":"Prefix"},{"path":"/ws","pathType":"Exact"},{"path":"/api","pathType":"Prefix"},{"path":"/auth","pathType":"Prefix"},{"path":"/uploads","pathType":"Prefix"}]` | Backend paths to expose through Ingress before frontend catch-all paths. |
 | ingress.className | string | `""` | IngressClass name. |
-| ingress.enabled | bool | `false` | Enable Ingress for the frontend. |
+| ingress.enabled | bool | `false` | Enable Ingress for Multica. |
 | ingress.hosts | list | `[]` | Ingress hosts and paths. |
 | ingress.tls | list | `[]` | Ingress TLS entries. |
 | livenessProbe.backend.failureThreshold | int | `6` |  |
@@ -234,6 +310,14 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | livenessProbe.frontend.periodSeconds | int | `10` |  |
 | livenessProbe.frontend.successThreshold | int | `1` |  |
 | livenessProbe.frontend.timeoutSeconds | int | `3` |  |
+| migrations.preUpgradeJob.backfillTaskUsageHourlyOnFailure | bool | `true` | Retry `migrate up` after running `backfill_task_usage_hourly` when the first migration pass fails. |
+| migrations.preUpgradeJob.backoffLimit | int | `1` | Job backoff limit. |
+| migrations.preUpgradeJob.enabled | bool | `true` | Run a Helm pre-upgrade Job with the backend image before rolling the Deployment. |
+| migrations.preUpgradeJob.hookDeletePolicy | string | `"before-hook-creation,hook-succeeded"` | Hook delete policy for the migration Job. |
+| migrations.preUpgradeJob.hookWeight | int | `-5` | Helm hook weight for the migration Job. |
+| migrations.preUpgradeJob.podAnnotations | object | `{}` | Pod annotations for the migration Job. |
+| migrations.preUpgradeJob.resources | object | `{}` | Migration Job resources. |
+| migrations.preUpgradeJob.ttlSecondsAfterFinished | int | `300` | Seconds to keep the finished Job. Set null to omit. |
 | nameOverride | string | `""` | Override chart name. |
 | postgres.auth.database | string | `"multica"` |  |
 | postgres.auth.password | string | `"multica"` |  |
@@ -258,9 +342,23 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | readinessProbe.frontend.periodSeconds | int | `10` |  |
 | readinessProbe.frontend.successThreshold | int | `1` |  |
 | readinessProbe.frontend.timeoutSeconds | int | `3` |  |
+| realtime.redisUrl | string | `""` | Redis connection URL for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues. Leave empty for single-backend in-memory mode or when using bundled Redis. |
+| realtime.redisUrlRef.key | string | `""` | Secret key for REDIS_URL. |
+| realtime.redisUrlRef.name | string | `""` | Existing secret containing REDIS_URL. |
+| redis.architecture | string | `"standalone"` |  |
+| redis.auth.enabled | bool | `true` |  |
+| redis.enabled | bool | `false` | Enable bundled Redis for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues. |
+| redis.persistence.enabled | bool | `true` |  |
+| redis.persistence.size | string | `"8Gi"` |  |
 | serviceAccount.annotations | object | `{}` | Service account annotations. |
 | serviceAccount.create | bool | `true` | Create a service account for Multica pods. |
 | serviceAccount.name | string | `""` | Service account name. |
+| startupProbe.backend.failureThreshold | int | `30` |  |
+| startupProbe.backend.httpGet.path | string | `"/health"` |  |
+| startupProbe.backend.httpGet.port | string | `"http"` |  |
+| startupProbe.backend.periodSeconds | int | `10` |  |
+| startupProbe.backend.successThreshold | int | `1` |  |
+| startupProbe.backend.timeoutSeconds | int | `3` |  |
 | storage.local.baseUrl | string | `""` | Public base URL for local uploads. Empty returns relative `/uploads/...` paths. |
 | storage.local.persistence.accessModes | list | `["ReadWriteOnce"]` | PVC access modes. |
 | storage.local.persistence.annotations | object | `{}` | PVC annotations. |
@@ -288,3 +386,15 @@ Do not run arbitrary coding-agent daemons inside this chart by default. Treat ru
 | tests.image.pullPolicy | string | `"IfNotPresent"` | Test image pull policy. |
 | tests.image.repository | string | `"busybox"` | Test image repository. |
 | tests.image.tag | string | `"1.37"` | Test image tag. |
+| usageRollups.cronJob.backoffLimit | int | `1` | Job backoff limit. |
+| usageRollups.cronJob.concurrencyPolicy | string | `"Forbid"` | CronJob concurrency policy. Forbid pairs with the database advisory lock to avoid overlapping rollups. |
+| usageRollups.cronJob.enabled | bool | `true` | Run rollup_task_usage_hourly() on a Kubernetes CronJob instead of requiring pg_cron in PostgreSQL. |
+| usageRollups.cronJob.failedJobsHistoryLimit | int | `3` | Failed Job history limit. |
+| usageRollups.cronJob.image.pullPolicy | string | `"IfNotPresent"` | PostgreSQL client image pull policy. |
+| usageRollups.cronJob.image.repository | string | `"postgres"` | PostgreSQL client image repository used to call the rollup SQL function. |
+| usageRollups.cronJob.image.tag | string | `"18-alpine"` | PostgreSQL client image tag. |
+| usageRollups.cronJob.podAnnotations | object | `{}` | Pod annotations for the rollup CronJob. |
+| usageRollups.cronJob.resources | object | `{}` | Rollup CronJob resources. |
+| usageRollups.cronJob.schedule | string | `"*/5 * * * *"` | Cron schedule for the hourly usage rollup worker. |
+| usageRollups.cronJob.startingDeadlineSeconds | int | `300` | Seconds after a missed schedule when the job may still start. Set null to omit. |
+| usageRollups.cronJob.successfulJobsHistoryLimit | int | `3` | Successful Job history limit. |
