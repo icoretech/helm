@@ -120,6 +120,8 @@ Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you exp
 
 Signup restrictions only apply to first-time signup. Existing users can always sign in again. To restrict first-time signup to explicit addresses or domains, keep `backend.config.allowSignup=true` and set `backend.config.allowedEmails` or `backend.config.allowedEmailDomains`. Setting `backend.config.allowSignup=false` blocks every new signup even when an email allowlist is present.
 
+Set `backend.config.disableWorkspaceCreation=true` after bootstrapping the shared workspace when self-hosted users should only join by invitation. This maps to upstream `DISABLE_WORKSPACE_CREATION` and makes workspace creation fail for every caller.
+
 Email delivery can use Resend or an SMTP relay. SMTP is enabled when `backend.email.smtp.host` is set, and upstream Multica checks `SMTP_HOST` before Resend, so SMTP takes priority when both are configured. For production SMTP auth, prefer `backend.email.smtp.passwordRef` instead of inline `backend.email.smtp.password`.
 
 GitHub App integration only needs the app slug and webhook secret for this chart scope. Store the webhook secret in an existing Kubernetes Secret:
@@ -173,6 +175,7 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.config.cookieDomain | string | `""` | Optional cookie Domain attribute. Leave empty for single-host deployments. |
 | backend.config.corsAllowedOrigins | string | `""` | Additional CORS origins, comma-separated. |
 | backend.config.devVerificationCode | string | `""` | Fixed local test verification code. Keep empty in production. |
+| backend.config.disableWorkspaceCreation | bool | `false` | Disable workspace creation globally. Bootstrap the shared workspace with this false, then set true so users can only join by invitation. |
 | backend.config.frontendOrigin | string | `"http://localhost:3000"` | Public frontend origin. Required for production links, cookies, CORS, and WebSocket origin checks. |
 | backend.config.jwtSecret | string | `"change-me-in-production"` | JWT signing secret. Replace in production or use jwtSecretRef. |
 | backend.config.jwtSecretRef.key | string | `""` | Secret key for JWT_SECRET. |
