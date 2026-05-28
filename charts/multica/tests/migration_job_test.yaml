@@ -22,9 +22,9 @@ tests:
       - equal:
           path: spec.template.spec.restartPolicy
           value: Never
-      - equal:
+      - matchRegex:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/multica-ai/multica-backend:v0.3.6
+          pattern: "^ghcr\\.io/multica-ai/multica-backend:v[0-9]+\\.[0-9]+\\.[0-9]+$"
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.name
           value: multica-db

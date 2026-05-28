@@ -115,6 +115,8 @@ Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you exp
 
 Signup restrictions only apply to first-time signup. Existing users can always sign in again. To restrict first-time signup to explicit addresses or domains, keep `backend.config.allowSignup=true` and set `backend.config.allowedEmails` or `backend.config.allowedEmailDomains`. Setting `backend.config.allowSignup=false` blocks every new signup even when an email allowlist is present.
 
+Set `backend.config.disableWorkspaceCreation=true` after bootstrapping the shared workspace when self-hosted users should only join by invitation. This maps to upstream `DISABLE_WORKSPACE_CREATION` and makes workspace creation fail for every caller.
+
 Email delivery can use Resend or an SMTP relay. SMTP is enabled when `backend.email.smtp.host` is set, and upstream Multica checks `SMTP_HOST` before Resend, so SMTP takes priority when both are configured. For production SMTP auth, prefer `backend.email.smtp.passwordRef` instead of inline `backend.email.smtp.password`.
 
 GitHub App integration only needs the app slug and webhook secret for this chart scope. Store the webhook secret in an existing Kubernetes Secret:

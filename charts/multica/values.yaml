@@ -137,6 +137,8 @@ backend:
     allowedEmails: ""
     # -- First-time signup domain allowlist, comma-separated. Existing users can still sign in even if their domain is removed from the allowlist.
     allowedEmailDomains: ""
+    # -- Disable workspace creation globally. Bootstrap the shared workspace with this false, then set true so users can only join by invitation.
+    disableWorkspaceCreation: false
     # -- Optional cookie Domain attribute. Leave empty for single-host deployments.
     cookieDomain: ""
     # -- Disable backend/frontend analytics. Defaults to true for self-host privacy.

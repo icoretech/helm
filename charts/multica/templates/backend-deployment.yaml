@@ -176,6 +176,9 @@ spec:
             - name: ALLOWED_EMAIL_DOMAINS
               value: {{ .Values.backend.config.allowedEmailDomains | quote }}
             {{- $_ := set $managed "ALLOWED_EMAIL_DOMAINS" true }}
+            - name: DISABLE_WORKSPACE_CREATION
+              value: {{ printf "%v" .Values.backend.config.disableWorkspaceCreation | quote }}
+            {{- $_ := set $managed "DISABLE_WORKSPACE_CREATION" true }}
             - name: COOKIE_DOMAIN
               value: {{ .Values.backend.config.cookieDomain | quote }}
             {{- $_ := set $managed "COOKIE_DOMAIN" true }}

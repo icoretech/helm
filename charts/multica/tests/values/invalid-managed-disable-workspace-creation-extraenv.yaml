@@ -1,0 +1,4 @@
+backend:
+  extraEnv:
+    - name: DISABLE_WORKSPACE_CREATION
+      value: "true"

@@ -100,6 +100,7 @@
             "allowSignup": { "type": "boolean" },
             "allowedEmails": { "type": "string" },
             "allowedEmailDomains": { "type": "string" },
+            "disableWorkspaceCreation": { "type": "boolean" },
             "cookieDomain": { "type": "string" },
             "analyticsDisabled": { "type": "boolean" },
             "analyticsEnvironment": { "type": "string" },

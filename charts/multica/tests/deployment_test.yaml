@@ -72,6 +72,23 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name=="ANALYTICS_ENVIRONMENT")].value
           value: staging
 
+  - it: supports disabling workspace creation
+    template: backend-deployment.yaml
+    set:
+      backend.config.disableWorkspaceCreation: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DISABLE_WORKSPACE_CREATION")].value
+          value: "true"
+
+  - it: rejects managed DISABLE_WORKSPACE_CREATION overrides through extraEnv
+    template: backend-deployment.yaml
+    values:
+      - values/invalid-managed-disable-workspace-creation-extraenv.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=DISABLE_WORKSPACE_CREATION is managed by the chart; use the dedicated value instead"
+
   - it: supports backend image tag override
     template: backend-deployment.yaml
     set:
