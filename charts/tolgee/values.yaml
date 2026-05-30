@@ -292,7 +292,7 @@ database:
     enabled: true
 
     # -- Init container image used for DB readiness checks.
-    image: busybox:1.37
+    image: busybox:1.38
 
     # -- Init container image pull policy.
     imagePullPolicy: IfNotPresent
