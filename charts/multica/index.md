@@ -249,7 +249,7 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | database.pool.maxConns | string | `nil` | Optional DATABASE_MAX_CONNS env override. Leave empty to honor DATABASE_URL pool_max_conns or Multica defaults. |
 | database.pool.minConns | string | `nil` | Optional DATABASE_MIN_CONNS env override. Leave empty to honor DATABASE_URL pool_min_conns or Multica defaults. |
 | database.waitForReady.enabled | bool | `true` | Wait for PostgreSQL TCP readiness before starting the backend. |
-| database.waitForReady.image | string | `"busybox:1.37"` | Init container image used for DB readiness checks. |
+| database.waitForReady.image | string | `"busybox:1.38"` | Init container image used for DB readiness checks. |
 | database.waitForReady.imagePullPolicy | string | `"IfNotPresent"` | Init container image pull policy. |
 | database.waitForReady.periodSeconds | int | `2` | Poll interval in seconds. |
 | database.waitForReady.timeoutSeconds | int | `180` | Max seconds to wait for DB readiness. |
@@ -388,7 +388,7 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | tests.enabled | bool | `true` | Enable Helm test pod. |
 | tests.image.pullPolicy | string | `"IfNotPresent"` | Test image pull policy. |
 | tests.image.repository | string | `"busybox"` | Test image repository. |
-| tests.image.tag | string | `"1.37"` | Test image tag. |
+| tests.image.tag | string | `"1.38"` | Test image tag. |
 | usageRollups.cronJob.backoffLimit | int | `1` | Job backoff limit. |
 | usageRollups.cronJob.concurrencyPolicy | string | `"Forbid"` | CronJob concurrency policy. Forbid pairs with the database advisory lock to avoid overlapping rollups. |
 | usageRollups.cronJob.enabled | bool | `true` | Run rollup_task_usage_hourly() on a Kubernetes CronJob instead of requiring pg_cron in PostgreSQL. |
