@@ -354,7 +354,7 @@ database:
     # -- Wait for PostgreSQL TCP readiness before starting the backend.
     enabled: true
     # -- Init container image used for DB readiness checks.
-    image: busybox:1.37
+    image: busybox:1.38
     # -- Init container image pull policy.
     imagePullPolicy: IfNotPresent
     # -- Max seconds to wait for DB readiness.
@@ -564,7 +564,7 @@ tests:
     # -- Test image repository.
     repository: busybox
     # -- Test image tag.
-    tag: "1.37"
+    tag: "1.38"
     # -- Test image pull policy.
     pullPolicy: IfNotPresent
 
