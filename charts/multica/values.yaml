@@ -109,6 +109,8 @@ backend:
     port: 8080
     # -- Public frontend origin. Required for production links, cookies, CORS, and WebSocket origin checks.
     frontendOrigin: http://localhost:3000
+    # -- Public API URL without a trailing slash. Empty defaults to frontendOrigin, which matches the chart-managed same-origin routes.
+    publicUrl: ""
     # -- Additional CORS origins, comma-separated.
     corsAllowedOrigins: ""
     # -- Additional WebSocket origins, comma-separated.
@@ -162,7 +164,7 @@ backend:
     smtp:
       # -- SMTP relay host. When empty, Multica uses Resend or stdout fallback.
       host: ""
-      # -- SMTP relay port. Multica uses plain SMTP with optional STARTTLS, so implicit TLS port 465 is not supported.
+      # -- SMTP relay port. Port 465 auto-enables implicit TLS unless smtp.tls overrides the mode.
       port: 25
       # -- Optional SMTP auth username.
       username: ""
@@ -178,8 +180,12 @@ backend:
         name: ""
         # -- Secret key for SMTP_PASSWORD.
         key: ""
+      # -- SMTP TLS mode. Empty/starttls uses STARTTLS when advertised; implicit/smtps/ssl starts TLS immediately.
+      tls: ""
       # -- Skip TLS certificate verification for SMTP STARTTLS.
       tlsInsecure: false
+      # -- EHLO/HELO hostname announced to strict SMTP relays. Empty lets Multica use the backend container hostname.
+      ehloName: ""
 
   google:
     # -- Google OAuth client ID.
@@ -209,6 +215,23 @@ backend:
       name: ""
       # -- Secret key for GITHUB_WEBHOOK_SECRET.
       key: ""
+
+  lark:
+    # -- Base64-encoded 32-byte key enabling Lark/Feishu Bot integration and encrypting Bot app secrets at rest. Prefer secretKeyRef in production.
+    secretKey: ""
+    secretKeyRef:
+      # -- Existing secret containing MULTICA_LARK_SECRET_KEY.
+      name: ""
+      # -- Secret key for MULTICA_LARK_SECRET_KEY.
+      key: ""
+    # -- Optional Lark Open Platform API base URL. Set to https://open.larksuite.com for international Lark tenants.
+    httpBaseUrl: ""
+    # -- Optional Lark long-connection callback bootstrap base URL. Set to https://open.larksuite.com for international Lark tenants.
+    callbackBaseUrl: ""
+    # -- Optional initial device-flow registration host override.
+    registrationDomain: ""
+    # -- Optional Lark international device-flow registration host override.
+    registrationLarkDomain: ""
 
   usageRollups:
     # -- Enable runtime usage reads from the daily rollup table after external backfill/scheduler setup is complete.
@@ -372,6 +395,11 @@ realtime:
     key: ""
 
 storage:
+  attachments:
+    # -- Attachment download behavior: auto, cloudfront, presign, or proxy.
+    downloadMode: auto
+    # -- TTL for CloudFront signed URLs and S3 presigned attachment download URLs.
+    downloadUrlTtl: 30m
   local:
     # -- Local upload directory inside the backend container.
     uploadDir: /app/data/uploads

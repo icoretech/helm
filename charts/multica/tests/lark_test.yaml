@@ -1,0 +1,65 @@
+suite: lark integration wiring
+templates:
+  - backend-deployment.yaml
+tests:
+  - it: leaves Lark envs unset by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_LARK_SECRET_KEY")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_LARK_HTTP_BASE_URL")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_LARK_CALLBACK_BASE_URL")]
+
+  - it: renders Lark inline config and public URL
+    set:
+      backend.config.publicUrl: https://multica.example.com
+      backend.lark.secretKey: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      backend.lark.httpBaseUrl: https://open.larksuite.com
+      backend.lark.callbackBaseUrl: https://open.larksuite.com
+      backend.lark.registrationDomain: https://accounts.feishu.cn
+      backend.lark.registrationLarkDomain: https://accounts.larksuite.com
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_PUBLIC_URL")].value
+          value: https://multica.example.com
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_LARK_SECRET_KEY")].value
+          value: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_LARK_HTTP_BASE_URL")].value
+          value: https://open.larksuite.com
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_LARK_CALLBACK_BASE_URL")].value
+          value: https://open.larksuite.com
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_LARK_REGISTRATION_DOMAIN")].value
+          value: https://accounts.feishu.cn
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_LARK_REGISTRATION_LARK_DOMAIN")].value
+          value: https://accounts.larksuite.com
+
+  - it: uses Lark secret refs when provided
+    values:
+      - values/valid-secret-refs.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_LARK_SECRET_KEY")].valueFrom.secretKeyRef.name
+          value: multica-lark
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_LARK_SECRET_KEY")].valueFrom.secretKeyRef.key
+          value: MULTICA_LARK_SECRET_KEY
+
+  - it: rejects Lark secret refs without a key
+    values:
+      - values/invalid-lark-secret-ref-missing-key.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.lark.secretKeyRef.key is required when backend.lark.secretKeyRef.name is set"
+
+  - it: rejects managed Lark env overrides through extraEnv
+    values:
+      - values/invalid-managed-lark-extraenv.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=MULTICA_LARK_SECRET_KEY is managed by the chart; use the dedicated value instead"

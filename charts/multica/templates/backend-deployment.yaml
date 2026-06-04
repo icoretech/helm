@@ -90,6 +90,9 @@ spec:
             - name: MULTICA_APP_URL
               value: {{ .Values.backend.config.frontendOrigin | quote }}
             {{- $_ := set $managed "MULTICA_APP_URL" true }}
+            - name: MULTICA_PUBLIC_URL
+              value: {{ default .Values.backend.config.frontendOrigin .Values.backend.config.publicUrl | trimSuffix "/" | quote }}
+            {{- $_ := set $managed "MULTICA_PUBLIC_URL" true }}
             {{- if .Values.database.external.urlFrom.secretKeyRef.name }}
             - name: DATABASE_URL
               valueFrom:
@@ -249,6 +252,16 @@ spec:
               value: {{ printf "%v" .Values.backend.email.smtp.tlsInsecure | quote }}
             {{- end }}
             {{- $_ := set $managed "SMTP_TLS_INSECURE" true }}
+            {{- if and .Values.backend.email.smtp.host .Values.backend.email.smtp.tls }}
+            - name: SMTP_TLS
+              value: {{ .Values.backend.email.smtp.tls | quote }}
+            {{- end }}
+            {{- $_ := set $managed "SMTP_TLS" true }}
+            {{- if and .Values.backend.email.smtp.host .Values.backend.email.smtp.ehloName }}
+            - name: SMTP_EHLO_NAME
+              value: {{ .Values.backend.email.smtp.ehloName | quote }}
+            {{- end }}
+            {{- $_ := set $managed "SMTP_EHLO_NAME" true }}
             {{- if .Values.backend.google.clientIdRef.name }}
             - name: GOOGLE_CLIENT_ID
               valueFrom:
@@ -290,6 +303,37 @@ spec:
               value: {{ .Values.backend.github.webhookSecret | quote }}
             {{- end }}
             {{- $_ := set $managed "GITHUB_WEBHOOK_SECRET" true }}
+            {{- if .Values.backend.lark.secretKeyRef.name }}
+            - name: MULTICA_LARK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.lark.secretKeyRef.name | quote }}
+                  key: {{ required "multica: backend.lark.secretKeyRef.key is required when backend.lark.secretKeyRef.name is set" .Values.backend.lark.secretKeyRef.key | quote }}
+            {{- else if .Values.backend.lark.secretKey }}
+            - name: MULTICA_LARK_SECRET_KEY
+              value: {{ .Values.backend.lark.secretKey | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_LARK_SECRET_KEY" true }}
+            {{- if .Values.backend.lark.httpBaseUrl }}
+            - name: MULTICA_LARK_HTTP_BASE_URL
+              value: {{ .Values.backend.lark.httpBaseUrl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_LARK_HTTP_BASE_URL" true }}
+            {{- if .Values.backend.lark.callbackBaseUrl }}
+            - name: MULTICA_LARK_CALLBACK_BASE_URL
+              value: {{ .Values.backend.lark.callbackBaseUrl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_LARK_CALLBACK_BASE_URL" true }}
+            {{- if .Values.backend.lark.registrationDomain }}
+            - name: MULTICA_LARK_REGISTRATION_DOMAIN
+              value: {{ .Values.backend.lark.registrationDomain | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_LARK_REGISTRATION_DOMAIN" true }}
+            {{- if .Values.backend.lark.registrationLarkDomain }}
+            - name: MULTICA_LARK_REGISTRATION_LARK_DOMAIN
+              value: {{ .Values.backend.lark.registrationLarkDomain | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_LARK_REGISTRATION_LARK_DOMAIN" true }}
             {{- if .Values.backend.usageRollups.dailyEnabled }}
             - name: USAGE_DAILY_ROLLUP_ENABLED
               value: {{ printf "%v" .Values.backend.usageRollups.dailyEnabled | quote }}
@@ -315,6 +359,12 @@ spec:
             - name: AWS_ENDPOINT_URL
               value: {{ .Values.storage.s3.endpointUrl | quote }}
             {{- $_ := set $managed "AWS_ENDPOINT_URL" true }}
+            - name: ATTACHMENT_DOWNLOAD_MODE
+              value: {{ .Values.storage.attachments.downloadMode | quote }}
+            {{- $_ := set $managed "ATTACHMENT_DOWNLOAD_MODE" true }}
+            - name: ATTACHMENT_DOWNLOAD_URL_TTL
+              value: {{ .Values.storage.attachments.downloadUrlTtl | quote }}
+            {{- $_ := set $managed "ATTACHMENT_DOWNLOAD_URL_TTL" true }}
             {{- if .Values.storage.s3.accessKeyIdRef.name }}
             - name: AWS_ACCESS_KEY_ID
               valueFrom:

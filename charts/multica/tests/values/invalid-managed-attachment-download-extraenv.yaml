@@ -1,0 +1,4 @@
+backend:
+  extraEnv:
+    - name: ATTACHMENT_DOWNLOAD_MODE
+      value: proxy

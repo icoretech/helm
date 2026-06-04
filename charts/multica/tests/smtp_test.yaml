@@ -14,6 +14,10 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PASSWORD")]
       - notExists:
           path: spec.template.spec.containers[0].env[?(@.name=="SMTP_TLS_INSECURE")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_TLS")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_EHLO_NAME")]
 
   - it: renders SMTP relay values when configured directly
     set:
@@ -21,7 +25,9 @@ tests:
       backend.email.smtp.port: 587
       backend.email.smtp.username: multica
       backend.email.smtp.password: secret
+      backend.email.smtp.tls: starttls
       backend.email.smtp.tlsInsecure: true
+      backend.email.smtp.ehloName: mail.example.com
     asserts:
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="SMTP_HOST")].value
@@ -36,8 +42,14 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PASSWORD")].value
           value: secret
       - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_TLS")].value
+          value: starttls
+      - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="SMTP_TLS_INSECURE")].value
           value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_EHLO_NAME")].value
+          value: mail.example.com
 
   - it: uses SMTP secret refs when provided
     values:
@@ -65,12 +77,18 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name=="SMTP_TLS_INSECURE")].value
           value: "true"
 
-  - it: rejects unsupported SMTP port 465
+  - it: supports implicit TLS SMTP on port 465
     set:
       backend.email.smtp.host: smtp.example.com
       backend.email.smtp.port: 465
+      backend.email.smtp.tls: implicit
     asserts:
-      - failedTemplate: {}
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PORT")].value
+          value: "465"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_TLS")].value
+          value: implicit
 
   - it: rejects managed SMTP_HOST overrides through extraEnv
     values:
@@ -78,3 +96,10 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: "multica: backend.extraEnv[0].name=SMTP_HOST is managed by the chart; use the dedicated value instead"
+
+  - it: rejects managed SMTP_EHLO_NAME overrides through extraEnv
+    values:
+      - values/invalid-managed-smtp-ehlo-extraenv.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=SMTP_EHLO_NAME is managed by the chart; use the dedicated value instead"

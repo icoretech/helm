@@ -9,7 +9,7 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - External PostgreSQL mode for production deployments
 - Optional bundled Redis for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues
 - Local upload PVC support and S3-compatible storage configuration
-- Secret references for JWT, email, Google OAuth, metrics, database URL, and S3 credentials
+- Secret references for JWT, email, Google OAuth, metrics, database URL, Lark, and S3 credentials
 - Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
 - Helm unit tests and install-safe CI values
 
@@ -71,6 +71,7 @@ database:
 backend:
   config:
     frontendOrigin: https://multica.example.com
+    publicUrl: https://multica.example.com
     jwtSecretRef:
       name: multica-auth
       key: JWT_SECRET
@@ -82,6 +83,10 @@ backend:
     smtp:
       host: smtp.example.com
       port: 587
+      # Use implicit for SMTPS/465, or leave empty for STARTTLS when advertised.
+      tls: starttls
+      # Set a real FQDN when strict public relays reject the container hostname.
+      ehloName: mail.example.com
       usernameRef:
         name: multica-smtp
         key: SMTP_USERNAME
@@ -105,11 +110,11 @@ redis:
 
 When using the chart-managed Ingress or HTTPRoute, backend-owned paths such as `/health`, `/api`, `/auth`, `/uploads`, and `/ws` are routed directly to the backend Service by default. This is required by `multica setup self-host`, which probes `<server-url>/health`. If you manage Traefik `IngressRoute`, nginx snippets, or another external router outside the chart, mirror the same path split.
 
-When using S3-compatible storage without `storage.s3.cloudfrontDomain`, Multica stores reader-facing URLs using the configured bucket endpoint. Configure the bucket with public `s3:GetObject` access for uploaded objects, or set `storage.s3.cloudfrontDomain` with CloudFront signing support.
+When using S3-compatible storage without `storage.s3.cloudfrontDomain`, Multica stores reader-facing URLs using the configured bucket endpoint. Configure the bucket with public `s3:GetObject` access for uploaded objects, set `storage.s3.cloudfrontDomain` with CloudFront signing support, or use `storage.attachments.downloadMode=proxy` when browsers and CLI clients cannot reach a private S3-compatible endpoint directly.
 
 The backend startup probe gives cold installs time to wait for PostgreSQL and run migrations before liveness starts. Readiness uses `/readyz`, which checks PostgreSQL connectivity and the latest server migration. Liveness stays on `/health`, which only confirms the process is alive.
 
-Backend pod annotations include a checksum of referenced Kubernetes Secret data so out-of-band rotations of `jwtSecretRef`, database URL, email, OAuth, Redis, GitHub, and S3 secrets roll the Deployment on the next `helm upgrade`. `helm template` and dry-run renders cannot read live Secrets, so they emit a stable placeholder checksum.
+Backend pod annotations include a checksum of referenced Kubernetes Secret data so out-of-band rotations of `jwtSecretRef`, database URL, email, OAuth, Redis, GitHub, Lark, and S3 secrets roll the Deployment on the next `helm upgrade`. `helm template` and dry-run renders cannot read live Secrets, so they emit a stable placeholder checksum.
 
 Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you explicitly want `DATABASE_MAX_CONNS` / `DATABASE_MIN_CONNS` env vars to override Multica's own defaults and any `pool_max_conns` / `pool_min_conns` query parameters already embedded in `DATABASE_URL`.
 
@@ -117,7 +122,7 @@ Signup restrictions only apply to first-time signup. Existing users can always s
 
 Set `backend.config.disableWorkspaceCreation=true` after bootstrapping the shared workspace when self-hosted users should only join by invitation. This maps to upstream `DISABLE_WORKSPACE_CREATION` and makes workspace creation fail for every caller.
 
-Email delivery can use Resend or an SMTP relay. SMTP is enabled when `backend.email.smtp.host` is set, and upstream Multica checks `SMTP_HOST` before Resend, so SMTP takes priority when both are configured. For production SMTP auth, prefer `backend.email.smtp.passwordRef` instead of inline `backend.email.smtp.password`.
+Email delivery can use Resend or an SMTP relay. SMTP is enabled when `backend.email.smtp.host` is set, and upstream Multica checks `SMTP_HOST` before Resend, so SMTP takes priority when both are configured. Port `465` is supported for implicit TLS; set `backend.email.smtp.tls=implicit` for non-standard SMTPS ports. For strict relays such as Google Workspace, set `backend.email.smtp.ehloName` to the FQDN the relay accepts. For production SMTP auth, prefer `backend.email.smtp.passwordRef` instead of inline `backend.email.smtp.password`.
 
 GitHub App integration only needs the app slug and webhook secret for this chart scope. Store the webhook secret in an existing Kubernetes Secret:
 
@@ -128,6 +133,20 @@ backend:
     webhookSecretRef:
       name: multica-github
       key: GITHUB_WEBHOOK_SECRET
+```
+
+Lark/Feishu Bot integration is disabled until `backend.lark.secretKey` or `backend.lark.secretKeyRef` is set. Use a base64-encoded 32-byte key, for example `openssl rand -base64 32`. International Lark tenants should set both `backend.lark.httpBaseUrl` and `backend.lark.callbackBaseUrl` to `https://open.larksuite.com`; `backend.config.publicUrl` must point at the public API origin used by Lark binding prompts.
+
+```yaml
+backend:
+  config:
+    publicUrl: https://multica.example.com
+  lark:
+    secretKeyRef:
+      name: multica-lark
+      key: MULTICA_LARK_SECRET_KEY
+    httpBaseUrl: https://open.larksuite.com
+    callbackBaseUrl: https://open.larksuite.com
 ```
 
 Usage rollup flags are read-path switches only. Set `backend.usageRollups.dailyEnabled` or `backend.usageRollups.dashboardEnabled` only after the external scheduler and historical backfill are in place.

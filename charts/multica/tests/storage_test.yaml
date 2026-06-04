@@ -23,6 +23,27 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name=="S3_BUCKET")].value
           value: multica-uploads
 
+  - it: renders attachment download controls
+    set:
+      storage.attachments.downloadMode: proxy
+      storage.attachments.downloadUrlTtl: 15m
+    template: backend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="ATTACHMENT_DOWNLOAD_MODE")].value
+          value: proxy
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="ATTACHMENT_DOWNLOAD_URL_TTL")].value
+          value: 15m
+
+  - it: rejects managed attachment download overrides through extraEnv
+    values:
+      - values/invalid-managed-attachment-download-extraenv.yaml
+    template: backend-deployment.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=ATTACHMENT_DOWNLOAD_MODE is managed by the chart; use the dedicated value instead"
+
   - it: rejects multi-replica backend on local upload persistence without S3
     values:
       - values/invalid-replicated-local-storage.yaml

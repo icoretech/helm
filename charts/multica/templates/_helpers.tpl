@@ -167,6 +167,7 @@ app.kubernetes.io/component: {{ .component }}
 {{- with .Values.backend.google.clientIdRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.google.clientSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.github.webhookSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.lark.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.storage.s3.accessKeyIdRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.storage.s3.secretAccessKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.storage.s3.cloudfrontPrivateKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
@@ -215,14 +216,14 @@ app.kubernetes.io/component: {{ .component }}
 {{- if and .Values.backend.github.webhookSecretRef.name (not .Values.backend.github.webhookSecretRef.key) -}}
 {{- fail "multica: backend.github.webhookSecretRef.key is required when backend.github.webhookSecretRef.name is set" -}}
 {{- end -}}
-{{- if and .Values.backend.email.smtp.host (eq (int .Values.backend.email.smtp.port) 465) -}}
-{{- fail "multica: backend.email.smtp.port=465 is not supported; use a different SMTP port" -}}
-{{- end -}}
 {{- if and .Values.backend.email.smtp.host .Values.backend.email.smtp.usernameRef.name (not .Values.backend.email.smtp.usernameRef.key) -}}
 {{- fail "multica: backend.email.smtp.usernameRef.key is required when backend.email.smtp.usernameRef.name is set" -}}
 {{- end -}}
 {{- if and .Values.backend.email.smtp.host .Values.backend.email.smtp.passwordRef.name (not .Values.backend.email.smtp.passwordRef.key) -}}
 {{- fail "multica: backend.email.smtp.passwordRef.key is required when backend.email.smtp.passwordRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.lark.secretKeyRef.name (not .Values.backend.lark.secretKeyRef.key) -}}
+{{- fail "multica: backend.lark.secretKeyRef.key is required when backend.lark.secretKeyRef.name is set" -}}
 {{- end -}}
 {{- if and .Values.redis.enabled (not .Values.realtime.redisUrl) (not .Values.realtime.redisUrlRef.name) .Values.redis.auth.enabled (or .Values.redis.auth.existingSecret .Values.redis.auth.acl.enabled) -}}
 {{- fail "multica: realtime.redisUrl or realtime.redisUrlRef is required when redis.enabled=true with redis.auth.existingSecret or redis.auth.acl.enabled" -}}

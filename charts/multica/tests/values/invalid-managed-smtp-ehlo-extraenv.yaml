@@ -1,0 +1,4 @@
+backend:
+  extraEnv:
+    - name: SMTP_EHLO_NAME
+      value: mail.example.com

@@ -89,6 +89,7 @@
             "appEnv": { "type": "string" },
             "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
             "frontendOrigin": { "type": "string" },
+            "publicUrl": { "type": "string" },
             "corsAllowedOrigins": { "type": "string" },
             "allowedOrigins": { "type": "string" },
             "metricsAddr": { "type": "string" },
@@ -125,31 +126,10 @@
                 "usernameRef": { "$ref": "#/definitions/secretRef" },
                 "password": { "type": "string" },
                 "passwordRef": { "$ref": "#/definitions/secretRef" },
-                "tlsInsecure": { "type": "boolean" }
-              },
-              "allOf": [
-                {
-                  "if": {
-                    "allOf": [
-                      {
-                        "properties": {
-                          "host": { "minLength": 1 }
-                        },
-                        "required": ["host"]
-                      },
-                      {
-                        "properties": {
-                          "port": { "const": 465 }
-                        },
-                        "required": ["port"]
-                      }
-                    ]
-                  },
-                  "then": {
-                    "required": ["unsupported SMTP port 465"]
-                  }
-                }
-              ]
+                "tls": { "type": "string", "enum": ["", "starttls", "implicit", "smtps", "ssl"] },
+                "tlsInsecure": { "type": "boolean" },
+                "ehloName": { "type": "string" }
+              }
             }
           }
         },
@@ -283,6 +263,18 @@
             }
           ]
         },
+        "lark": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "secretKey": { "type": "string" },
+            "secretKeyRef": { "$ref": "#/definitions/secretRef" },
+            "httpBaseUrl": { "type": "string" },
+            "callbackBaseUrl": { "type": "string" },
+            "registrationDomain": { "type": "string" },
+            "registrationLarkDomain": { "type": "string" }
+          }
+        },
         "usageRollups": {
           "type": "object",
           "additionalProperties": false,
@@ -397,6 +389,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "attachments": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "downloadMode": { "type": "string", "enum": ["auto", "cloudfront", "presign", "proxy"] },
+            "downloadUrlTtl": { "type": "string" }
+          }
+        },
         "local": {
           "type": "object",
           "additionalProperties": false,
