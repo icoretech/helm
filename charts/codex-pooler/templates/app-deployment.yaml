@@ -1,0 +1,118 @@
+{{- include "codex-pooler.validateWebsocketTopology" . }}
+{{- if .Values.app.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "codex-pooler.fullname" . }}-app
+  labels:
+    {{- include "codex-pooler.labels" . | nindent 4 }}
+    app.kubernetes.io/component: app
+spec:
+  replicas: {{ .Values.app.replicaCount }}
+  revisionHistoryLimit: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.app.strategy.maxUnavailable }}
+      maxSurge: {{ .Values.app.strategy.maxSurge }}
+  selector:
+    matchLabels:
+      {{- include "codex-pooler.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: app
+  template:
+    metadata:
+      labels:
+        {{- include "codex-pooler.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: app
+        {{- if and .Values.clustering.enabled .Values.clustering.participants.app }}
+        {{- include "codex-pooler.clusteringMemberLabel" . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if and .Values.clustering.enabled .Values.clustering.participants.app }}
+      subdomain: {{ include "codex-pooler.clusteringHeadlessServiceName" . }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.app.terminationGracePeriodSeconds }}
+      serviceAccountName: {{ include "codex-pooler.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: app
+          image: {{ include "codex-pooler.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.config.port }}
+            {{- if and .Values.clustering.enabled .Values.clustering.participants.app }}
+            - name: epmd
+              containerPort: {{ .Values.clustering.epmdPort }}
+            - name: distribution
+              containerPort: {{ .Values.clustering.distributionPort }}
+            {{- end }}
+          env:
+            - name: PHX_SERVER
+              value: "true"
+            - name: OBAN_MODE
+              value: web
+            - name: CODEX_POOLER_DRAIN_MARKER_PATH
+              value: {{ .Values.app.drainMarkerPath | quote }}
+            {{- include "codex-pooler.clusteringEnv" (dict "root" . "role" "app") | nindent 12 }}
+            {{- include "codex-pooler.websocketOwnerForwardingEnv" . | nindent 12 }}
+            {{- include "codex-pooler.env" . | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+              httpHeaders:
+                - name: X-Forwarded-Proto
+                  value: https
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+              httpHeaders:
+                - name: X-Forwarded-Proto
+                  value: https
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          {{- if .Values.app.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.app.startupProbe.path }}
+              port: http
+              httpHeaders:
+                - name: X-Forwarded-Proto
+                  value: https
+            initialDelaySeconds: {{ .Values.app.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.app.startupProbe.periodSeconds }}
+            failureThreshold: {{ .Values.app.startupProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.app.startupProbe.timeoutSeconds }}
+          {{- end }}
+          {{- if .Values.app.lifecycle.preStop.enabled }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "touch \"$CODEX_POOLER_DRAIN_MARKER_PATH\"; sleep {{ .Values.app.lifecycle.preStop.sleepSeconds }}"]
+          {{- end }}
+          resources:
+            {{- toYaml .Values.app.resources | nindent 12 }}
+      {{- with .Values.app.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.app.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.app.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

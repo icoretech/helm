@@ -99,6 +99,22 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/codex-pooler\\/Chart\\.yaml$/"],
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
+      "depNameTemplate": "icoretech/codex-pooler",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/codex-pooler\\/Chart\\.yaml$/"],
+      "matchStrings": ["image:\\s*ghcr\\.io\\/icoretech\\/codex-pooler:(?<currentValue>[^\\s]+)"],
+      "depNameTemplate": "icoretech/codex-pooler",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^charts\\/multica\\/Chart\\.yaml$/"],
       "matchStrings": ["appVersion:\\s*\\\"?v?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "multica-ai/multica",
@@ -237,6 +253,11 @@
       "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
       "automerge": true,
       "platformAutomerge": true
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["icoretech/codex-pooler"],
+      "groupName": "codex-pooler chart software updates"
     },
     {
       "matchManagers": ["custom.regex"],

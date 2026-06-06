@@ -1,0 +1,30 @@
+apiVersion: v2
+name: codex-pooler
+description: Self-hosted gateway for sharing Codex account capacity across trusted agents and tools
+type: application
+version: 0.0.1
+appVersion: "0.0.1"
+kubeVersion: ">= 1.24.0-0"
+icon: https://icoretech.github.io/helm/charts/codex-pooler/logo.png
+keywords:
+  - codex
+  - openai
+  - gateway
+  - pooler
+  - ai
+maintainers:
+  - name: icoretech
+    url: https://github.com/icoretech
+home: https://github.com/icoretech/codex-pooler
+sources:
+  - https://github.com/icoretech/codex-pooler
+  - https://github.com/icoretech/helm/tree/main/charts/codex-pooler
+annotations:
+  artifacthub.io/license: "Elastic-2.0"
+  artifacthub.io/signKey: |
+    fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+    url: https://icoretech.github.io/helm/pgp-public-key.asc
+  artifacthub.io/images: |
+    - name: codex-pooler
+      image: ghcr.io/icoretech/codex-pooler:0.0.1
+  artifacthub.io/category: ai-machine-learning

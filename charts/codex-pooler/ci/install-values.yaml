@@ -1,0 +1,13 @@
+# Values used by chart-testing (ct install) to verify installability before a
+# public application image tag is necessarily available.
+app:
+  enabled: false
+
+migrations:
+  enabled: false
+
+oban:
+  worker:
+    enabled: false
+  scheduler:
+    enabled: false

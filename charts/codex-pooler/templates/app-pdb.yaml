@@ -1,0 +1,15 @@
+{{- if and .Values.app.enabled .Values.app.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "codex-pooler.fullname" . }}-app
+  labels:
+    {{- include "codex-pooler.labels" . | nindent 4 }}
+    app.kubernetes.io/component: app
+spec:
+  minAvailable: {{ .Values.app.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "codex-pooler.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: app
+{{- end }}

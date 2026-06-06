@@ -1,0 +1,43 @@
+{{- if and .Values.app.enabled .Values.monitoring.serviceMonitor.enabled }}
+{{- $serviceMonitor := .Values.monitoring.serviceMonitor }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "codex-pooler.fullname" . }}-app
+  labels:
+    {{- include "codex-pooler.labels" . | nindent 4 }}
+    {{- with $serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $serviceMonitor.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "codex-pooler.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: app
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - port: http
+      path: {{ $serviceMonitor.path | quote }}
+      interval: {{ $serviceMonitor.interval | quote }}
+      scrapeTimeout: {{ $serviceMonitor.scrapeTimeout | quote }}
+      scheme: {{ $serviceMonitor.scheme | quote }}
+      {{- with $serviceMonitor.metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $serviceMonitor.relabelings }}
+      relabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if and $serviceMonitor.bearerTokenSecret.name $serviceMonitor.bearerTokenSecret.key }}
+      bearerTokenSecret:
+        name: {{ $serviceMonitor.bearerTokenSecret.name | quote }}
+        key: {{ $serviceMonitor.bearerTokenSecret.key | quote }}
+      {{- end }}
+{{- end }}

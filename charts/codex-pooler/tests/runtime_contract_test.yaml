@@ -1,0 +1,239 @@
+suite: runtime role contract
+templates:
+  - app-service.yaml
+  - app-deployment.yaml
+  - oban-worker-deployment.yaml
+  - oban-scheduler-deployment.yaml
+  - migration-job.yaml
+tests:
+  - it: renders the app service selector and component labels
+    template: app-service.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: app
+      - equal:
+          path: spec.selector["app.kubernetes.io/component"]
+          value: app
+      - equal:
+          path: spec.ports[0].name
+          value: http
+
+  - it: keeps app runtime env, probes, and graceful drain contract aligned
+    template: app-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy.rollingUpdate.maxUnavailable
+          value: 0
+      - equal:
+          path: spec.strategy.rollingUpdate.maxSurge
+          value: 1
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 75
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_MODE")].value
+          value: web
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_DRAIN_MARKER_PATH")].value
+          value: /tmp/codex-pooler-draining
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /readyz
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /healthz
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: /healthz
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.timeoutSeconds
+          value: 2
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value:
+            - /bin/sh
+            - -c
+            - touch "$CODEX_POOLER_DRAIN_MARKER_PATH"; sleep 10
+
+  - it: keeps worker runtime env contract aligned
+    template: oban-worker-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.strategy.rollingUpdate.maxUnavailable
+          value: 0
+      - equal:
+          path: spec.strategy.rollingUpdate.maxSurge
+          value: 1
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 75
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_MODE")].value
+          value: worker
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+
+  - it: keeps scheduler runtime env contract aligned
+    template: oban-scheduler-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.strategy.rollingUpdate.maxUnavailable
+          value: 0
+      - equal:
+          path: spec.strategy.rollingUpdate.maxSurge
+          value: 1
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 75
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_MODE")].value
+          value: scheduler
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+
+  - it: keeps migration hook command and role env aligned
+    template: migration-job.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: pre-install,pre-upgrade
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - /bin/sh
+            - -lc
+      - matchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: CodexPooler\.Release\.migrate\(\)
+      - matchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: CodexPooler\.Release\.import_openai_pricing_from_priv\(\)
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_MODE")].value
+          value: web
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+
+  - it: uses the required secret keys and plain runtime env on app pods
+    template: app-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.key
+          value: database-url
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SECRET_KEY_BASE")].valueFrom.secretKeyRef.key
+          value: secret-key-base
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_TOTP_ENCRYPTION_KEY")].valueFrom.secretKeyRef.key
+          value: totp-encryption-key
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_TOTP_KEY_VERSION")].valueFrom.secretKeyRef.key
+          value: totp-key-version
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_UPSTREAM_SECRET_KEY")].valueFrom.secretKeyRef.key
+          value: upstream-secret-key
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_UPSTREAM_SECRET_KEY_VERSION")].valueFrom.secretKeyRef.key
+          value: upstream-secret-key-version
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="PORT")].value
+          value: "4000"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_HOST")].value
+          value: codex-pooler.example.com
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="POOL_SIZE")].value
+          value: "10"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="ECTO_IPV6")].value
+          value: "false"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_JOBS_QUEUE_LIMIT")].value
+          value: "8"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_SHUTDOWN_GRACE_PERIOD_MS")].value
+          value: "55000"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="LANG")].value
+          value: C.UTF-8
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="LC_ALL")].value
+          value: C.UTF-8
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_METRICS_BEARER_TOKEN")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PASSWORD")]
+
+  - it: uses the required secret keys and plain runtime env on worker pods
+    template: oban-worker-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.key
+          value: database-url
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SECRET_KEY_BASE")].valueFrom.secretKeyRef.key
+          value: secret-key-base
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_UPSTREAM_SECRET_KEY")].valueFrom.secretKeyRef.key
+          value: upstream-secret-key
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_HOST")].value
+          value: codex-pooler.example.com
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_JOBS_QUEUE_LIMIT")].value
+          value: "8"
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PASSWORD")]
+
+  - it: uses the required secret keys and plain runtime env on scheduler pods
+    template: oban-scheduler-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.key
+          value: database-url
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SECRET_KEY_BASE")].valueFrom.secretKeyRef.key
+          value: secret-key-base
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_UPSTREAM_SECRET_KEY")].valueFrom.secretKeyRef.key
+          value: upstream-secret-key
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_HOST")].value
+          value: codex-pooler.example.com
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_JOBS_QUEUE_LIMIT")].value
+          value: "8"
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PASSWORD")]
+
+  - it: uses the required secret keys and plain runtime env on migration pods
+    template: migration-job.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.key
+          value: database-url
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SECRET_KEY_BASE")].valueFrom.secretKeyRef.key
+          value: secret-key-base
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_UPSTREAM_SECRET_KEY")].valueFrom.secretKeyRef.key
+          value: upstream-secret-key
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_HOST")].value
+          value: codex-pooler.example.com
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_JOBS_QUEUE_LIMIT")].value
+          value: "8"
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PASSWORD")]

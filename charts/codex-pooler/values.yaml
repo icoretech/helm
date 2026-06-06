@@ -1,0 +1,166 @@
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+imagePullSecrets: []
+
+image:
+  repository: ghcr.io/icoretech/codex-pooler
+  tag: latest
+  pullPolicy: IfNotPresent
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: codex-pooler.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+config:
+  host: codex-pooler.example.com
+  port: 4000
+  poolSize: 10
+  ectoIpv6: "false"
+  obanJobsQueueLimit: "8"
+  obanShutdownGracePeriodMs: "55000"
+  lang: "C.UTF-8"
+  lcAll: "C.UTF-8"
+
+monitoring:
+  serviceMonitor:
+    enabled: false
+    labels: {}
+    annotations: {}
+    interval: 30s
+    scrapeTimeout: 10s
+    path: /metrics
+    scheme: http
+    bearerTokenSecret:
+      name: ""
+      key: ""
+    metricRelabelings: []
+    relabelings: []
+
+clustering:
+  enabled: false
+  query: ""
+  distributionPort: "9000"
+  epmdPort: "4369"
+  headlessService:
+    enabled: true
+    nameOverride: ""
+    publishNotReadyAddresses: true
+  cookie:
+    existingSecret: ""
+    existingSecretKey: release-cookie
+    value: ""
+  participants:
+    app: true
+    worker: true
+    scheduler: true
+
+secrets:
+  create: false
+  existingSecret: codex-pooler-secrets
+  databaseUrl: ""
+  secretKeyBase: ""
+  totpEncryptionKey: ""
+  totpKeyVersion: v1
+  upstreamSecretKey: ""
+  upstreamSecretKeyVersion: v1
+
+app:
+  enabled: true
+  replicaCount: 1
+  websocketContinuity:
+    allowUnsafeMultiReplica: false
+    ownerForwarding:
+      enabled: false
+  strategy:
+    maxUnavailable: 0
+    maxSurge: 1
+  terminationGracePeriodSeconds: 75
+  drainMarkerPath: /tmp/codex-pooler-draining
+  startupProbe:
+    enabled: true
+    path: /healthz
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 12
+    timeoutSeconds: 2
+  lifecycle:
+    preStop:
+      enabled: true
+      sleepSeconds: 10
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  service:
+    type: ClusterIP
+    port: 4000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 768Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+migrations:
+  enabled: true
+  ttlSecondsAfterFinished: 300
+  resources:
+    requests:
+      cpu: 50m
+      memory: 192Mi
+    limits:
+      cpu: 250m
+      memory: 384Mi
+
+oban:
+  worker:
+    enabled: true
+    replicaCount: 1
+    strategy:
+      maxUnavailable: 0
+      maxSurge: 1
+    terminationGracePeriodSeconds: 75
+    resources:
+      requests:
+        cpu: 75m
+        memory: 768Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+  scheduler:
+    enabled: true
+    replicaCount: 1
+    strategy:
+      maxUnavailable: 0
+      maxSurge: 1
+    terminationGracePeriodSeconds: 75
+    resources:
+      requests:
+        cpu: 75m
+        memory: 584Mi
+      limits:
+        cpu: 500m
+        memory: 584Mi
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}

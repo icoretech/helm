@@ -1,0 +1,128 @@
+suite: websocket topology guards
+templates:
+  - app-deployment.yaml
+  - oban-worker-deployment.yaml
+  - oban-scheduler-deployment.yaml
+  - migration-job.yaml
+tests:
+  - it: rejects multi-replica app without unsafe acknowledgement
+    template: app-deployment.yaml
+    set:
+      app.replicaCount: 2
+    asserts:
+      - failedTemplate:
+          errorMessage: "app.replicaCount > 1 is unsafe for backend websocket continuity until post-smoke guard relaxation is completed; set app.websocketContinuity.allowUnsafeMultiReplica=true only if external sticky routing and the documented reconnect limitations are acceptable"
+
+  - it: allows multi-replica app with unsafe acknowledgement
+    template: app-deployment.yaml
+    set:
+      app.replicaCount: 2
+      app.websocketContinuity.allowUnsafeMultiReplica: true
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")]
+
+  - it: rejects owner forwarding unless clustering is enabled
+    template: app-deployment.yaml
+    set:
+      app.websocketContinuity.ownerForwarding.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "app.websocketContinuity.ownerForwarding.enabled requires clustering.enabled=true so websocket owner pods can be reached across app nodes"
+
+  - it: rejects owner forwarding unless app nodes participate in clustering
+    template: app-deployment.yaml
+    set:
+      clustering.enabled: true
+      clustering.participants.app: false
+      app.websocketContinuity.ownerForwarding.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "app.websocketContinuity.ownerForwarding.enabled requires clustering.participants.app=true; worker or scheduler clustering cannot satisfy websocket owner forwarding"
+
+  - it: renders owner forwarding only on app pods
+    template: app-deployment.yaml
+    set:
+      clustering.enabled: true
+      app.websocketContinuity.ownerForwarding.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")].value
+          value: "true"
+
+  - it: does not render owner forwarding on worker pods
+    template: oban-worker-deployment.yaml
+    set:
+      clustering.enabled: true
+      app.websocketContinuity.ownerForwarding.enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")]
+
+  - it: does not render owner forwarding on scheduler pods
+    template: oban-scheduler-deployment.yaml
+    set:
+      clustering.enabled: true
+      app.websocketContinuity.ownerForwarding.enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")]
+
+  - it: does not render owner forwarding on migration pods
+    template: migration-job.yaml
+    set:
+      clustering.enabled: true
+      app.websocketContinuity.ownerForwarding.enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")]
+
+  - it: renders clustering env for app pods
+    template: app-deployment.yaml
+    set:
+      clustering.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DNS_CLUSTER_QUERY")].value
+          value: codex-pooler-cluster.NAMESPACE.svc.cluster.local
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="RELEASE_DISTRIBUTION")].value
+          value: name
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="RELEASE_COOKIE")].valueFrom.secretKeyRef.key
+          value: release-cookie
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="RELEASE_NODE")].value
+          value: codex_pooler@$(POD_IP)
+      - equal:
+          path: spec.template.spec.subdomain
+          value: codex-pooler-cluster
+
+  - it: renders clustering env for worker pods
+    template: oban-worker-deployment.yaml
+    set:
+      clustering.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DNS_CLUSTER_QUERY")].value
+          value: codex-pooler-cluster.NAMESPACE.svc.cluster.local
+
+  - it: renders clustering env for scheduler pods
+    template: oban-scheduler-deployment.yaml
+    set:
+      clustering.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DNS_CLUSTER_QUERY")].value
+          value: codex-pooler-cluster.NAMESPACE.svc.cluster.local
+
+  - it: does not render clustering env for migration pods
+    template: migration-job.yaml
+    set:
+      clustering.enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="DNS_CLUSTER_QUERY")]

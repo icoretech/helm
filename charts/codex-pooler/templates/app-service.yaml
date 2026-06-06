@@ -1,0 +1,42 @@
+{{- if .Values.app.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "codex-pooler.fullname" . }}-app
+  labels:
+    {{- include "codex-pooler.labels" . | nindent 4 }}
+    app.kubernetes.io/component: app
+spec:
+  type: {{ .Values.app.service.type }}
+  selector:
+    {{- include "codex-pooler.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: app
+  ports:
+    - name: http
+      port: {{ .Values.app.service.port }}
+      targetPort: http
+{{- end }}
+{{- if and .Values.clustering.enabled .Values.clustering.headlessService.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "codex-pooler.clusteringHeadlessServiceName" . }}
+  labels:
+    {{- include "codex-pooler.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cluster
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: {{ .Values.clustering.headlessService.publishNotReadyAddresses }}
+  selector:
+    {{- include "codex-pooler.selectorLabels" . | nindent 4 }}
+    codex-pooler.icoretech.io/cluster-member: "true"
+  ports:
+    - name: epmd
+      port: {{ .Values.clustering.epmdPort }}
+      targetPort: {{ .Values.clustering.epmdPort }}
+    - name: distribution
+      port: {{ .Values.clustering.distributionPort }}
+      targetPort: {{ .Values.clustering.distributionPort }}
+{{- end }}

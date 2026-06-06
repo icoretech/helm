@@ -1,0 +1,138 @@
+# Codex Pooler Helm Chart
+
+Deploy [Codex Pooler](https://github.com/icoretech/codex-pooler), a self-hosted gateway for sharing Codex account capacity across trusted agents and tools, on Kubernetes.
+
+## Prerequisites
+
+- Kubernetes 1.24+
+- Helm 3.10+
+- PostgreSQL database reachable from the cluster
+- Existing Kubernetes Secret with the release bootstrap values, unless `secrets.create=true` is used from a private values source
+
+## Install
+
+```bash
+helm repo add icoretech https://icoretech.github.io/helm
+helm repo update
+helm upgrade --install codex-pooler icoretech/codex-pooler \
+  -n codex-pooler --create-namespace \
+  --version 0.0.1 \
+  --values values.production.yaml
+```
+
+OCI:
+
+```bash
+helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
+  -n codex-pooler --create-namespace \
+  --version 0.0.1 \
+  --values values.production.yaml
+```
+
+## Image
+
+The application image is published at `ghcr.io/icoretech/codex-pooler`. Set an explicit immutable `image.tag` for real deployments.
+
+```yaml
+image:
+  repository: ghcr.io/icoretech/codex-pooler
+  tag: 0.0.1
+  pullPolicy: IfNotPresent
+```
+
+## Required Secret
+
+By default, the chart expects an existing Secret named `codex-pooler-secrets`:
+
+```yaml
+secrets:
+  create: false
+  existingSecret: codex-pooler-secrets
+```
+
+The Secret must contain these keys:
+
+- `database-url`
+- `secret-key-base`
+- `totp-encryption-key`
+- `totp-key-version`
+- `upstream-secret-key`
+- `upstream-secret-key-version`
+
+Do not put upstream access tokens, API keys, cookies, `auth.json`, SMTP passwords, or raw client payloads in chart values.
+
+## Roles
+
+- `app` serves HTTP with `OBAN_MODE=web` and `PHX_SERVER=true`
+- `oban.worker` runs background jobs with `OBAN_MODE=worker`
+- `oban.scheduler` runs scheduled jobs with `OBAN_MODE=scheduler`
+- `migrations` runs release migrations and imports the vendored pricing feed before app rollout
+
+Keep `app.replicaCount` at `1` unless clustering and owner-forwarding are intentionally configured and verified.
+
+## Monitoring
+
+The app service can render a Prometheus Operator `ServiceMonitor`:
+
+```yaml
+monitoring:
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
+    interval: 10s
+    scrapeTimeout: 5s
+    path: /metrics
+```
+
+If metrics bearer authentication is enabled in Codex Pooler, keep the raw token in a Kubernetes Secret and reference it through `monitoring.serviceMonitor.bearerTokenSecret`.
+
+## Flux Example
+
+```yaml
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: icoretech
+  namespace: flux-system
+spec:
+  type: oci
+  interval: 30m
+  url: oci://ghcr.io/icoretech/charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: codex-pooler
+  namespace: codex-pooler
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: codex-pooler
+      version: "0.0.1"
+      sourceRef:
+        kind: HelmRepository
+        name: icoretech
+        namespace: flux-system
+  values:
+    image:
+      repository: ghcr.io/icoretech/codex-pooler
+      tag: "0.0.1"
+    config:
+      host: codex-pooler.example.com
+    ingress:
+      enabled: true
+      hosts:
+        - host: codex-pooler.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+    secrets:
+      create: false
+      existingSecret: codex-pooler-secrets
+```
+
+## Configuration Reference
+
+{{ template "chart.valuesSection" . }}
