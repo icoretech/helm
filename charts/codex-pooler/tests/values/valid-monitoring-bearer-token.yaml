@@ -1,0 +1,8 @@
+monitoring:
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
+    bearerTokenSecret:
+      name: codex-pooler-metrics
+      key: bearer-token

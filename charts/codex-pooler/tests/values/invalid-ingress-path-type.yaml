@@ -1,0 +1,7 @@
+ingress:
+  enabled: true
+  hosts:
+    - host: codex-pooler.example.com
+      paths:
+        - path: /
+          pathType: RoutePrefix

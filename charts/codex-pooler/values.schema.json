@@ -1,0 +1,372 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "nameOverride": { "type": "string" },
+    "fullnameOverride": { "type": "string" },
+    "serviceAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": { "type": "boolean" },
+        "annotations": { "$ref": "#/definitions/metadataMap" },
+        "name": { "type": "string" }
+      }
+    },
+    "podAnnotations": { "$ref": "#/definitions/metadataMap" },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "tag": { "type": "string", "minLength": 1 },
+        "pullPolicy": { "type": "string", "enum": ["Always", "IfNotPresent", "Never"] }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "className": { "type": "string" },
+        "annotations": { "$ref": "#/definitions/metadataMap" },
+        "hosts": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ingressHost" }
+        },
+        "tls": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "host": { "type": "string", "minLength": 1 },
+        "port": { "$ref": "#/definitions/port" },
+        "poolSize": { "type": "integer", "minimum": 1 },
+        "ectoIpv6": { "type": "string", "enum": ["true", "false"] },
+        "obanJobsQueueLimit": { "type": "string", "pattern": "^[0-9]+$" },
+        "obanShutdownGracePeriodMs": { "type": "string", "pattern": "^[0-9]+$" },
+        "lang": { "type": "string", "minLength": 1 },
+        "lcAll": { "type": "string", "minLength": 1 }
+      }
+    },
+    "monitoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "serviceMonitor": { "$ref": "#/definitions/serviceMonitor" }
+      }
+    },
+    "clustering": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "query": { "type": "string" },
+        "distributionPort": { "$ref": "#/definitions/portString" },
+        "epmdPort": { "$ref": "#/definitions/portString" },
+        "headlessService": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "nameOverride": { "type": "string" },
+            "publishNotReadyAddresses": { "type": "boolean" }
+          }
+        },
+        "cookie": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "existingSecret": { "type": "string" },
+            "existingSecretKey": { "type": "string", "minLength": 1 },
+            "value": { "type": "string" }
+          }
+        },
+        "participants": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "app": { "type": "boolean" },
+            "worker": { "type": "boolean" },
+            "scheduler": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "secrets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": { "type": "boolean" },
+        "existingSecret": { "type": "string" },
+        "databaseUrl": { "type": "string" },
+        "secretKeyBase": { "type": "string" },
+        "totpEncryptionKey": { "type": "string" },
+        "totpKeyVersion": { "type": "string", "minLength": 1 },
+        "upstreamSecretKey": { "type": "string" },
+        "upstreamSecretKeyVersion": { "type": "string", "minLength": 1 }
+      }
+    },
+    "app": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "replicaCount": { "type": "integer", "minimum": 1 },
+        "websocketContinuity": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allowUnsafeMultiReplica": { "type": "boolean" },
+            "ownerForwarding": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" }
+              }
+            }
+          }
+        },
+        "strategy": { "$ref": "#/definitions/rollingUpdate" },
+        "terminationGracePeriodSeconds": { "type": "integer", "minimum": 0 },
+        "drainMarkerPath": { "type": "string", "minLength": 1 },
+        "startupProbe": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "path": { "type": "string", "minLength": 1 },
+            "initialDelaySeconds": { "type": "integer", "minimum": 0 },
+            "periodSeconds": { "type": "integer", "minimum": 1 },
+            "failureThreshold": { "type": "integer", "minimum": 1 },
+            "timeoutSeconds": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "lifecycle": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "preStop": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "sleepSeconds": { "type": "integer", "minimum": 0 }
+              }
+            }
+          }
+        },
+        "podDisruptionBudget": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "minAvailable": { "$ref": "#/definitions/intOrString" }
+          }
+        },
+        "service": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string", "enum": ["ClusterIP", "NodePort", "LoadBalancer", "ExternalName"] },
+            "port": { "$ref": "#/definitions/port" }
+          }
+        },
+        "resources": { "$ref": "#/definitions/resourceRequirements" },
+        "nodeSelector": { "type": "object" },
+        "tolerations": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "affinity": { "type": "object" }
+      }
+    },
+    "migrations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "ttlSecondsAfterFinished": { "type": "integer", "minimum": 0 },
+        "resources": { "$ref": "#/definitions/resourceRequirements" }
+      }
+    },
+    "oban": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "worker": { "$ref": "#/definitions/obanRole" },
+        "scheduler": { "$ref": "#/definitions/obanRole" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "secrets": {
+            "type": "object",
+            "properties": { "create": { "const": true } },
+            "required": ["create"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "secrets": {
+            "type": "object",
+            "properties": {
+              "databaseUrl": { "type": "string", "minLength": 1 },
+              "secretKeyBase": { "type": "string", "minLength": 1 },
+              "totpEncryptionKey": { "type": "string", "minLength": 1 },
+              "upstreamSecretKey": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "metadataMap": {
+      "type": "object",
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "portString": {
+      "anyOf": [
+        { "$ref": "#/definitions/port" },
+        { "type": "string", "pattern": "^[0-9]+$" }
+      ]
+    },
+    "intOrString": {
+      "anyOf": [
+        { "type": "integer", "minimum": 0 },
+        { "type": "string", "minLength": 1 }
+      ]
+    },
+    "rollingUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxUnavailable": { "$ref": "#/definitions/intOrString" },
+        "maxSurge": { "$ref": "#/definitions/intOrString" }
+      }
+    },
+    "resourceList": {
+      "type": "object",
+      "additionalProperties": { "type": ["string", "number", "integer"] }
+    },
+    "resourceRequirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requests": { "$ref": "#/definitions/resourceList" },
+        "limits": { "$ref": "#/definitions/resourceList" }
+      }
+    },
+    "ingressHost": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "host": { "type": "string", "minLength": 1 },
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "pathType": {
+                "type": "string",
+                "enum": ["ImplementationSpecific", "Exact", "Prefix"]
+              }
+            },
+            "required": ["path"]
+          }
+        }
+      },
+      "required": ["host", "paths"]
+    },
+    "secretNameKeyPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "key": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "name": { "type": "string", "minLength": 1 } },
+            "required": ["name"]
+          },
+          "then": {
+            "properties": { "key": { "type": "string", "minLength": 1 } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "key": { "type": "string", "minLength": 1 } },
+            "required": ["key"]
+          },
+          "then": {
+            "properties": { "name": { "type": "string", "minLength": 1 } }
+          }
+        }
+      ]
+    },
+    "serviceMonitor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "labels": { "$ref": "#/definitions/metadataMap" },
+        "annotations": { "$ref": "#/definitions/metadataMap" },
+        "interval": { "type": "string", "minLength": 1 },
+        "scrapeTimeout": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "scheme": { "type": "string", "enum": ["http", "https"] },
+        "bearerTokenSecret": { "$ref": "#/definitions/secretNameKeyPair" },
+        "metricRelabelings": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "relabelings": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "obanRole": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "replicaCount": { "type": "integer", "minimum": 0 },
+        "strategy": { "$ref": "#/definitions/rollingUpdate" },
+        "terminationGracePeriodSeconds": { "type": "integer", "minimum": 0 },
+        "resources": { "$ref": "#/definitions/resourceRequirements" },
+        "nodeSelector": { "type": "object" },
+        "tolerations": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "affinity": { "type": "object" }
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+image:
+  tag: "0.0.1"
+secrets:
+  create: false
+  existingSecret: codex-pooler-secrets
