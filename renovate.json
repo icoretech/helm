@@ -261,6 +261,13 @@
     },
     {
       "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["icoretech/codex-pooler"],
+      "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "matchManagers": ["custom.regex"],
       "matchPackageNames": ["multica-ai/multica"],
       "groupName": "multica chart software updates"
     },
