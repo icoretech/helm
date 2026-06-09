@@ -103,7 +103,7 @@
       "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "icoretech/codex-pooler",
       "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^v?(?<version>.+)$"
+      "extractVersionTemplate": "^codex-pooler-v?(?<version>.+)$"
     },
     {
       "customType": "regex",
@@ -111,7 +111,7 @@
       "matchStrings": ["image:\\s*ghcr\\.io\\/icoretech\\/codex-pooler:(?<currentValue>[^\\s]+)"],
       "depNameTemplate": "icoretech/codex-pooler",
       "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^v?(?<version>.+)$"
+      "extractVersionTemplate": "^codex-pooler-v?(?<version>.+)$"
     },
     {
       "customType": "regex",
