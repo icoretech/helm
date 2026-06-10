@@ -26,7 +26,7 @@ jobs:
         id: install
         uses: azure/setup-helm@v5
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Prepare chart signing key (Helm provenance)
         id: signing
@@ -76,9 +76,10 @@ jobs:
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1
         with:
+          version: v1.8.1
           skip_existing: true
         env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_TOKEN: ${{ github.token }}
 
       # Note: Removed extra cr index step to avoid merge conflicts with chart-releaser's own gh-pages updates.
 
@@ -87,7 +88,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ github.token }}
 
       - name: Push Charts to GHCR
         shell: bash
