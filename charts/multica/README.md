@@ -9,7 +9,7 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - External PostgreSQL mode for production deployments
 - Optional bundled Redis for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues
 - Local upload PVC support and S3-compatible storage configuration
-- Secret references for JWT, email, Google OAuth, metrics, database URL, Lark, and S3 credentials
+- Secret references for JWT, email, Google OAuth, metrics, database URL, GitHub App, Lark, and S3 credentials
 - Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
 - Helm unit tests and install-safe CI values
 
@@ -122,9 +122,11 @@ Signup restrictions only apply to first-time signup. Existing users can always s
 
 Set `backend.config.disableWorkspaceCreation=true` after bootstrapping the shared workspace when self-hosted users should only join by invitation. This maps to upstream `DISABLE_WORKSPACE_CREATION` and makes workspace creation fail for every caller.
 
+Set `backend.config.authTokenTtl` only when you need to override Multica's default auth token lifetime. Behind a reverse proxy, configure `backend.rateLimits.auth.trustedProxies` for the public auth limiter and `backend.config.trustedProxies` for the autopilot webhook limiter so upstream rate limits see real client IPs instead of only the proxy address.
+
 Email delivery can use Resend or an SMTP relay. SMTP is enabled when `backend.email.smtp.host` is set, and upstream Multica checks `SMTP_HOST` before Resend, so SMTP takes priority when both are configured. Port `465` is supported for implicit TLS; set `backend.email.smtp.tls=implicit` for non-standard SMTPS ports. For strict relays such as Google Workspace, set `backend.email.smtp.ehloName` to the FQDN the relay accepts. For production SMTP auth, prefer `backend.email.smtp.passwordRef` instead of inline `backend.email.smtp.password`.
 
-GitHub App integration only needs the app slug and webhook secret for this chart scope. Store the webhook secret in an existing Kubernetes Secret:
+GitHub App integration needs the app slug and webhook secret. Optionally set `backend.github.appId` with `backend.github.appPrivateKeyRef` so Multica can enrich the connected account name immediately after install. Store secrets in an existing Kubernetes Secret:
 
 ```yaml
 backend:
@@ -133,6 +135,10 @@ backend:
     webhookSecretRef:
       name: multica-github
       key: GITHUB_WEBHOOK_SECRET
+    appId: "123456"
+    appPrivateKeyRef:
+      name: multica-github
+      key: GITHUB_APP_PRIVATE_KEY
 ```
 
 Lark/Feishu Bot integration is disabled until `backend.lark.secretKey` or `backend.lark.secretKeyRef` is set. Use a base64-encoded 32-byte key, for example `openssl rand -base64 32`. International Lark tenants should set both `backend.lark.httpBaseUrl` and `backend.lark.callbackBaseUrl` to `https://open.larksuite.com`; `backend.config.publicUrl` must point at the public API origin used by Lark binding prompts.
@@ -153,7 +159,7 @@ Usage rollup flags are read-path switches only. Set `backend.usageRollups.dailyE
 
 For upgrades, `migrations.preUpgradeJob.enabled` runs the backend image as a Helm `pre-upgrade` hook before the Deployment rolls. It first runs `./migrate up`; if Multica refuses to drop legacy daily rollups because `task_usage_hourly` has not been seeded yet, the hook runs `./backfill_task_usage_hourly` and retries `./migrate up`. This matches the upstream `v0.3.5` self-host upgrade order while keeping the regular backend entrypoint unchanged.
 
-By default, `usageRollups.cronJob.enabled` creates a Kubernetes CronJob that calls `rollup_task_usage_hourly()` every five minutes. This keeps the ongoing scheduler in Kubernetes instead of requiring the PostgreSQL `pg_cron` extension. If your database already runs the upstream `pg_cron` entry, disable the chart CronJob to avoid duplicate work:
+By default, `usageRollups.cronJob.enabled` creates a Kubernetes CronJob that calls `rollup_task_usage_hourly()` every five minutes. Each job waits for the migrated rollup function before calling it, so fresh installs do not record failed jobs while the backend is still applying migrations. This keeps the ongoing scheduler in Kubernetes instead of requiring the PostgreSQL `pg_cron` extension. If your database already runs the upstream `pg_cron` entry, disable the chart CronJob to avoid duplicate work:
 
 ```yaml
 usageRollups:
@@ -186,6 +192,7 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.config.analyticsDisabled | bool | `true` | Disable backend/frontend analytics. Defaults to true for self-host privacy. |
 | backend.config.analyticsEnvironment | string | `""` | Optional PostHog environment property override. Empty lets Multica derive it from APP_ENV. |
 | backend.config.appEnv | string | `"production"` | Runtime environment. Keep `production` on public deployments. |
+| backend.config.authTokenTtl | string | `""` | Optional AUTH_TOKEN_TTL override. Empty uses Multica's default auth token lifetime. |
 | backend.config.cookieDomain | string | `""` | Optional cookie Domain attribute. Leave empty for single-host deployments. |
 | backend.config.corsAllowedOrigins | string | `""` | Additional CORS origins, comma-separated. |
 | backend.config.devVerificationCode | string | `""` | Fixed local test verification code. Keep empty in production. |
@@ -202,6 +209,7 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.config.realtimeMetricsToken | string | `""` | Token required to expose `/health/realtime` through a proxy. |
 | backend.config.realtimeMetricsTokenRef.key | string | `""` | Secret key for REALTIME_METRICS_TOKEN. |
 | backend.config.realtimeMetricsTokenRef.name | string | `""` | Existing secret containing REALTIME_METRICS_TOKEN. |
+| backend.config.trustedProxies | string | `""` | Comma-separated CIDRs whose X-Forwarded-For/X-Real-IP headers are trusted by Multica's autopilot webhook limiter. |
 | backend.deployment.progressDeadlineSeconds | int | `600` | Time in seconds for the Deployment controller to wait before marking a rollout failed. |
 | backend.deployment.strategy.type | string | `"Recreate"` | Deployment strategy. `Recreate` avoids RWO upload PVC multi-attach deadlocks. |
 | backend.email.resendApiKey | string | `""` | Resend API key. When empty, Multica prints verification codes to stdout. |
@@ -221,6 +229,10 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.email.smtp.usernameRef.name | string | `""` | Existing secret containing SMTP_USERNAME. |
 | backend.envFrom | list | `[]` | Extra backend envFrom refs. |
 | backend.extraEnv | list | `[]` | Extra backend env vars. Managed env names are rejected to avoid silent overrides. |
+| backend.github.appId | string | `""` | Optional GitHub App ID used to enrich connected account names after install. |
+| backend.github.appPrivateKey | string | `""` | Optional GitHub App private key PEM. Prefer appPrivateKeyRef for production deployments. |
+| backend.github.appPrivateKeyRef.key | string | `""` | Secret key for GITHUB_APP_PRIVATE_KEY. |
+| backend.github.appPrivateKeyRef.name | string | `""` | Existing secret containing GITHUB_APP_PRIVATE_KEY. |
 | backend.github.appSlug | string | `""` | GitHub App slug. |
 | backend.github.webhookSecret | string | `""` | GitHub App webhook secret. Prefer webhookSecretRef for production deployments. |
 | backend.github.webhookSecretRef.key | string | `""` | Secret key for GITHUB_WEBHOOK_SECRET. |
@@ -246,6 +258,9 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.podAnnotations | object | `{}` | Pod annotations for backend pods. |
 | backend.podLabels | object | `{}` | Pod labels for backend pods. |
 | backend.podSecurityContext | object | `{}` | Pod security context for backend pods. |
+| backend.rateLimits.auth.maxPerMinute | string | `nil` | Optional RATE_LIMIT_AUTH override for `/auth/send-code` and `/auth/google` requests per IP per minute. Empty uses Multica's default. |
+| backend.rateLimits.auth.trustedProxies | string | `""` | Comma-separated CIDRs whose X-Forwarded-For header is trusted by the auth rate limiter. |
+| backend.rateLimits.auth.verifyMaxPerMinute | string | `nil` | Optional RATE_LIMIT_AUTH_VERIFY override for `/auth/verify-code` requests per IP per minute. Empty uses Multica's default. |
 | backend.replicaCount | int | `1` | Number of backend replicas. |
 | backend.resources | object | `{}` | Backend resources. |
 | backend.securityContext | object | `{}` | Container security context for the backend container. |

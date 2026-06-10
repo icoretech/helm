@@ -167,6 +167,16 @@ spec:
               value: {{ .Values.backend.config.realtimeMetricsToken | quote }}
             {{- end }}
             {{- $_ := set $managed "REALTIME_METRICS_TOKEN" true }}
+            {{- if .Values.backend.config.authTokenTtl }}
+            - name: AUTH_TOKEN_TTL
+              value: {{ .Values.backend.config.authTokenTtl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "AUTH_TOKEN_TTL" true }}
+            {{- if .Values.backend.config.trustedProxies }}
+            - name: MULTICA_TRUSTED_PROXIES
+              value: {{ .Values.backend.config.trustedProxies | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_TRUSTED_PROXIES" true }}
             - name: MULTICA_DEV_VERIFICATION_CODE
               value: {{ .Values.backend.config.devVerificationCode | quote }}
             {{- $_ := set $managed "MULTICA_DEV_VERIFICATION_CODE" true }}
@@ -303,6 +313,37 @@ spec:
               value: {{ .Values.backend.github.webhookSecret | quote }}
             {{- end }}
             {{- $_ := set $managed "GITHUB_WEBHOOK_SECRET" true }}
+            {{- if .Values.backend.github.appId }}
+            - name: GITHUB_APP_ID
+              value: {{ .Values.backend.github.appId | quote }}
+            {{- end }}
+            {{- $_ := set $managed "GITHUB_APP_ID" true }}
+            {{- if .Values.backend.github.appPrivateKeyRef.name }}
+            - name: GITHUB_APP_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.github.appPrivateKeyRef.name | quote }}
+                  key: {{ required "multica: backend.github.appPrivateKeyRef.key is required when backend.github.appPrivateKeyRef.name is set" .Values.backend.github.appPrivateKeyRef.key | quote }}
+            {{- else if .Values.backend.github.appPrivateKey }}
+            - name: GITHUB_APP_PRIVATE_KEY
+              value: {{ .Values.backend.github.appPrivateKey | quote }}
+            {{- end }}
+            {{- $_ := set $managed "GITHUB_APP_PRIVATE_KEY" true }}
+            {{- if .Values.backend.rateLimits.auth.maxPerMinute }}
+            - name: RATE_LIMIT_AUTH
+              value: {{ printf "%v" .Values.backend.rateLimits.auth.maxPerMinute | quote }}
+            {{- end }}
+            {{- $_ := set $managed "RATE_LIMIT_AUTH" true }}
+            {{- if .Values.backend.rateLimits.auth.verifyMaxPerMinute }}
+            - name: RATE_LIMIT_AUTH_VERIFY
+              value: {{ printf "%v" .Values.backend.rateLimits.auth.verifyMaxPerMinute | quote }}
+            {{- end }}
+            {{- $_ := set $managed "RATE_LIMIT_AUTH_VERIFY" true }}
+            {{- if .Values.backend.rateLimits.auth.trustedProxies }}
+            - name: RATE_LIMIT_TRUSTED_PROXIES
+              value: {{ .Values.backend.rateLimits.auth.trustedProxies | quote }}
+            {{- end }}
+            {{- $_ := set $managed "RATE_LIMIT_TRUSTED_PROXIES" true }}
             {{- if .Values.backend.lark.secretKeyRef.name }}
             - name: MULTICA_LARK_SECRET_KEY
               valueFrom:

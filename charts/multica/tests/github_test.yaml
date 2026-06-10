@@ -8,6 +8,10 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_APP_SLUG")]
       - notExists:
           path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_WEBHOOK_SECRET")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_APP_ID")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_APP_PRIVATE_KEY")]
 
   - it: renders GitHub App env values from secret refs
     values:
@@ -22,6 +26,15 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_WEBHOOK_SECRET")].valueFrom.secretKeyRef.key
           value: GITHUB_WEBHOOK_SECRET
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_APP_ID")].value
+          value: "123456"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_APP_PRIVATE_KEY")].valueFrom.secretKeyRef.name
+          value: multica-github
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_APP_PRIVATE_KEY")].valueFrom.secretKeyRef.key
+          value: GITHUB_APP_PRIVATE_KEY
 
   - it: rejects slug-only GitHub App config
     values:
@@ -44,5 +57,23 @@ tests:
   - it: rejects GitHub App secret refs without a key
     values:
       - values/invalid-github-secret-ref-missing-key.yaml
+    asserts:
+      - failedTemplate: {}
+
+  - it: rejects GitHub App ID without private key
+    values:
+      - values/invalid-github-app-id-only.yaml
+    asserts:
+      - failedTemplate: {}
+
+  - it: rejects GitHub App private key without app ID
+    values:
+      - values/invalid-github-private-key-only.yaml
+    asserts:
+      - failedTemplate: {}
+
+  - it: rejects GitHub App private key refs without a key
+    values:
+      - values/invalid-github-private-key-ref-missing-key.yaml
     asserts:
       - failedTemplate: {}

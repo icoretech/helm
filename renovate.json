@@ -116,29 +116,26 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/multica\\/Chart\\.yaml$/"],
-      "matchStrings": ["appVersion:\\s*\\\"?v?(?<currentValue>[^\\\"\\s]+)\\\"?"],
-      "depNameTemplate": "multica-ai/multica",
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^v?(?<version>.+)$",
-      "autoReplaceStringTemplate": "appVersion: \"v{{{newValue}}}\""
+      "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>v[^\\\"\\s]+)\\\"?"],
+      "depNameTemplate": "ghcr.io/multica-ai/multica-backend",
+      "datasourceTemplate": "docker",
+      "autoReplaceStringTemplate": "appVersion: \"{{{newValue}}}\""
     },
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/multica\\/Chart\\.yaml$/"],
-      "matchStrings": ["image:\\s*ghcr\\.io\\/multica-ai\\/multica-backend:v?(?<currentValue>[^\\s]+)"],
-      "depNameTemplate": "multica-ai/multica",
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^v?(?<version>.+)$",
-      "autoReplaceStringTemplate": "image: ghcr.io/multica-ai/multica-backend:v{{{newValue}}}"
+      "matchStrings": ["image:\\s*ghcr\\.io\\/multica-ai\\/multica-backend:(?<currentValue>v[^\\s]+)"],
+      "depNameTemplate": "ghcr.io/multica-ai/multica-backend",
+      "datasourceTemplate": "docker",
+      "autoReplaceStringTemplate": "image: ghcr.io/multica-ai/multica-backend:{{{newValue}}}"
     },
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/multica\\/Chart\\.yaml$/"],
-      "matchStrings": ["image:\\s*ghcr\\.io\\/multica-ai\\/multica-web:v?(?<currentValue>[^\\s]+)"],
-      "depNameTemplate": "multica-ai/multica",
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^v?(?<version>.+)$",
-      "autoReplaceStringTemplate": "image: ghcr.io/multica-ai/multica-web:v{{{newValue}}}"
+      "matchStrings": ["image:\\s*ghcr\\.io\\/multica-ai\\/multica-web:(?<currentValue>v[^\\s]+)"],
+      "depNameTemplate": "ghcr.io/multica-ai/multica-backend",
+      "datasourceTemplate": "docker",
+      "autoReplaceStringTemplate": "image: ghcr.io/multica-ai/multica-web:{{{newValue}}}"
     }
   ],
   "packageRules": [
@@ -268,12 +265,12 @@
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchPackageNames": ["multica-ai/multica"],
+      "matchPackageNames": ["ghcr.io/multica-ai/multica-backend"],
       "groupName": "multica chart software updates"
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchPackageNames": ["multica-ai/multica"],
+      "matchPackageNames": ["ghcr.io/multica-ai/multica-backend"],
       "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
       "automerge": true,
       "platformAutomerge": true

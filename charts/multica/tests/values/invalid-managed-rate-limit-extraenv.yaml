@@ -1,0 +1,4 @@
+backend:
+  extraEnv:
+    - name: RATE_LIMIT_AUTH
+      value: "10"

@@ -1,0 +1,4 @@
+backend:
+  extraEnv:
+    - name: AUTH_TOKEN_TTL
+      value: 720h

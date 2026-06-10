@@ -81,6 +81,36 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name=="DISABLE_WORKSPACE_CREATION")].value
           value: "true"
 
+  - it: supports auth token TTL and trusted proxy overrides
+    template: backend-deployment.yaml
+    set:
+      backend.config.authTokenTtl: 720h
+      backend.config.trustedProxies: 10.0.0.0/8,127.0.0.1/32
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="AUTH_TOKEN_TTL")].value
+          value: 720h
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_TRUSTED_PROXIES")].value
+          value: 10.0.0.0/8,127.0.0.1/32
+
+  - it: supports auth rate limit overrides
+    template: backend-deployment.yaml
+    set:
+      backend.rateLimits.auth.maxPerMinute: 10
+      backend.rateLimits.auth.verifyMaxPerMinute: 30
+      backend.rateLimits.auth.trustedProxies: 127.0.0.1/32,::1/128
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="RATE_LIMIT_AUTH")].value
+          value: "10"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="RATE_LIMIT_AUTH_VERIFY")].value
+          value: "30"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="RATE_LIMIT_TRUSTED_PROXIES")].value
+          value: 127.0.0.1/32,::1/128
+
   - it: rejects managed DISABLE_WORKSPACE_CREATION overrides through extraEnv
     template: backend-deployment.yaml
     values:
@@ -88,6 +118,22 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: "multica: backend.extraEnv[0].name=DISABLE_WORKSPACE_CREATION is managed by the chart; use the dedicated value instead"
+
+  - it: rejects managed auth token overrides through extraEnv
+    template: backend-deployment.yaml
+    values:
+      - values/invalid-managed-auth-token-extraenv.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=AUTH_TOKEN_TTL is managed by the chart; use the dedicated value instead"
+
+  - it: rejects managed rate limit overrides through extraEnv
+    template: backend-deployment.yaml
+    values:
+      - values/invalid-managed-rate-limit-extraenv.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=RATE_LIMIT_AUTH is managed by the chart; use the dedicated value instead"
 
   - it: supports backend image tag override
     template: backend-deployment.yaml
@@ -112,6 +158,11 @@ tests:
     set:
       backend.github.appSlug: multica-example-app
       backend.github.webhookSecret: webhook-secret
+      backend.github.appId: "123456"
+      backend.github.appPrivateKey: |
+        -----BEGIN RSA PRIVATE KEY-----
+        example
+        -----END RSA PRIVATE KEY-----
     asserts:
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_APP_SLUG")].value
@@ -119,3 +170,12 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_WEBHOOK_SECRET")].value
           value: webhook-secret
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_APP_ID")].value
+          value: "123456"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="GITHUB_APP_PRIVATE_KEY")].value
+          value: |
+            -----BEGIN RSA PRIVATE KEY-----
+            example
+            -----END RSA PRIVATE KEY-----

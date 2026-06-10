@@ -30,6 +30,9 @@ tests:
           value: multica-db
       - matchRegex:
           path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: "to_regprocedure\\('public\\.rollup_task_usage_hourly\\(\\)'\\)"
+      - matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
           pattern: "SELECT public\\.rollup_task_usage_hourly\\(\\);"
       - notMatchRegex:
           path: spec.jobTemplate.spec.template.spec.containers[0].command[2]

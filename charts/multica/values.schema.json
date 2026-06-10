@@ -95,6 +95,8 @@
             "metricsAddr": { "type": "string" },
             "realtimeMetricsToken": { "type": "string" },
             "realtimeMetricsTokenRef": { "$ref": "#/definitions/secretRef" },
+            "authTokenTtl": { "type": "string" },
+            "trustedProxies": { "type": "string" },
             "jwtSecret": { "type": "string" },
             "jwtSecretRef": { "$ref": "#/definitions/secretRef" },
             "devVerificationCode": { "type": "string" },
@@ -150,7 +152,10 @@
           "properties": {
             "appSlug": { "type": "string" },
             "webhookSecret": { "type": "string" },
-            "webhookSecretRef": { "$ref": "#/definitions/secretRef" }
+            "webhookSecretRef": { "$ref": "#/definitions/secretRef" },
+            "appId": { "type": "string" },
+            "appPrivateKey": { "type": "string" },
+            "appPrivateKeyRef": { "$ref": "#/definitions/secretRef" }
           },
           "allOf": [
             {
@@ -260,8 +265,131 @@
               "then": {
                 "required": ["backend.github.webhookSecretRef.key is required when backend.github.webhookSecretRef.name is set"]
               }
+            },
+            {
+              "if": {
+                "allOf": [
+                  {
+                    "properties": {
+                      "appId": { "minLength": 1 }
+                    }
+                  },
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "properties": {
+                            "appPrivateKey": { "minLength": 1 }
+                          },
+                          "required": ["appPrivateKey"]
+                        },
+                        {
+                          "properties": {
+                            "appPrivateKeyRef": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "minLength": 1 }
+                              },
+                              "required": ["name"]
+                            }
+                          },
+                          "required": ["appPrivateKeyRef"]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "required": ["backend.github.appPrivateKey or backend.github.appPrivateKeyRef.name is required when backend.github.appId is set"]
+              }
+            },
+            {
+              "if": {
+                "allOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "properties": {
+                          "appPrivateKey": { "minLength": 1 }
+                        },
+                        "required": ["appPrivateKey"]
+                      },
+                      {
+                        "properties": {
+                          "appPrivateKeyRef": {
+                            "type": "object",
+                            "properties": {
+                              "name": { "minLength": 1 }
+                            },
+                            "required": ["name"]
+                          }
+                        },
+                        "required": ["appPrivateKeyRef"]
+                      }
+                    ]
+                  },
+                  {
+                    "not": {
+                      "properties": {
+                        "appId": { "minLength": 1 }
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "required": ["backend.github.appId is required when backend.github.appPrivateKey or backend.github.appPrivateKeyRef.name is set"]
+              }
+            },
+            {
+              "if": {
+                "allOf": [
+                  {
+                    "properties": {
+                      "appPrivateKeyRef": {
+                        "type": "object",
+                        "properties": {
+                          "name": { "minLength": 1 }
+                        },
+                        "required": ["name"]
+                      }
+                    }
+                  },
+                  {
+                    "not": {
+                      "properties": {
+                        "appPrivateKeyRef": {
+                          "type": "object",
+                          "properties": {
+                            "key": { "minLength": 1 }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "required": ["backend.github.appPrivateKeyRef.key is required when backend.github.appPrivateKeyRef.name is set"]
+              }
             }
           ]
+        },
+        "rateLimits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "auth": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "maxPerMinute": { "type": ["integer", "null"], "minimum": 1 },
+                "verifyMaxPerMinute": { "type": ["integer", "null"], "minimum": 1 },
+                "trustedProxies": { "type": "string" }
+              }
+            }
+          }
         },
         "lark": {
           "type": "object",

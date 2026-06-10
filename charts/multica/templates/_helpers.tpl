@@ -167,6 +167,7 @@ app.kubernetes.io/component: {{ .component }}
 {{- with .Values.backend.google.clientIdRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.google.clientSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.github.webhookSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.github.appPrivateKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.lark.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.storage.s3.accessKeyIdRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.storage.s3.secretAccessKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
@@ -215,6 +216,15 @@ app.kubernetes.io/component: {{ .component }}
 {{- end -}}
 {{- if and .Values.backend.github.webhookSecretRef.name (not .Values.backend.github.webhookSecretRef.key) -}}
 {{- fail "multica: backend.github.webhookSecretRef.key is required when backend.github.webhookSecretRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.github.appId (not (or .Values.backend.github.appPrivateKey .Values.backend.github.appPrivateKeyRef.name)) -}}
+{{- fail "multica: backend.github.appPrivateKey or backend.github.appPrivateKeyRef.name is required when backend.github.appId is set" -}}
+{{- end -}}
+{{- if and (or .Values.backend.github.appPrivateKey .Values.backend.github.appPrivateKeyRef.name) (not .Values.backend.github.appId) -}}
+{{- fail "multica: backend.github.appId is required when backend.github.appPrivateKey or backend.github.appPrivateKeyRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.github.appPrivateKeyRef.name (not .Values.backend.github.appPrivateKeyRef.key) -}}
+{{- fail "multica: backend.github.appPrivateKeyRef.key is required when backend.github.appPrivateKeyRef.name is set" -}}
 {{- end -}}
 {{- if and .Values.backend.email.smtp.host .Values.backend.email.smtp.usernameRef.name (not .Values.backend.email.smtp.usernameRef.key) -}}
 {{- fail "multica: backend.email.smtp.usernameRef.key is required when backend.email.smtp.usernameRef.name is set" -}}

@@ -40,7 +40,21 @@ spec:
               command:
                 - /bin/sh
                 - -ec
-                - psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'SELECT public.rollup_task_usage_hourly();'
+                - |
+                  deadline="$(( $(date +%s) + {{ .Values.database.waitForReady.timeoutSeconds }} ))"
+                  while true; do
+                    if psql "$DATABASE_URL" -Atqc "SELECT to_regprocedure('public.rollup_task_usage_hourly()') IS NOT NULL" 2>/tmp/rollup-ready.err | grep -qx t; then
+                      break
+                    fi
+                    if [ "$(date +%s)" -ge "$deadline" ]; then
+                      echo "Timed out waiting for rollup_task_usage_hourly() to become available" >&2
+                      cat /tmp/rollup-ready.err >&2 || true
+                      exit 1
+                    fi
+                    echo "Waiting for rollup_task_usage_hourly() to become available"
+                    sleep {{ .Values.database.waitForReady.periodSeconds }}
+                  done
+                  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'SELECT public.rollup_task_usage_hourly();'
               env:
                 {{- if .Values.database.external.urlFrom.secretKeyRef.name }}
                 - name: DATABASE_URL

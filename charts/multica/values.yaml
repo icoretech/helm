@@ -124,6 +124,10 @@ backend:
       name: ""
       # -- Secret key for REALTIME_METRICS_TOKEN.
       key: ""
+    # -- Optional AUTH_TOKEN_TTL override. Empty uses Multica's default auth token lifetime.
+    authTokenTtl: ""
+    # -- Comma-separated CIDRs whose X-Forwarded-For/X-Real-IP headers are trusted by Multica's autopilot webhook limiter.
+    trustedProxies: ""
     # -- JWT signing secret. Replace in production or use jwtSecretRef.
     jwtSecret: change-me-in-production
     jwtSecretRef:
@@ -215,6 +219,24 @@ backend:
       name: ""
       # -- Secret key for GITHUB_WEBHOOK_SECRET.
       key: ""
+    # -- Optional GitHub App ID used to enrich connected account names after install.
+    appId: ""
+    # -- Optional GitHub App private key PEM. Prefer appPrivateKeyRef for production deployments.
+    appPrivateKey: ""
+    appPrivateKeyRef:
+      # -- Existing secret containing GITHUB_APP_PRIVATE_KEY.
+      name: ""
+      # -- Secret key for GITHUB_APP_PRIVATE_KEY.
+      key: ""
+
+  rateLimits:
+    auth:
+      # -- Optional RATE_LIMIT_AUTH override for `/auth/send-code` and `/auth/google` requests per IP per minute. Empty uses Multica's default.
+      maxPerMinute:
+      # -- Optional RATE_LIMIT_AUTH_VERIFY override for `/auth/verify-code` requests per IP per minute. Empty uses Multica's default.
+      verifyMaxPerMinute:
+      # -- Comma-separated CIDRs whose X-Forwarded-For header is trusted by the auth rate limiter.
+      trustedProxies: ""
 
   lark:
     # -- Base64-encoded 32-byte key enabling Lark/Feishu Bot integration and encrypting Bot app secrets at rest. Prefer secretKeyRef in production.

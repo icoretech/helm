@@ -32,7 +32,17 @@ jobs:
 
       - name: Run chart-testing (lint)
         if: steps.list-changed.outputs.changed == 'true'
-        run: ct lint --target-branch ${{ github.event.repository.default_branch }}
+        run: |
+          for attempt in 1 2 3; do
+            if ct lint --target-branch ${{ github.event.repository.default_branch }}; then
+              exit 0
+            fi
+            rc=$?
+            if [[ "$attempt" -eq 3 ]]; then
+              exit "$rc"
+            fi
+            sleep "$((attempt * 20))"
+          done
 
       - name: Create kind cluster
         if: steps.list-changed.outputs.changed == 'true'
@@ -40,4 +50,14 @@ jobs:
 
       - name: Run chart-testing (install)
         if: steps.list-changed.outputs.changed == 'true'
-        run: ct install --target-branch ${{ github.event.repository.default_branch }}
+        run: |
+          for attempt in 1 2 3; do
+            if ct install --target-branch ${{ github.event.repository.default_branch }}; then
+              exit 0
+            fi
+            rc=$?
+            if [[ "$attempt" -eq 3 ]]; then
+              exit "$rc"
+            fi
+            sleep "$((attempt * 20))"
+          done

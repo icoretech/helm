@@ -1,10 +1,7 @@
 backend:
   github:
     appSlug: multica-example-app
-    webhookSecretRef:
-      name: multica-github
-      key: GITHUB_WEBHOOK_SECRET
+    webhookSecret: webhook-secret
     appId: "123456"
     appPrivateKeyRef:
       name: multica-github
-      key: GITHUB_APP_PRIVATE_KEY
