@@ -11,17 +11,15 @@
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/airbroke\\/Chart\\.yaml$/"],
       "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
-      "depNameTemplate": "icoretech/airbroke",
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^v?(?<version>.+)$"
+      "depNameTemplate": "ghcr.io/icoretech/airbroke",
+      "datasourceTemplate": "docker"
     },
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/airbroke\\/Chart\\.yaml$/"],
       "matchStrings": ["image:\\s*ghcr\\.io\\/icoretech\\/airbroke:(?<currentValue>[^\\s]+)"],
-      "depNameTemplate": "icoretech/airbroke",
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^v?(?<version>.+)$"
+      "depNameTemplate": "ghcr.io/icoretech/airbroke",
+      "datasourceTemplate": "docker"
     },
     {
       "customType": "regex",
@@ -101,17 +99,15 @@
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/codex-pooler\\/Chart\\.yaml$/"],
       "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
-      "depNameTemplate": "icoretech/codex-pooler",
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^codex-pooler-v?(?<version>.+)$"
+      "depNameTemplate": "ghcr.io/icoretech/codex-pooler",
+      "datasourceTemplate": "docker"
     },
     {
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/codex-pooler\\/Chart\\.yaml$/"],
       "matchStrings": ["image:\\s*ghcr\\.io\\/icoretech\\/codex-pooler:(?<currentValue>[^\\s]+)"],
-      "depNameTemplate": "icoretech/codex-pooler",
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^codex-pooler-v?(?<version>.+)$"
+      "depNameTemplate": "ghcr.io/icoretech/codex-pooler",
+      "datasourceTemplate": "docker"
     },
     {
       "customType": "regex",
@@ -195,12 +191,12 @@
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchPackageNames": ["icoretech/airbroke"],
+      "matchPackageNames": ["ghcr.io/icoretech/airbroke"],
       "groupName": "airbroke chart software updates"
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchPackageNames": ["icoretech/airbroke"],
+      "matchPackageNames": ["ghcr.io/icoretech/airbroke"],
       "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
       "automerge": true,
       "platformAutomerge": true
@@ -253,12 +249,12 @@
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchPackageNames": ["icoretech/codex-pooler"],
+      "matchPackageNames": ["ghcr.io/icoretech/codex-pooler"],
       "groupName": "codex-pooler chart software updates"
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchPackageNames": ["icoretech/codex-pooler"],
+      "matchPackageNames": ["ghcr.io/icoretech/codex-pooler"],
       "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
       "automerge": true,
       "platformAutomerge": true
