@@ -11,6 +11,42 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "metamcp.trpcShortPathMiddlewareName" -}}
+{{- printf "%s-trpc-short-path-rewrite" (include "metamcp.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "metamcp.trpcShortPathMiddlewareRef" -}}
+{{- printf "%s-%s@kubernetescrd" .Release.Namespace (include "metamcp.trpcShortPathMiddlewareName" .) -}}
+{{- end -}}
+
+{{- define "metamcp.nginxTrpcShortPathRewriteSnippet" -}}
+# Rewrite tRPC short form /trpc/frontend.<proc> to /trpc/frontend/frontend.<proc>
+rewrite ^/trpc/(frontend\..*) /trpc/frontend/$1 break;
+{{- range $lp := (default (list) .Values.ingress.localePrefixes) }}
+rewrite ^/{{ $lp }}/trpc/(frontend\..*) /{{ $lp }}/trpc/frontend/$1 break;
+{{- end }}
+{{- end -}}
+
+{{- define "metamcp.traefikTrpcShortPathRegex" -}}
+{{- $prefixes := list -}}
+{{- range $lp := (default (list) .Values.ingress.localePrefixes) -}}
+{{- $prefixes = append $prefixes (regexQuoteMeta $lp) -}}
+{{- end -}}
+{{- if gt (len $prefixes) 0 -}}
+^(/(?:{{ join "|" $prefixes }}))?/trpc/(frontend\..*)$
+{{- else -}}
+^/trpc/(frontend\..*)$
+{{- end -}}
+{{- end -}}
+
+{{- define "metamcp.traefikTrpcShortPathReplacement" -}}
+{{- if gt (len (default (list) .Values.ingress.localePrefixes)) 0 -}}
+$1/trpc/frontend/$2
+{{- else -}}
+/trpc/frontend/$1
+{{- end -}}
+{{- end -}}
+
 {{- define "metamcp.labels" -}}
 app.kubernetes.io/name: {{ include "metamcp.name" . }}
 helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}

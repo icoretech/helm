@@ -2,27 +2,46 @@
 {{- $fullName := include "metamcp.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
 {{- $ann := (default (dict) .Values.ingress.annotations) -}}
-{{- $rewriteTrpc := (default true .Values.ingress.rewriteTrpcShortPath) -}}
-{{- $isNginx := eq (default "" .Values.ingress.className) "nginx" -}}
+{{- $rewriteTrpc := true -}}
+{{- if hasKey .Values.ingress "rewriteTrpcShortPath" -}}
+{{- $rewriteTrpc = .Values.ingress.rewriteTrpcShortPath -}}
+{{- end -}}
+{{- $rewriteController := default "auto" .Values.ingress.rewriteTrpcShortPathController -}}
+{{- $isNginx := or (eq $rewriteController "nginx") (and (eq $rewriteController "auto") (eq (default "" .Values.ingress.className) "nginx")) -}}
+{{- $isTraefik := or (eq $rewriteController "traefik") (and (eq $rewriteController "auto") (eq (default "" .Values.ingress.className) "traefik")) -}}
+{{- $traefikMiddlewareAPIAvailable := .Capabilities.APIVersions.Has "traefik.io/v1alpha1/Middleware" -}}
+{{- $annotations := dict -}}
+{{- range $key, $value := $ann -}}
+{{- $_ := set $annotations $key $value -}}
+{{- end -}}
+{{- if and $isNginx $rewriteTrpc (not (hasKey $ann "nginx.ingress.kubernetes.io/configuration-snippet")) -}}
+{{- $_ := set $annotations "nginx.ingress.kubernetes.io/configuration-snippet" (include "metamcp.nginxTrpcShortPathRewriteSnippet" .) -}}
+{{- end -}}
+{{- if and $isNginx $rewriteTrpc (not (hasKey $ann "nginx.ingress.kubernetes.io/use-regex")) -}}
+{{- $_ := set $annotations "nginx.ingress.kubernetes.io/use-regex" "true" -}}
+{{- end -}}
+{{- if and $isTraefik $rewriteTrpc $traefikMiddlewareAPIAvailable -}}
+{{- $middlewareKey := "traefik.ingress.kubernetes.io/router.middlewares" -}}
+{{- $middlewareRef := include "metamcp.trpcShortPathMiddlewareRef" . -}}
+{{- $existingMiddlewares := default "" (get $ann $middlewareKey) -}}
+{{- if $existingMiddlewares -}}
+{{- if not (contains $middlewareRef $existingMiddlewares) -}}
+{{- $_ := set $annotations $middlewareKey (printf "%s,%s" $middlewareRef $existingMiddlewares) -}}
+{{- end -}}
+{{- else -}}
+{{- $_ := set $annotations $middlewareKey $middlewareRef -}}
+{{- end -}}
+{{- end -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $fullName }}
   labels:
     {{- include "metamcp.labels" . | nindent 4 }}
+  {{- if $annotations }}
   annotations:
-    {{- if and $isNginx $rewriteTrpc (not (hasKey $ann "nginx.ingress.kubernetes.io/configuration-snippet")) }}
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      # Rewrite tRPC short form /trpc/frontend.<proc> to /trpc/frontend/frontend.<proc>
-      rewrite ^/trpc/(frontend\..*) /trpc/frontend/$1 break;
-      {{- range $i, $lp := (default (list) $.Values.ingress.localePrefixes) }}
-      rewrite ^/{{ $lp }}/trpc/(frontend\..*) /{{ $lp }}/trpc/frontend/$1 break;
-      {{- end }}
-    {{- end }}
-    {{- if and $isNginx $rewriteTrpc (not (hasKey $ann "nginx.ingress.kubernetes.io/use-regex")) }}
-    nginx.ingress.kubernetes.io/use-regex: "true"
-    {{- end }}
-    {{- toYaml $ann | nindent 4 }}
+    {{- toYaml $annotations | nindent 4 }}
+  {{- end }}
 spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}

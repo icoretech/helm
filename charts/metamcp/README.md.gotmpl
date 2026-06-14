@@ -17,6 +17,15 @@ In short: this chart both installs MetaMCP and can preâ€‘configure it (servers â
   - SSE: `http://<service>:12008/metamcp/lab/sse`
   - Streamable HTTP: `http://<service>:12008/metamcp/lab/mcp`
 
+## Ingress tRPC routing
+
+MetaMCP's browser client calls `/trpc/<procedure>`, while the backend Express router is mounted at `/trpc/frontend/<procedure>`. The chart maps backend routes (`/metamcp`, `/trpc`, `/api`) to port `12009` and, by default, rewrites tRPC short paths for supported standard Ingress controllers:
+
+- `ingress.className: nginx` injects an `nginx.ingress.kubernetes.io/configuration-snippet` unless you provide one yourself.
+- `ingress.className: traefik` renders a `traefik.io/v1alpha1` `Middleware` with `replacePathRegex` and adds it to `traefik.ingress.kubernetes.io/router.middlewares` only when Helm discovers `traefik.io/v1alpha1/Middleware` in the target cluster. This requires Traefik's Kubernetes Ingress provider and Kubernetes CRD provider; it is not an IngressRoute or Gateway API HTTPRoute rewrite.
+
+Set `ingress.rewriteTrpcShortPathController: nginx` or `traefik` when your IngressClass has a custom name. The explicit `traefik` mode is still gated on the `traefik.io/v1alpha1/Middleware` API so upgrades do not fail on clusters without that CRD. Set `ingress.rewriteTrpcShortPath: false` only when you provide equivalent ingress-controller rewrite behavior yourself. Set `ingress.localePrefixes` when localized backend paths such as `/de/trpc/...` should be routed and rewritten directly to the backend.
+
 ## Install
 
 ```bash

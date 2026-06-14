@@ -270,7 +270,8 @@
       "properties": {
         "mapBackendPaths": { "type": "boolean" },
         "localePrefixes": { "type": "array", "items": { "type": "string" } },
-        "rewriteTrpcShortPath": { "type": "boolean" }
+        "rewriteTrpcShortPath": { "type": "boolean" },
+        "rewriteTrpcShortPathController": { "type": "string", "enum": ["auto", "nginx", "traefik"] }
       }
     }
     ,"gatewayAPI": {

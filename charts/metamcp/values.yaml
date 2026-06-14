@@ -45,8 +45,16 @@ ingress:
           pathType: ImplementationSpecific
           # port: 12008   # optional per-path override
   tls: []
-  # Also map backend routes (/metamcp, /trpc, /api) to port 12009 by default
+  # -- Also map backend routes (/metamcp, /trpc, /api) to port 12009 by default.
   mapBackendPaths: true
+  # -- Rewrite frontend tRPC short paths such as /trpc/frontend.logs.get to the backend route /trpc/frontend/frontend.logs.get.
+  # Supported controllers are nginx and Traefik standard Ingress. Traefik rewrite rendering requires Helm to discover traefik.io/v1alpha1/Middleware.
+  # Set rewriteTrpcShortPathController when your IngressClass is not literally nginx or traefik.
+  rewriteTrpcShortPath: true
+  # -- tRPC short-path rewrite controller mode: auto, nginx, or traefik. The traefik mode renders a traefik.io Middleware only when that API is available and attaches it to this standard Ingress; it does not apply to Traefik IngressRoute or Gateway API HTTPRoute resources.
+  rewriteTrpcShortPathController: auto
+  # -- Locale prefixes whose backend paths should be routed and rewritten too, e.g. ["en", "de"].
+  localePrefixes: []
 
 gatewayAPI:
   enabled: false

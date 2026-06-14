@@ -1,0 +1,19 @@
+{{- $rewriteTrpc := true -}}
+{{- if hasKey .Values.ingress "rewriteTrpcShortPath" -}}
+{{- $rewriteTrpc = .Values.ingress.rewriteTrpcShortPath -}}
+{{- end -}}
+{{- $rewriteController := default "auto" .Values.ingress.rewriteTrpcShortPathController -}}
+{{- $isTraefik := or (eq $rewriteController "traefik") (and (eq $rewriteController "auto") (eq (default "" .Values.ingress.className) "traefik")) -}}
+{{- $traefikMiddlewareAPIAvailable := .Capabilities.APIVersions.Has "traefik.io/v1alpha1/Middleware" -}}
+{{- if and .Values.ingress.enabled $isTraefik $rewriteTrpc $traefikMiddlewareAPIAvailable -}}
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "metamcp.trpcShortPathMiddlewareName" . }}
+  labels:
+    {{- include "metamcp.labels" . | nindent 4 }}
+spec:
+  replacePathRegex:
+    regex: {{ include "metamcp.traefikTrpcShortPathRegex" . | quote }}
+    replacement: {{ include "metamcp.traefikTrpcShortPathReplacement" . | quote }}
+{{- end }}
