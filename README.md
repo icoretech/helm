@@ -14,7 +14,6 @@ For detailed information on the individual charts and their usage, please naviga
 - [MetaMCP](https://icoretech.github.io/helm/charts/metamcp): MetaMCP aggregator + declarative provisioning of MCP servers (STDIO/HTTP/SSE), namespaces, and endpoints.
 - [Browserless](https://icoretech.github.io/helm/charts/browserless): Browserless v2 chart with token enforcement and multi-browser image presets for browser automation workloads.
 - [Codex Pooler](https://icoretech.github.io/helm/charts/codex-pooler): Self-hosted gateway for sharing Codex account capacity across trusted agents and tools.
-- [Codex LB](https://icoretech.github.io/helm/charts/codex-lb): ChatGPT / OpenAI account-pool proxy with PostgreSQL support, OAuth onboarding flow, and dashboard/API routing.
 - [Tolgee](https://icoretech.github.io/helm/charts/tolgee): Tolgee Platform chart with optional bundled PostgreSQL, external DB mode, and Gateway API/Ingress support.
 - [Multica](https://icoretech.github.io/helm/charts/multica): Managed agents platform chart with backend/frontend services, PostgreSQL wiring, upload storage, and Gateway API/Ingress support.
 
@@ -22,6 +21,7 @@ For detailed information on the individual charts and their usage, please naviga
 
 - [ChatGPT Retrieval Plugin](https://icoretech.github.io/helm/charts/chatgpt-retrieval-plugin): DEPRECATED — This Helm chart is no longer maintained and will not be supported in the foreseeable future. Do not use it for new deployments.
 - [Inngest Server](https://icoretech.github.io/helm/charts/inngest-server): DEPRECATED — This Helm chart is deprecated because an official Inngest Helm chart is available. Avoid new deployments and plan to migrate to the [official chart](https://github.com/inngest/inngest-helm.).
+- [Codex LB](https://icoretech.github.io/helm/charts/codex-lb): DEPRECATED — This Helm chart is deprecated. We suggest using [Codex Pooler](https://icoretech.github.io/helm/charts/codex-pooler) instead.
 
 ## Getting Started
 

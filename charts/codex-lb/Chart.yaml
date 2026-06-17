@@ -2,7 +2,7 @@ apiVersion: v2
 name: codex-lb
 description: Codex LB – load balancer and account pool for ChatGPT / OpenAI proxying
 type: application
-version: 0.14.0
+version: 0.14.1
 appVersion: "1.20.0"
 kubeVersion: ">= 1.24.0-0"
 keywords:
@@ -12,10 +12,6 @@ keywords:
   - openai
   - load-balancer
   - proxy
-maintainers:
-  - name: masterkain
-    email: claudio@icorete.ch
-    url: https://github.com/masterkain
 home: https://github.com/icoretech/helm
 sources:
   - https://github.com/icoretech/helm/tree/main/charts/codex-lb
@@ -28,3 +24,6 @@ annotations:
   artifacthub.io/images: |
     - name: codex-lb
       image: ghcr.io/soju06/codex-lb:1.20.0
+  artifacthub.io/deprecated: "true"
+  artifacthub.io/deprecationMessage: "This Helm chart is deprecated. For new deployments, use Codex Pooler instead: https://icoretech.github.io/helm/charts/codex-pooler."
+deprecated: true
