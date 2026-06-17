@@ -570,6 +570,23 @@
     "startupProbe": { "type": "object" },
     "livenessProbe": { "type": "object" },
     "readinessProbe": { "type": "object" },
+    "monitoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "prometheusRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "additionalLabels": { "type": "object" },
+            "samplerQueryErrorsFor": { "type": "string", "minLength": 1 },
+            "samplerQueryLatencyFor": { "type": "string", "minLength": 1 },
+            "severity": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
     "tests": {
       "type": "object",
       "additionalProperties": false,

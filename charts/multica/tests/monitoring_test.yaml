@@ -1,0 +1,56 @@
+suite: monitoring rendering
+templates:
+  - prometheusrule.yaml
+tests:
+  - it: does not render PrometheusRule by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders business sampler alerts when enabled
+    set:
+      monitoring.prometheusRule.enabled: true
+      monitoring.prometheusRule.additionalLabels.release: kube-prometheus-stack
+      monitoring.prometheusRule.samplerQueryErrorsFor: 3m
+      monitoring.prometheusRule.samplerQueryLatencyFor: 7m
+      monitoring.prometheusRule.severity: critical
+    asserts:
+      - equal:
+          path: apiVersion
+          value: monitoring.coreos.com/v1
+      - equal:
+          path: kind
+          value: PrometheusRule
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-multica-backend-sampler
+      - equal:
+          path: metadata.labels.release
+          value: kube-prometheus-stack
+      - equal:
+          path: spec.groups[0].name
+          value: multica-business-sampler
+      - equal:
+          path: spec.groups[0].rules[0].alert
+          value: MulticaBusinessSamplerQueryErrors
+      - equal:
+          path: spec.groups[0].rules[0].for
+          value: 3m
+      - equal:
+          path: spec.groups[0].rules[0].labels.severity
+          value: critical
+      - matchRegex:
+          path: spec.groups[0].rules[0].expr
+          pattern: "multica_business_sampler_query_errors_total"
+      - equal:
+          path: spec.groups[0].rules[1].alert
+          value: MulticaBusinessSamplerQueryLatencyHigh
+      - equal:
+          path: spec.groups[0].rules[1].for
+          value: 7m
+      - equal:
+          path: spec.groups[0].rules[1].labels.severity
+          value: critical
+      - matchRegex:
+          path: spec.groups[0].rules[1].expr
+          pattern: "multica_business_sampler_query_seconds_bucket"

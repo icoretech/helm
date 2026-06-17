@@ -11,6 +11,7 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - Local upload PVC support and S3-compatible storage configuration
 - Secret references for JWT, email, Google OAuth, metrics, database URL, GitHub App, Lark, and S3 credentials
 - Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
+- Optional PrometheusRule alerts for Multica business sampler metrics
 - Helm unit tests and install-safe CI values
 
 ## Important Runtime Note
@@ -117,6 +118,8 @@ The backend startup probe gives cold installs time to wait for PostgreSQL and ru
 Backend pod annotations include a checksum of referenced Kubernetes Secret data so out-of-band rotations of `jwtSecretRef`, database URL, email, OAuth, Redis, GitHub, Lark, and S3 secrets roll the Deployment on the next `helm upgrade`. `helm template` and dry-run renders cannot read live Secrets, so they emit a stable placeholder checksum.
 
 Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you explicitly want `DATABASE_MAX_CONNS` / `DATABASE_MIN_CONNS` env vars to override Multica's own defaults and any `pool_max_conns` / `pool_min_conns` query parameters already embedded in `DATABASE_URL`.
+
+Set `backend.config.metricsAddr` to enable Multica's Prometheus metrics listener. If your cluster has the Prometheus Operator CRD installed, `monitoring.prometheusRule.enabled=true` adds alert rules for business sampler query failures and high query latency; it is disabled by default so minimal clusters without the CRD still render and install.
 
 Signup restrictions only apply to first-time signup. Existing users can always sign in again. To restrict first-time signup to explicit addresses or domains, keep `backend.config.allowSignup=true` and set `backend.config.allowedEmails` or `backend.config.allowedEmailDomains`. Setting `backend.config.allowSignup=false` blocks every new signup even when an email allowlist is present.
 
@@ -360,6 +363,11 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | migrations.preUpgradeJob.podAnnotations | object | `{}` | Pod annotations for the migration Job. |
 | migrations.preUpgradeJob.resources | object | `{}` | Migration Job resources. |
 | migrations.preUpgradeJob.ttlSecondsAfterFinished | int | `300` | Seconds to keep the finished Job. Set null to omit. |
+| monitoring.prometheusRule.additionalLabels | object | `{}` | Extra labels to add to the PrometheusRule. |
+| monitoring.prometheusRule.enabled | bool | `false` | Create Prometheus Operator alert rules for Multica business sampler metrics. |
+| monitoring.prometheusRule.samplerQueryErrorsFor | string | `"5m"` | Alert duration for business sampler query errors. |
+| monitoring.prometheusRule.samplerQueryLatencyFor | string | `"10m"` | Alert duration for high business sampler query latency. |
+| monitoring.prometheusRule.severity | string | `"warning"` | Prometheus alert severity label. |
 | nameOverride | string | `""` | Override chart name. |
 | postgres.auth.database | string | `"multica"` |  |
 | postgres.auth.password | string | `"multica"` |  |

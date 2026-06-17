@@ -607,6 +607,19 @@ readinessProbe:
     successThreshold: 1
     failureThreshold: 6
 
+monitoring:
+  prometheusRule:
+    # -- Create Prometheus Operator alert rules for Multica business sampler metrics.
+    enabled: false
+    # -- Extra labels to add to the PrometheusRule.
+    additionalLabels: {}
+    # -- Alert duration for business sampler query errors.
+    samplerQueryErrorsFor: 5m
+    # -- Alert duration for high business sampler query latency.
+    samplerQueryLatencyFor: 10m
+    # -- Prometheus alert severity label.
+    severity: warning
+
 tests:
   # -- Enable Helm test pod.
   enabled: true
