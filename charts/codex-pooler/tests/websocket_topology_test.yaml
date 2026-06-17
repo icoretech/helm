@@ -5,7 +5,7 @@ templates:
   - oban-scheduler-deployment.yaml
   - migration-job.yaml
 tests:
-  - it: rejects multi-replica app unless clustering is enabled
+  - it: rejects app replicaCount >= 2 unless clustering is enabled
     template: app-deployment.yaml
     set:
       app.replicaCount: 2
@@ -13,7 +13,7 @@ tests:
       - failedTemplate:
           errorMessage: "websocket owner forwarding requires clustering.enabled=true so websocket owner pods can be reached across app nodes"
 
-  - it: rejects multi-replica app unless app pods participate in clustering
+  - it: rejects app replicaCount >= 2 unless app pods participate in clustering
     template: app-deployment.yaml
     set:
       app.replicaCount: 2
@@ -23,7 +23,7 @@ tests:
       - failedTemplate:
           errorMessage: "websocket owner forwarding requires clustering.participants.app=true; worker or scheduler clustering cannot satisfy websocket owner forwarding"
 
-  - it: automatically enables owner forwarding for clustered multi-replica app pods
+  - it: automatically enables owner forwarding for clustered app replicaCount >= 2
     template: app-deployment.yaml
     set:
       app.replicaCount: 2

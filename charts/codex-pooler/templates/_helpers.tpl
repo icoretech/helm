@@ -132,8 +132,8 @@ codex-pooler.icoretech.io/cluster-member: "true"
 {{- end }}
 {{- end -}}
 
-{{- define "codex-pooler.multiReplicaApp" -}}
-{{- if and .Values.app.enabled (gt (int .Values.app.replicaCount) 1) -}}true{{- end -}}
+{{- define "codex-pooler.appReplicaCountAtLeastTwo" -}}
+{{- if and .Values.app.enabled (ge (int .Values.app.replicaCount) 2) -}}true{{- end -}}
 {{- end -}}
 
 {{- define "codex-pooler.explicitWebsocketOwnerForwardingEnabled" -}}
@@ -145,7 +145,7 @@ codex-pooler.icoretech.io/cluster-member: "true"
 {{- end -}}
 
 {{- define "codex-pooler.websocketOwnerForwardingEnabled" -}}
-{{- if or (eq (include "codex-pooler.multiReplicaApp" .) "true") (eq (include "codex-pooler.explicitWebsocketOwnerForwardingEnabled" .) "true") -}}true{{- end -}}
+{{- if or (eq (include "codex-pooler.appReplicaCountAtLeastTwo" .) "true") (eq (include "codex-pooler.explicitWebsocketOwnerForwardingEnabled" .) "true") -}}true{{- end -}}
 {{- end -}}
 
 {{- define "codex-pooler.validateWebsocketTopology" -}}

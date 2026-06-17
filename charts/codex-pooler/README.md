@@ -68,7 +68,7 @@ Do not put upstream access tokens, API keys, cookies, `auth.json`, SMTP password
 - `oban.scheduler` runs scheduled jobs with `OBAN_MODE=scheduler`
 - `migrations` runs release migrations and imports the vendored pricing feed before app rollout
 
-Keep `app.replicaCount` at `1` unless app clustering is intentionally configured and verified. When `app.replicaCount` is greater than `1`, the chart requires app clustering and automatically enables websocket owner forwarding on app pods.
+Keep `app.replicaCount` at `1` unless app clustering is intentionally configured and verified. When `app.replicaCount` is `>= 2`, the chart requires app clustering and automatically enables websocket owner forwarding on app pods.
 
 ## Monitoring
 
