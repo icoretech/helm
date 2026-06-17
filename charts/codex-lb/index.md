@@ -5,6 +5,10 @@ title: codex-lb
 
 # Codex LB Helm Chart
 
+> DEPRECATION NOTICE
+>
+> This Helm chart is deprecated. For new deployments, we suggest using [Codex Pooler](https://icoretech.github.io/helm/charts/codex-pooler) instead.
+
 Deploy [Codex LB](https://github.com/Soju06/codex-lb) on Kubernetes — a load balancer and account pool for proxying ChatGPT / OpenAI API requests across multiple accounts.
 
 ## Features
