@@ -132,20 +132,29 @@ codex-pooler.icoretech.io/cluster-member: "true"
 {{- end }}
 {{- end -}}
 
+{{- define "codex-pooler.multiReplicaApp" -}}
+{{- if and .Values.app.enabled (gt (int .Values.app.replicaCount) 1) -}}true{{- end -}}
+{{- end -}}
+
+{{- define "codex-pooler.explicitWebsocketOwnerForwardingEnabled" -}}
+{{- with .Values.app.websocketContinuity -}}
+{{- with .ownerForwarding -}}
+{{- if .enabled -}}true{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "codex-pooler.websocketOwnerForwardingEnabled" -}}
-{{- if .Values.app.websocketContinuity.ownerForwarding.enabled -}}true{{- end -}}
+{{- if or (eq (include "codex-pooler.multiReplicaApp" .) "true") (eq (include "codex-pooler.explicitWebsocketOwnerForwardingEnabled" .) "true") -}}true{{- end -}}
 {{- end -}}
 
 {{- define "codex-pooler.validateWebsocketTopology" -}}
 {{- $ownerForwardingEnabled := eq (include "codex-pooler.websocketOwnerForwardingEnabled" .) "true" -}}
 {{- if and $ownerForwardingEnabled (not .Values.clustering.enabled) -}}
-{{- fail "app.websocketContinuity.ownerForwarding.enabled requires clustering.enabled=true so websocket owner pods can be reached across app nodes" -}}
+{{- fail "websocket owner forwarding requires clustering.enabled=true so websocket owner pods can be reached across app nodes" -}}
 {{- end -}}
 {{- if and $ownerForwardingEnabled (not .Values.clustering.participants.app) -}}
-{{- fail "app.websocketContinuity.ownerForwarding.enabled requires clustering.participants.app=true; worker or scheduler clustering cannot satisfy websocket owner forwarding" -}}
-{{- end -}}
-{{- if and .Values.app.enabled (gt (int .Values.app.replicaCount) 1) (not .Values.app.websocketContinuity.allowUnsafeMultiReplica) -}}
-{{- fail "app.replicaCount > 1 is unsafe for backend websocket continuity until post-smoke guard relaxation is completed; set app.websocketContinuity.allowUnsafeMultiReplica=true only if external sticky routing and the documented reconnect limitations are acceptable" -}}
+{{- fail "websocket owner forwarding requires clustering.participants.app=true; worker or scheduler clustering cannot satisfy websocket owner forwarding" -}}
 {{- end -}}
 {{- end -}}
 

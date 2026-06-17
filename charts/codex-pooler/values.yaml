@@ -83,10 +83,6 @@ app:
   enabled: true
   podAnnotations: {}
   replicaCount: 1
-  websocketContinuity:
-    allowUnsafeMultiReplica: false
-    ownerForwarding:
-      enabled: false
   strategy:
     maxUnavailable: 0
     maxSurge: 1

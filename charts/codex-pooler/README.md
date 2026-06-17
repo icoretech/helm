@@ -16,7 +16,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.1.3 \
+  --version 0.2.0 \
   --values values.production.yaml
 ```
 
@@ -25,7 +25,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.1.3 \
+  --version 0.2.0 \
   --values values.production.yaml
 ```
 
@@ -68,7 +68,7 @@ Do not put upstream access tokens, API keys, cookies, `auth.json`, SMTP password
 - `oban.scheduler` runs scheduled jobs with `OBAN_MODE=scheduler`
 - `migrations` runs release migrations and imports the vendored pricing feed before app rollout
 
-Keep `app.replicaCount` at `1` unless clustering and owner-forwarding are intentionally configured and verified.
+Keep `app.replicaCount` at `1` unless app clustering is intentionally configured and verified. When `app.replicaCount` is greater than `1`, the chart requires app clustering and automatically enables websocket owner forwarding on app pods.
 
 ## Monitoring
 
@@ -110,7 +110,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.1.3"
+      version: "0.2.0"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -165,8 +165,6 @@ spec:
 | app.strategy.maxUnavailable | int | `0` |  |
 | app.terminationGracePeriodSeconds | int | `75` |  |
 | app.tolerations | list | `[]` |  |
-| app.websocketContinuity.allowUnsafeMultiReplica | bool | `false` |  |
-| app.websocketContinuity.ownerForwarding.enabled | bool | `false` |  |
 | clustering.cookie.existingSecret | string | `""` |  |
 | clustering.cookie.existingSecretKey | string | `"release-cookie"` |  |
 | clustering.cookie.value | string | `""` |  |

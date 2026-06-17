@@ -5,25 +5,36 @@ templates:
   - oban-scheduler-deployment.yaml
   - migration-job.yaml
 tests:
-  - it: rejects multi-replica app without unsafe acknowledgement
+  - it: rejects multi-replica app unless clustering is enabled
     template: app-deployment.yaml
     set:
       app.replicaCount: 2
     asserts:
       - failedTemplate:
-          errorMessage: "app.replicaCount > 1 is unsafe for backend websocket continuity until post-smoke guard relaxation is completed; set app.websocketContinuity.allowUnsafeMultiReplica=true only if external sticky routing and the documented reconnect limitations are acceptable"
+          errorMessage: "websocket owner forwarding requires clustering.enabled=true so websocket owner pods can be reached across app nodes"
 
-  - it: allows multi-replica app with unsafe acknowledgement
+  - it: rejects multi-replica app unless app pods participate in clustering
     template: app-deployment.yaml
     set:
       app.replicaCount: 2
-      app.websocketContinuity.allowUnsafeMultiReplica: true
+      clustering.enabled: true
+      clustering.participants.app: false
+    asserts:
+      - failedTemplate:
+          errorMessage: "websocket owner forwarding requires clustering.participants.app=true; worker or scheduler clustering cannot satisfy websocket owner forwarding"
+
+  - it: automatically enables owner forwarding for clustered multi-replica app pods
+    template: app-deployment.yaml
+    set:
+      app.replicaCount: 2
+      clustering.enabled: true
     asserts:
       - equal:
           path: spec.replicas
           value: 2
-      - notExists:
-          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")]
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")].value
+          value: "true"
 
   - it: rejects owner forwarding unless clustering is enabled
     template: app-deployment.yaml
@@ -31,7 +42,7 @@ tests:
       app.websocketContinuity.ownerForwarding.enabled: true
     asserts:
       - failedTemplate:
-          errorMessage: "app.websocketContinuity.ownerForwarding.enabled requires clustering.enabled=true so websocket owner pods can be reached across app nodes"
+          errorMessage: "websocket owner forwarding requires clustering.enabled=true so websocket owner pods can be reached across app nodes"
 
   - it: rejects owner forwarding unless app nodes participate in clustering
     template: app-deployment.yaml
@@ -41,7 +52,7 @@ tests:
       app.websocketContinuity.ownerForwarding.enabled: true
     asserts:
       - failedTemplate:
-          errorMessage: "app.websocketContinuity.ownerForwarding.enabled requires clustering.participants.app=true; worker or scheduler clustering cannot satisfy websocket owner forwarding"
+          errorMessage: "websocket owner forwarding requires clustering.participants.app=true; worker or scheduler clustering cannot satisfy websocket owner forwarding"
 
   - it: renders owner forwarding only on app pods
     template: app-deployment.yaml
