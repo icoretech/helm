@@ -27,9 +27,9 @@ spec:
         {{- if and .Values.clustering.enabled .Values.clustering.participants.app }}
         {{- include "codex-pooler.clusteringMemberLabel" . | nindent 8 }}
         {{- end }}
-      {{- with .Values.podAnnotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
+      {{- $runtimePodAnnotations := include "codex-pooler.runtimePodAnnotations" (dict "root" . "podAnnotations" .Values.app.podAnnotations) | trim }}
+      {{- if $runtimePodAnnotations }}
+{{ $runtimePodAnnotations | nindent 6 }}
       {{- end }}
     spec:
       {{- if and .Values.clustering.enabled .Values.clustering.participants.app }}

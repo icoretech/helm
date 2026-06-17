@@ -27,6 +27,16 @@ app.kubernetes.io/name: {{ include "codex-pooler.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
+{{- define "codex-pooler.runtimePodAnnotations" -}}
+{{- $root := .root -}}
+{{- $rolePodAnnotations := default (dict) .podAnnotations -}}
+{{- $annotations := mergeOverwrite (dict) (default (dict) $root.Values.podAnnotations) $rolePodAnnotations -}}
+{{- with $annotations -}}
+annotations:
+{{- toYaml . | nindent 2 }}
+{{- end -}}
+{{- end -}}
+
 {{- define "codex-pooler.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create -}}
 {{- default (include "codex-pooler.fullname" .) .Values.serviceAccount.name -}}

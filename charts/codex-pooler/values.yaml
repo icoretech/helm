@@ -80,6 +80,7 @@ secrets:
 
 app:
   enabled: true
+  podAnnotations: {}
   replicaCount: 1
   websocketContinuity:
     allowUnsafeMultiReplica: false
@@ -132,6 +133,7 @@ migrations:
 oban:
   worker:
     enabled: true
+    podAnnotations: {}
     replicaCount: 1
     strategy:
       maxUnavailable: 0
@@ -149,6 +151,7 @@ oban:
     affinity: {}
   scheduler:
     enabled: true
+    podAnnotations: {}
     replicaCount: 1
     strategy:
       maxUnavailable: 0

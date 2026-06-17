@@ -26,6 +26,10 @@ spec:
         {{- if and .Values.clustering.enabled .Values.clustering.participants.worker }}
         {{- include "codex-pooler.clusteringMemberLabel" . | nindent 8 }}
         {{- end }}
+      {{- $runtimePodAnnotations := include "codex-pooler.runtimePodAnnotations" (dict "root" . "podAnnotations" .Values.oban.worker.podAnnotations) | trim }}
+      {{- if $runtimePodAnnotations }}
+{{ $runtimePodAnnotations | nindent 6 }}
+      {{- end }}
     spec:
       {{- if and .Values.clustering.enabled .Values.clustering.participants.worker }}
       subdomain: {{ include "codex-pooler.clusteringHeadlessServiceName" . }}

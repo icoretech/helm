@@ -62,6 +62,27 @@ tests:
             - -c
             - touch "$CODEX_POOLER_DRAIN_MARKER_PATH"; sleep 10
 
+  - it: merges global and app pod annotations on app pods
+    template: app-deployment.yaml
+    set:
+      podAnnotations:
+        example.com/global: "true"
+        shared: global
+      app:
+        podAnnotations:
+          example.com/app: "true"
+          shared: app
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["example.com/global"]
+          value: "true"
+      - equal:
+          path: spec.template.metadata.annotations["example.com/app"]
+          value: "true"
+      - equal:
+          path: spec.template.metadata.annotations.shared
+          value: app
+
   - it: keeps worker runtime env contract aligned
     template: oban-worker-deployment.yaml
     asserts:
@@ -82,6 +103,28 @@ tests:
       - notExists:
           path: spec.template.spec.containers[0].lifecycle
 
+  - it: merges global and worker pod annotations on worker pods
+    template: oban-worker-deployment.yaml
+    set:
+      podAnnotations:
+        example.com/global: "true"
+        shared: global
+      oban:
+        worker:
+          podAnnotations:
+            example.com/worker: "true"
+            shared: worker
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["example.com/global"]
+          value: "true"
+      - equal:
+          path: spec.template.metadata.annotations["example.com/worker"]
+          value: "true"
+      - equal:
+          path: spec.template.metadata.annotations.shared
+          value: worker
+
   - it: keeps scheduler runtime env contract aligned
     template: oban-scheduler-deployment.yaml
     asserts:
@@ -101,6 +144,28 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
       - notExists:
           path: spec.template.spec.containers[0].lifecycle
+
+  - it: merges global and scheduler pod annotations on scheduler pods
+    template: oban-scheduler-deployment.yaml
+    set:
+      podAnnotations:
+        example.com/global: "true"
+        shared: global
+      oban:
+        scheduler:
+          podAnnotations:
+            example.com/scheduler: "true"
+            shared: scheduler
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["example.com/global"]
+          value: "true"
+      - equal:
+          path: spec.template.metadata.annotations["example.com/scheduler"]
+          value: "true"
+      - equal:
+          path: spec.template.metadata.annotations.shared
+          value: scheduler
 
   - it: keeps migration hook command and role env aligned
     template: migration-job.yaml
@@ -124,6 +189,15 @@ tests:
           value: web
       - notExists:
           path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+
+  - it: does not apply runtime pod annotations to migration hook pods
+    template: migration-job.yaml
+    set:
+      podAnnotations:
+        example.com/global: "true"
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations
 
   - it: uses the required secret keys and plain runtime env on app pods
     template: app-deployment.yaml

@@ -16,7 +16,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.0.2 \
+  --version 0.1.2 \
   --values values.production.yaml
 ```
 
@@ -25,7 +25,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.0.2 \
+  --version 0.1.2 \
   --values values.production.yaml
 ```
 
@@ -36,7 +36,7 @@ The application image is published at `ghcr.io/icoretech/codex-pooler`. Set an e
 ```yaml
 image:
   repository: ghcr.io/icoretech/codex-pooler
-  tag: 0.0.1
+  tag: 0.1.1
   pullPolicy: IfNotPresent
 ```
 
@@ -110,7 +110,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.0.2"
+      version: "0.1.2"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -118,7 +118,7 @@ spec:
   values:
     image:
       repository: ghcr.io/icoretech/codex-pooler
-      tag: "0.0.1"
+      tag: "0.1.1"
     config:
       host: codex-pooler.example.com
     ingress:
@@ -145,6 +145,7 @@ spec:
 | app.lifecycle.preStop.enabled | bool | `true` |  |
 | app.lifecycle.preStop.sleepSeconds | int | `10` |  |
 | app.nodeSelector | object | `{}` |  |
+| app.podAnnotations | object | `{}` |  |
 | app.podDisruptionBudget.enabled | bool | `true` |  |
 | app.podDisruptionBudget.minAvailable | int | `1` |  |
 | app.replicaCount | int | `1` |  |
@@ -220,6 +221,7 @@ spec:
 | oban.scheduler.affinity | object | `{}` |  |
 | oban.scheduler.enabled | bool | `true` |  |
 | oban.scheduler.nodeSelector | object | `{}` |  |
+| oban.scheduler.podAnnotations | object | `{}` |  |
 | oban.scheduler.replicaCount | int | `1` |  |
 | oban.scheduler.resources.limits.cpu | string | `"500m"` |  |
 | oban.scheduler.resources.limits.memory | string | `"584Mi"` |  |
@@ -232,6 +234,7 @@ spec:
 | oban.worker.affinity | object | `{}` |  |
 | oban.worker.enabled | bool | `true` |  |
 | oban.worker.nodeSelector | object | `{}` |  |
+| oban.worker.podAnnotations | object | `{}` |  |
 | oban.worker.replicaCount | int | `1` |  |
 | oban.worker.resources.limits.cpu | string | `"500m"` |  |
 | oban.worker.resources.limits.memory | string | `"768Mi"` |  |
