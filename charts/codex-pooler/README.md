@@ -16,7 +16,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.1.2 \
+  --version 0.1.3 \
   --values values.production.yaml
 ```
 
@@ -25,13 +25,13 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.1.2 \
+  --version 0.1.3 \
   --values values.production.yaml
 ```
 
 ## Image
 
-The application image is published at `ghcr.io/icoretech/codex-pooler`. Set an explicit immutable `image.tag` for real deployments.
+The application image is published at `ghcr.io/icoretech/codex-pooler`. When `image.tag` is empty, the chart uses `appVersion`.
 
 ```yaml
 image:
@@ -110,7 +110,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.1.2"
+      version: "0.1.3"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -191,7 +191,7 @@ spec:
 | fullnameOverride | string | `""` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/icoretech/codex-pooler"` |  |
-| image.tag | string | `"latest"` |  |
+| image.tag | string | `""` | Image tag. Defaults to the chart appVersion when empty. |
 | imagePullSecrets | list | `[]` |  |
 | ingress.annotations | object | `{}` |  |
 | ingress.className | string | `""` |  |

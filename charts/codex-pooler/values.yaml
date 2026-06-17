@@ -11,7 +11,8 @@ imagePullSecrets: []
 
 image:
   repository: ghcr.io/icoretech/codex-pooler
-  tag: latest
+  # -- Image tag. Defaults to the chart appVersion when empty.
+  tag: ""
   pullPolicy: IfNotPresent
 
 ingress:

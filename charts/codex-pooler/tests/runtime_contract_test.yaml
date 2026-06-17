@@ -19,6 +19,43 @@ tests:
           path: spec.ports[0].name
           value: http
 
+  - it: defaults the app image tag to chart appVersion instead of latest
+    template: app-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/icoretech/codex-pooler:0.1.1
+
+  - it: defaults the worker image tag to chart appVersion instead of latest
+    template: oban-worker-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/icoretech/codex-pooler:0.1.1
+
+  - it: defaults the scheduler image tag to chart appVersion instead of latest
+    template: oban-scheduler-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/icoretech/codex-pooler:0.1.1
+
+  - it: defaults the migration image tag to chart appVersion instead of latest
+    template: migration-job.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/icoretech/codex-pooler:0.1.1
+
+  - it: allows overriding the runtime image tag explicitly
+    template: app-deployment.yaml
+    set:
+      image.tag: explicit-tag
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/icoretech/codex-pooler:explicit-tag
+
   - it: keeps app runtime env, probes, and graceful drain contract aligned
     template: app-deployment.yaml
     asserts:

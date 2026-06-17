@@ -157,7 +157,7 @@ codex-pooler.icoretech.io/cluster-member: "true"
 {{- end -}}
 
 {{- define "codex-pooler.image" -}}
-{{- printf "%s:%s" .Values.image.repository .Values.image.tag -}}
+{{- printf "%s:%s" .Values.image.repository (default .Chart.AppVersion .Values.image.tag) -}}
 {{- end -}}
 
 {{- define "codex-pooler.env" -}}
