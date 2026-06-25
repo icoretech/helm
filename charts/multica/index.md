@@ -14,7 +14,8 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - External PostgreSQL mode for production deployments
 - Optional bundled Redis for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues
 - Local upload PVC support and S3-compatible storage configuration
-- Secret references for JWT, email, Google OAuth, metrics, database URL, GitHub App, Lark, and S3 credentials
+- Secret references for JWT, email, Google OAuth, metrics, database URL, GitHub App, Lark, Slack, and S3 credentials
+- Optional ConfigMap-backed feature flag rules
 - Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
 - Optional PrometheusRule alerts for Multica business sampler metrics
 - Helm unit tests and install-safe CI values
@@ -149,7 +150,7 @@ backend:
       key: GITHUB_APP_PRIVATE_KEY
 ```
 
-Lark/Feishu Bot integration is disabled until `backend.lark.secretKey` or `backend.lark.secretKeyRef` is set. Use a base64-encoded 32-byte key, for example `openssl rand -base64 32`. International Lark tenants should set both `backend.lark.httpBaseUrl` and `backend.lark.callbackBaseUrl` to `https://open.larksuite.com`; `backend.config.publicUrl` must point at the public API origin used by Lark binding prompts.
+Lark/Feishu Bot integration is disabled until `backend.lark.secretKey` or `backend.lark.secretKeyRef` is set. Use a base64-encoded 32-byte key, for example `openssl rand -base64 32`. International Lark tenants should set both `backend.lark.httpBaseUrl` and `backend.lark.callbackBaseUrl` to `https://open.larksuite.com`; `backend.config.publicUrl` must point at the public API origin used by Lark binding prompts. Set `backend.lark.wsProxyUrl` only when Lark WebSocket long-connection handshakes must go through a fixed HTTP CONNECT proxy instead of the standard pod `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` environment.
 
 ```yaml
 backend:
@@ -161,6 +162,26 @@ backend:
       key: MULTICA_LARK_SECRET_KEY
     httpBaseUrl: https://open.larksuite.com
     callbackBaseUrl: https://open.larksuite.com
+```
+
+Slack integration is disabled until `backend.slack.secretKey` or `backend.slack.secretKeyRef` is set. Use a separate base64-encoded 32-byte key from the Lark key; Multica uses it to decrypt Slack bot/app tokens stored in channel installation rows.
+
+```yaml
+backend:
+  slack:
+    secretKeyRef:
+      name: multica-slack
+      key: MULTICA_SLACK_SECRET_KEY
+```
+
+Feature flags are optional. Leave `backend.featureFlags.rules` and `backend.featureFlags.existingConfigMap.name` empty to use upstream defaults plus any `FF_*` overrides from `backend.extraEnv`. To ship file-backed rules, either provide inline rules and let the chart render a ConfigMap, or mount an existing ConfigMap; the chart exports `MULTICA_FEATURE_FLAGS_FILE` only when it also mounts the file.
+
+```yaml
+backend:
+  featureFlags:
+    rules:
+      runtime_brief_slim:
+        default: true
 ```
 
 Usage rollup flags are read-path switches only. Set `backend.usageRollups.dailyEnabled` or `backend.usageRollups.dashboardEnabled` only after the external scheduler and historical backfill are in place.
@@ -237,6 +258,10 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.email.smtp.usernameRef.name | string | `""` | Existing secret containing SMTP_USERNAME. |
 | backend.envFrom | list | `[]` | Extra backend envFrom refs. |
 | backend.extraEnv | list | `[]` | Extra backend env vars. Managed env names are rejected to avoid silent overrides. |
+| backend.featureFlags.existingConfigMap.key | string | `"feature-flags.yaml"` | ConfigMap key containing feature flag YAML. |
+| backend.featureFlags.existingConfigMap.name | string | `""` | Existing ConfigMap containing the feature flag YAML file. |
+| backend.featureFlags.mountPath | string | `"/etc/multica/feature-flags.yaml"` | Absolute file path mounted into the backend container and exported as MULTICA_FEATURE_FLAGS_FILE. |
+| backend.featureFlags.rules | object | `{}` | Inline Multica feature flag rules rendered to a ConfigMap and loaded from MULTICA_FEATURE_FLAGS_FILE. Leave empty to use upstream defaults plus any FF_* env overrides. |
 | backend.github.appId | string | `""` | Optional GitHub App ID used to enrich connected account names after install. |
 | backend.github.appPrivateKey | string | `""` | Optional GitHub App private key PEM. Prefer appPrivateKeyRef for production deployments. |
 | backend.github.appPrivateKeyRef.key | string | `""` | Secret key for GITHUB_APP_PRIVATE_KEY. |
@@ -262,6 +287,7 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.lark.secretKey | string | `""` | Base64-encoded 32-byte key enabling Lark/Feishu Bot integration and encrypting Bot app secrets at rest. Prefer secretKeyRef in production. |
 | backend.lark.secretKeyRef.key | string | `""` | Secret key for MULTICA_LARK_SECRET_KEY. |
 | backend.lark.secretKeyRef.name | string | `""` | Existing secret containing MULTICA_LARK_SECRET_KEY. |
+| backend.lark.wsProxyUrl | string | `""` | Optional fixed HTTP CONNECT proxy URL for Lark/Feishu WebSocket long-connection handshakes. |
 | backend.nodeSelector | object | `{}` | Backend node selector. |
 | backend.podAnnotations | object | `{}` | Pod annotations for backend pods. |
 | backend.podLabels | object | `{}` | Pod labels for backend pods. |
@@ -277,6 +303,9 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.service.port | int | `8080` | Backend Service port. |
 | backend.service.targetPort | int | `8080` | Backend container port. |
 | backend.service.type | string | `"ClusterIP"` | Backend Service type. |
+| backend.slack.secretKey | string | `""` | Base64-encoded 32-byte key enabling Slack integration and encrypting Slack app/bot tokens at rest. Prefer secretKeyRef in production. |
+| backend.slack.secretKeyRef.key | string | `""` | Secret key for MULTICA_SLACK_SECRET_KEY. |
+| backend.slack.secretKeyRef.name | string | `""` | Existing secret containing MULTICA_SLACK_SECRET_KEY. |
 | backend.tolerations | list | `[]` | Backend tolerations. |
 | backend.usageRollups.dailyEnabled | bool | `false` | Enable runtime usage reads from the daily rollup table after external backfill/scheduler setup is complete. |
 | backend.usageRollups.dashboardEnabled | bool | `false` | Enable dashboard usage reads from the dashboard rollup table after external backfill/scheduler setup is complete. |
