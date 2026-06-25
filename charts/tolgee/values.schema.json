@@ -304,6 +304,13 @@
             "needsEmailVerification": { "type": ["boolean", "null"] },
             "userCanCreateOrganizations": { "type": ["boolean", "null"] },
             "createDemoForInitialUser": { "type": ["boolean", "null"] },
+            "ssoOrganizations": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "allowLocalAddresses": { "type": ["boolean", "null"] }
+              }
+            },
             "initialUsername": { "type": "string" },
             "initialPassword": { "type": "string" },
             "initialPasswordRef": {

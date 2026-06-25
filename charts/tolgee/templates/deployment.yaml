@@ -185,6 +185,11 @@ spec:
               value: {{ printf "%v" .Values.tolgee.authentication.createDemoForInitialUser | quote }}
             {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_CREATE_DEMO_FOR_INITIAL_USER" true }}
             {{- end }}
+            {{- if ne .Values.tolgee.authentication.ssoOrganizations.allowLocalAddresses nil }}
+            - name: TOLGEE_AUTHENTICATION_SSO_ORGANIZATIONS_ALLOW_LOCAL_ADDRESSES
+              value: {{ printf "%v" .Values.tolgee.authentication.ssoOrganizations.allowLocalAddresses | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_SSO_ORGANIZATIONS_ALLOW_LOCAL_ADDRESSES" true }}
+            {{- end }}
             {{- with .Values.tolgee.authentication.initialUsername }}
             - name: TOLGEE_AUTHENTICATION_INITIAL_USERNAME
               value: {{ . | quote }}

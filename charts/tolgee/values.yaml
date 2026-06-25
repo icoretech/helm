@@ -326,6 +326,10 @@ tolgee:
     # -- tolgee.authentication.create-demo-for-initial-user
     createDemoForInitialUser: null
 
+    ssoOrganizations:
+      # -- tolgee.authentication.sso-organizations.allow-local-addresses. Enables internal/private SSO provider URLs; keep null/false unless the IdP is deliberately reachable only on a trusted internal network.
+      allowLocalAddresses: null
+
     # -- tolgee.authentication.initial-username
     initialUsername: ""
 

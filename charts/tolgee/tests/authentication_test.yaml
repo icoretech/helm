@@ -1,0 +1,20 @@
+suite: authentication config
+templates:
+  - deployment.yaml
+tests:
+  - it: leaves SSO local-address override unset by default
+    values:
+      - values/valid-minimal.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_AUTHENTICATION_SSO_ORGANIZATIONS_ALLOW_LOCAL_ADDRESSES")]
+
+  - it: renders SSO local-address override when enabled
+    values:
+      - values/valid-minimal.yaml
+    set:
+      tolgee.authentication.ssoOrganizations.allowLocalAddresses: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_AUTHENTICATION_SSO_ORGANIZATIONS_ALLOW_LOCAL_ADDRESSES")].value
+          value: "true"
