@@ -133,6 +133,18 @@ Use the built-in `*Ref` fields when you want chart-managed env wiring without st
 - `tolgee.fileStorage.s3.accessKeyRef`
 - `tolgee.fileStorage.s3.secretKeyRef`
 
+## Per-Organization SSO Internal URLs
+
+Tolgee rejects loopback, private, link-local, multicast, and wildcard SSO provider URLs by default. Set `tolgee.authentication.ssoOrganizations.allowLocalAddresses=true` only when a self-hosted per-organization SSO provider intentionally lives on a trusted internal network.
+
+## Webhook Internal URLs
+
+Tolgee rejects loopback, private, link-local, multicast, and wildcard webhook target URLs by default. Set `tolgee.webhook.allowLocalAddresses=true` only for local development or when webhook targets intentionally live on a trusted internal network; this weakens SSRF protection for users who can configure webhooks.
+
+## Registration Email Controls
+
+Tolgee blocks disposable email domains and duplicate subaddress aliases for new registrations by default. Use `tolgee.authentication.blockDisposableEmails`, `tolgee.authentication.blockEmailAliases`, `tolgee.authentication.blockedEmailDomains`, and `tolgee.authentication.allowedEmailDomains` only when the deployment needs to override those defaults.
+
 ## Gateway API HTTPRoute Example
 
 ```yaml
@@ -231,7 +243,7 @@ spec:
 | database.jdbcParameters | string | `"reWriteBatchedInserts=true"` | Extra JDBC query parameters (without leading ?), e.g. key1=value1&key2=value2. |
 | database.sslMode | string | `"disable"` | SSL mode appended to JDBC URL. |
 | database.waitForReady.enabled | bool | `true` | Wait for PostgreSQL TCP readiness before starting Tolgee. |
-| database.waitForReady.image | string | `"busybox:1.37"` | Init container image used for DB readiness checks. |
+| database.waitForReady.image | string | `"busybox:1.38"` | Init container image used for DB readiness checks. |
 | database.waitForReady.imagePullPolicy | string | `"IfNotPresent"` | Init container image pull policy. |
 | database.waitForReady.periodSeconds | int | `2` | Poll interval in seconds. |
 | database.waitForReady.timeoutSeconds | int | `180` | Max seconds to wait for DB readiness. |
@@ -317,6 +329,10 @@ spec:
 | serviceAccount.create | bool | `true` | Create a service account. |
 | serviceAccount.name | string | `""` | Service account name. |
 | tolerations | list | `[]` | Tolerations. |
+| tolgee.authentication.allowedEmailDomains | list | `[]` | tolgee.authentication.allowed-email-domains |
+| tolgee.authentication.blockDisposableEmails | string | `nil` | tolgee.authentication.block-disposable-emails |
+| tolgee.authentication.blockEmailAliases | string | `nil` | tolgee.authentication.block-email-aliases |
+| tolgee.authentication.blockedEmailDomains | list | `[]` | tolgee.authentication.blocked-email-domains |
 | tolgee.authentication.createDemoForInitialUser | string | `nil` | tolgee.authentication.create-demo-for-initial-user |
 | tolgee.authentication.enabled | string | `nil` | tolgee.authentication.enabled |
 | tolgee.authentication.initialPassword | string | `""` | tolgee.authentication.initial-password |
@@ -329,6 +345,7 @@ spec:
 | tolgee.authentication.nativeEnabled | string | `nil` | tolgee.authentication.native-enabled |
 | tolgee.authentication.needsEmailVerification | string | `nil` | tolgee.authentication.needs-email-verification |
 | tolgee.authentication.registrationsAllowed | string | `nil` | tolgee.authentication.registrations-allowed |
+| tolgee.authentication.ssoOrganizations.allowLocalAddresses | string | `nil` | tolgee.authentication.sso-organizations.allow-local-addresses. Enables internal/private SSO provider URLs; keep null/false unless the IdP is deliberately reachable only on a trusted internal network. |
 | tolgee.authentication.userCanCreateOrganizations | string | `nil` | tolgee.authentication.user-can-create-organizations |
 | tolgee.cache.enabled | string | `nil` | tolgee.cache.enabled |
 | tolgee.cache.useRedis | string | `nil` | tolgee.cache.use-redis |
@@ -362,4 +379,5 @@ spec:
 | tolgee.smtp.username | string | `""` | tolgee.smtp.username |
 | tolgee.telemetry.enabled | string | `nil` | tolgee.telemetry.enabled |
 | tolgee.telemetry.server | string | `""` | tolgee.telemetry.server |
+| tolgee.webhook.allowLocalAddresses | string | `nil` | tolgee.webhook.allow-local-addresses. Enables internal/private webhook target URLs; keep null/false unless webhook targets are deliberately reachable only on a trusted internal network. |
 | tolgee.websocket.useRedis | string | `nil` | tolgee.websocket.use-redis |
