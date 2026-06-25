@@ -323,6 +323,18 @@ tolgee:
     # -- tolgee.authentication.user-can-create-organizations
     userCanCreateOrganizations: null
 
+    # -- tolgee.authentication.block-disposable-emails
+    blockDisposableEmails: null
+
+    # -- tolgee.authentication.block-email-aliases
+    blockEmailAliases: null
+
+    # -- tolgee.authentication.blocked-email-domains
+    blockedEmailDomains: []
+
+    # -- tolgee.authentication.allowed-email-domains
+    allowedEmailDomains: []
+
     # -- tolgee.authentication.create-demo-for-initial-user
     createDemoForInitialUser: null
 
@@ -445,6 +457,10 @@ tolgee:
   websocket:
     # -- tolgee.websocket.use-redis
     useRedis: null
+
+  webhook:
+    # -- tolgee.webhook.allow-local-addresses. Enables internal/private webhook target URLs; keep null/false unless webhook targets are deliberately reachable only on a trusted internal network.
+    allowLocalAddresses: null
 
   # -- Additional non-secret Tolgee/Spring properties in dot notation.
   # -- Example: tolgee.authentication.google.client-id

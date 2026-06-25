@@ -132,6 +132,14 @@ Use the built-in `*Ref` fields when you want chart-managed env wiring without st
 
 Tolgee rejects loopback, private, link-local, multicast, and wildcard SSO provider URLs by default. Set `tolgee.authentication.ssoOrganizations.allowLocalAddresses=true` only when a self-hosted per-organization SSO provider intentionally lives on a trusted internal network.
 
+## Webhook Internal URLs
+
+Tolgee rejects loopback, private, link-local, multicast, and wildcard webhook target URLs by default. Set `tolgee.webhook.allowLocalAddresses=true` only for local development or when webhook targets intentionally live on a trusted internal network; this weakens SSRF protection for users who can configure webhooks.
+
+## Registration Email Controls
+
+Tolgee blocks disposable email domains and duplicate subaddress aliases for new registrations by default. Use `tolgee.authentication.blockDisposableEmails`, `tolgee.authentication.blockEmailAliases`, `tolgee.authentication.blockedEmailDomains`, and `tolgee.authentication.allowedEmailDomains` only when the deployment needs to override those defaults.
+
 ## Gateway API HTTPRoute Example
 
 ```yaml
@@ -316,6 +324,10 @@ spec:
 | serviceAccount.create | bool | `true` | Create a service account. |
 | serviceAccount.name | string | `""` | Service account name. |
 | tolerations | list | `[]` | Tolerations. |
+| tolgee.authentication.allowedEmailDomains | list | `[]` | tolgee.authentication.allowed-email-domains |
+| tolgee.authentication.blockDisposableEmails | string | `nil` | tolgee.authentication.block-disposable-emails |
+| tolgee.authentication.blockEmailAliases | string | `nil` | tolgee.authentication.block-email-aliases |
+| tolgee.authentication.blockedEmailDomains | list | `[]` | tolgee.authentication.blocked-email-domains |
 | tolgee.authentication.createDemoForInitialUser | string | `nil` | tolgee.authentication.create-demo-for-initial-user |
 | tolgee.authentication.enabled | string | `nil` | tolgee.authentication.enabled |
 | tolgee.authentication.initialPassword | string | `""` | tolgee.authentication.initial-password |
@@ -362,4 +374,5 @@ spec:
 | tolgee.smtp.username | string | `""` | tolgee.smtp.username |
 | tolgee.telemetry.enabled | string | `nil` | tolgee.telemetry.enabled |
 | tolgee.telemetry.server | string | `""` | tolgee.telemetry.server |
+| tolgee.webhook.allowLocalAddresses | string | `nil` | tolgee.webhook.allow-local-addresses. Enables internal/private webhook target URLs; keep null/false unless webhook targets are deliberately reachable only on a trusted internal network. |
 | tolgee.websocket.useRedis | string | `nil` | tolgee.websocket.use-redis |

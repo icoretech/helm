@@ -18,3 +18,41 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_AUTHENTICATION_SSO_ORGANIZATIONS_ALLOW_LOCAL_ADDRESSES")].value
           value: "true"
+
+  - it: leaves registration email controls unset by default
+    values:
+      - values/valid-minimal.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_AUTHENTICATION_BLOCK_DISPOSABLE_EMAILS")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_AUTHENTICATION_BLOCK_EMAIL_ALIASES")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_AUTHENTICATION_BLOCKED_EMAIL_DOMAINS")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_AUTHENTICATION_ALLOWED_EMAIL_DOMAINS")]
+
+  - it: renders registration email controls when configured
+    values:
+      - values/valid-minimal.yaml
+    set:
+      tolgee.authentication.blockDisposableEmails: false
+      tolgee.authentication.blockEmailAliases: false
+      tolgee.authentication.blockedEmailDomains:
+        - blocked.example
+        - test.example
+      tolgee.authentication.allowedEmailDomains:
+        - allowed.example
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_AUTHENTICATION_BLOCK_DISPOSABLE_EMAILS")].value
+          value: "false"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_AUTHENTICATION_BLOCK_EMAIL_ALIASES")].value
+          value: "false"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_AUTHENTICATION_BLOCKED_EMAIL_DOMAINS")].value
+          value: "blocked.example,test.example"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_AUTHENTICATION_ALLOWED_EMAIL_DOMAINS")].value
+          value: "allowed.example"

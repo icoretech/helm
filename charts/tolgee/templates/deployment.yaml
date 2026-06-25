@@ -180,6 +180,26 @@ spec:
               value: {{ printf "%v" .Values.tolgee.authentication.userCanCreateOrganizations | quote }}
             {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_USER_CAN_CREATE_ORGANIZATIONS" true }}
             {{- end }}
+            {{- if ne .Values.tolgee.authentication.blockDisposableEmails nil }}
+            - name: TOLGEE_AUTHENTICATION_BLOCK_DISPOSABLE_EMAILS
+              value: {{ printf "%v" .Values.tolgee.authentication.blockDisposableEmails | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_BLOCK_DISPOSABLE_EMAILS" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.authentication.blockEmailAliases nil }}
+            - name: TOLGEE_AUTHENTICATION_BLOCK_EMAIL_ALIASES
+              value: {{ printf "%v" .Values.tolgee.authentication.blockEmailAliases | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_BLOCK_EMAIL_ALIASES" true }}
+            {{- end }}
+            {{- if .Values.tolgee.authentication.blockedEmailDomains }}
+            - name: TOLGEE_AUTHENTICATION_BLOCKED_EMAIL_DOMAINS
+              value: {{ join "," .Values.tolgee.authentication.blockedEmailDomains | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_BLOCKED_EMAIL_DOMAINS" true }}
+            {{- end }}
+            {{- if .Values.tolgee.authentication.allowedEmailDomains }}
+            - name: TOLGEE_AUTHENTICATION_ALLOWED_EMAIL_DOMAINS
+              value: {{ join "," .Values.tolgee.authentication.allowedEmailDomains | quote }}
+            {{- $_ := set $envSeen "TOLGEE_AUTHENTICATION_ALLOWED_EMAIL_DOMAINS" true }}
+            {{- end }}
             {{- if ne .Values.tolgee.authentication.createDemoForInitialUser nil }}
             - name: TOLGEE_AUTHENTICATION_CREATE_DEMO_FOR_INITIAL_USER
               value: {{ printf "%v" .Values.tolgee.authentication.createDemoForInitialUser | quote }}
@@ -358,6 +378,11 @@ spec:
             - name: TOLGEE_WEBSOCKET_USE_REDIS
               value: {{ printf "%v" .Values.tolgee.websocket.useRedis | quote }}
             {{- $_ := set $envSeen "TOLGEE_WEBSOCKET_USE_REDIS" true }}
+            {{- end }}
+            {{- if ne .Values.tolgee.webhook.allowLocalAddresses nil }}
+            - name: TOLGEE_WEBHOOK_ALLOW_LOCAL_ADDRESSES
+              value: {{ printf "%v" .Values.tolgee.webhook.allowLocalAddresses | quote }}
+            {{- $_ := set $envSeen "TOLGEE_WEBHOOK_ALLOW_LOCAL_ADDRESSES" true }}
             {{- end }}
 
             {{- range $property, $value := .Values.tolgee.secretConfig }}

@@ -303,6 +303,10 @@
             "registrationsAllowed": { "type": ["boolean", "null"] },
             "needsEmailVerification": { "type": ["boolean", "null"] },
             "userCanCreateOrganizations": { "type": ["boolean", "null"] },
+            "blockDisposableEmails": { "type": ["boolean", "null"] },
+            "blockEmailAliases": { "type": ["boolean", "null"] },
+            "blockedEmailDomains": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+            "allowedEmailDomains": { "type": "array", "items": { "type": "string", "minLength": 1 } },
             "createDemoForInitialUser": { "type": ["boolean", "null"] },
             "ssoOrganizations": {
               "type": "object",
@@ -416,6 +420,13 @@
             "useRedis": { "type": ["boolean", "null"] }
           }
         },
+        "webhook": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allowLocalAddresses": { "type": ["boolean", "null"] }
+          }
+        },
         "config": {
           "type": "object",
           "additionalProperties": { "type": ["string", "number", "boolean"] }
@@ -439,7 +450,7 @@
         },
         "envFrom": { "type": "array", "items": { "type": "object" } }
       },
-      "required": ["authentication", "smtp", "fileStorage", "telemetry", "cache", "websocket", "config", "secretConfig", "extraEnv", "envFrom"]
+      "required": ["authentication", "smtp", "fileStorage", "telemetry", "cache", "websocket", "webhook", "config", "secretConfig", "extraEnv", "envFrom"]
     },
     "livenessProbe": {
       "type": "object",

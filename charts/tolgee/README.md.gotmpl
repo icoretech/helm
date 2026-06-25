@@ -132,6 +132,14 @@ Use the built-in `*Ref` fields when you want chart-managed env wiring without st
 
 Tolgee rejects loopback, private, link-local, multicast, and wildcard SSO provider URLs by default. Set `tolgee.authentication.ssoOrganizations.allowLocalAddresses=true` only when a self-hosted per-organization SSO provider intentionally lives on a trusted internal network.
 
+## Webhook Internal URLs
+
+Tolgee rejects loopback, private, link-local, multicast, and wildcard webhook target URLs by default. Set `tolgee.webhook.allowLocalAddresses=true` only for local development or when webhook targets intentionally live on a trusted internal network; this weakens SSRF protection for users who can configure webhooks.
+
+## Registration Email Controls
+
+Tolgee blocks disposable email domains and duplicate subaddress aliases for new registrations by default. Use `tolgee.authentication.blockDisposableEmails`, `tolgee.authentication.blockEmailAliases`, `tolgee.authentication.blockedEmailDomains`, and `tolgee.authentication.allowedEmailDomains` only when the deployment needs to override those defaults.
+
 ## Gateway API HTTPRoute Example
 
 ```yaml

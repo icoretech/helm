@@ -1,0 +1,20 @@
+suite: webhook config
+templates:
+  - deployment.yaml
+tests:
+  - it: leaves webhook local-address override unset by default
+    values:
+      - values/valid-minimal.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_WEBHOOK_ALLOW_LOCAL_ADDRESSES")]
+
+  - it: renders webhook local-address override when enabled
+    values:
+      - values/valid-minimal.yaml
+    set:
+      tolgee.webhook.allowLocalAddresses: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_WEBHOOK_ALLOW_LOCAL_ADDRESSES")].value
+          value: "true"
