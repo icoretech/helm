@@ -1,0 +1,4 @@
+backend:
+  extraEnv:
+    - name: MULTICA_FEATURE_FLAGS_FILE
+      value: /tmp/flags.yaml

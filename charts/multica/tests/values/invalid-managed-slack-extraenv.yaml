@@ -1,0 +1,4 @@
+backend:
+  extraEnv:
+    - name: MULTICA_SLACK_SECRET_KEY
+      value: secret

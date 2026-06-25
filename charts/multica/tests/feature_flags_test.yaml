@@ -1,0 +1,81 @@
+suite: feature flag wiring
+templates:
+  - backend-deployment.yaml
+  - feature-flags-configmap.yaml
+tests:
+  - it: leaves feature flag file unset by default
+    template: backend-deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_FEATURE_FLAGS_FILE")]
+      - notExists:
+          path: spec.template.spec.containers[0].volumeMounts[?(@.name=="feature-flags")]
+      - notExists:
+          path: spec.template.spec.volumes[?(@.name=="feature-flags")]
+
+  - it: mounts inline feature flag rules into the backend
+    template: backend-deployment.yaml
+    set:
+      backend.featureFlags.rules.runtime_brief_slim.default: true
+      backend.featureFlags.rules.checkout_algo.variant: experiment-v2
+      backend.featureFlags.rules.checkout_algo.percent.percent: 25
+      backend.featureFlags.rules.checkout_algo.percent.by: user_id
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_FEATURE_FLAGS_FILE")].value
+          value: /etc/multica/feature-flags.yaml
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[?(@.name=="feature-flags")].mountPath
+          value: /etc/multica/feature-flags.yaml
+      - equal:
+          path: spec.template.spec.volumes[?(@.name=="feature-flags")].configMap.name
+          value: RELEASE-NAME-multica-feature-flags
+
+  - it: renders inline feature flag rules into a ConfigMap
+    template: feature-flags-configmap.yaml
+    set:
+      backend.featureFlags.rules.runtime_brief_slim.default: true
+      backend.featureFlags.rules.checkout_algo.variant: experiment-v2
+      backend.featureFlags.rules.checkout_algo.percent.percent: 25
+      backend.featureFlags.rules.checkout_algo.percent.by: user_id
+    asserts:
+      - matchRegex:
+          path: data["feature-flags.yaml"]
+          pattern: "runtime_brief_slim:\\n\\s+default: true"
+      - matchRegex:
+          path: data["feature-flags.yaml"]
+          pattern: "checkout_algo:\\n\\s+percent:\\n\\s+by: user_id\\n\\s+percent: 25\\n\\s+variant: experiment-v2"
+
+  - it: mounts an existing feature flag ConfigMap
+    template: backend-deployment.yaml
+    values:
+      - values/valid-feature-flags-existing-configmap.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_FEATURE_FLAGS_FILE")].value
+          value: /etc/multica/flags.yaml
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[?(@.name=="feature-flags")].subPath
+          value: flags.yaml
+      - equal:
+          path: spec.template.spec.volumes[?(@.name=="feature-flags")].configMap.name
+          value: multica-feature-flags
+      - equal:
+          path: spec.template.spec.volumes[?(@.name=="feature-flags")].configMap.items[0].key
+          value: flags.yaml
+
+  - it: rejects feature flag inline and existing ConfigMap sources together
+    template: backend-deployment.yaml
+    values:
+      - values/invalid-feature-flags-both-sources.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.featureFlags.rules and backend.featureFlags.existingConfigMap.name cannot both be set"
+
+  - it: rejects managed feature flag file overrides through extraEnv
+    template: backend-deployment.yaml
+    values:
+      - values/invalid-managed-feature-flags-extraenv.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=MULTICA_FEATURE_FLAGS_FILE is managed by the chart; use the dedicated value instead"

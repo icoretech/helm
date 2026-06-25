@@ -20,6 +20,7 @@ spec:
     metadata:
       annotations:
         checksum/secret-refs: {{ include "multica.backendSecretChecksumInput" . | sha256sum }}
+        checksum/feature-flags: {{ include "multica.featureFlagsChecksumInput" . | sha256sum }}
         {{- with .Values.backend.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -375,6 +376,27 @@ spec:
               value: {{ .Values.backend.lark.registrationLarkDomain | quote }}
             {{- end }}
             {{- $_ := set $managed "MULTICA_LARK_REGISTRATION_LARK_DOMAIN" true }}
+            {{- if .Values.backend.lark.wsProxyUrl }}
+            - name: MULTICA_LARK_WS_PROXY_URL
+              value: {{ .Values.backend.lark.wsProxyUrl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_LARK_WS_PROXY_URL" true }}
+            {{- if .Values.backend.slack.secretKeyRef.name }}
+            - name: MULTICA_SLACK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.slack.secretKeyRef.name | quote }}
+                  key: {{ required "multica: backend.slack.secretKeyRef.key is required when backend.slack.secretKeyRef.name is set" .Values.backend.slack.secretKeyRef.key | quote }}
+            {{- else if .Values.backend.slack.secretKey }}
+            - name: MULTICA_SLACK_SECRET_KEY
+              value: {{ .Values.backend.slack.secretKey | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_SLACK_SECRET_KEY" true }}
+            {{- if or .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name }}
+            - name: MULTICA_FEATURE_FLAGS_FILE
+              value: {{ .Values.backend.featureFlags.mountPath | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_FEATURE_FLAGS_FILE" true }}
             {{- if .Values.backend.usageRollups.dailyEnabled }}
             - name: USAGE_DAILY_ROLLUP_ENABLED
               value: {{ printf "%v" .Values.backend.usageRollups.dailyEnabled | quote }}
@@ -486,22 +508,36 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.backend.resources | nindent 12 }}
-          {{- if or .Values.storage.local.persistence.enabled .Values.backend.volumeMounts }}
+          {{- if or .Values.storage.local.persistence.enabled .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name .Values.backend.volumeMounts }}
           volumeMounts:
             {{- if .Values.storage.local.persistence.enabled }}
             - name: uploads
               mountPath: {{ .Values.storage.local.uploadDir | quote }}
             {{- end }}
+            {{- if or .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name }}
+            - name: feature-flags
+              mountPath: {{ .Values.backend.featureFlags.mountPath | quote }}
+              subPath: {{ include "multica.featureFlagsConfigMapKey" . | quote }}
+              readOnly: true
+            {{- end }}
             {{- with .Values.backend.volumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- end }}
-      {{- if or .Values.storage.local.persistence.enabled .Values.backend.volumes }}
+      {{- if or .Values.storage.local.persistence.enabled .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name .Values.backend.volumes }}
       volumes:
         {{- if .Values.storage.local.persistence.enabled }}
         - name: uploads
           persistentVolumeClaim:
             claimName: {{ include "multica.uploadsClaimName" . }}
+        {{- end }}
+        {{- if or .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name }}
+        - name: feature-flags
+          configMap:
+            name: {{ include "multica.featureFlagsConfigMapSourceName" . | quote }}
+            items:
+              - key: {{ include "multica.featureFlagsConfigMapKey" . | quote }}
+                path: {{ include "multica.featureFlagsConfigMapKey" . | quote }}
         {{- end }}
         {{- with .Values.backend.volumes }}
         {{- toYaml . | nindent 8 }}

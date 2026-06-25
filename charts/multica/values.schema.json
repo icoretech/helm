@@ -400,7 +400,16 @@
             "httpBaseUrl": { "type": "string" },
             "callbackBaseUrl": { "type": "string" },
             "registrationDomain": { "type": "string" },
-            "registrationLarkDomain": { "type": "string" }
+            "registrationLarkDomain": { "type": "string" },
+            "wsProxyUrl": { "type": "string" }
+          }
+        },
+        "slack": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "secretKey": { "type": "string" },
+            "secretKeyRef": { "$ref": "#/definitions/secretRef" }
           }
         },
         "usageRollups": {
@@ -409,6 +418,22 @@
           "properties": {
             "dailyEnabled": { "type": "boolean" },
             "dashboardEnabled": { "type": "boolean" }
+          }
+        },
+        "featureFlags": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "rules": { "type": "object" },
+            "existingConfigMap": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "key": { "type": "string" }
+              }
+            },
+            "mountPath": { "type": "string" }
           }
         },
         "extraEnv": { "$ref": "#/definitions/envList" },

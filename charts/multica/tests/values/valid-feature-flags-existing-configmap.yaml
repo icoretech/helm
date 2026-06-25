@@ -1,0 +1,6 @@
+backend:
+  featureFlags:
+    existingConfigMap:
+      name: multica-feature-flags
+      key: flags.yaml
+    mountPath: /etc/multica/flags.yaml

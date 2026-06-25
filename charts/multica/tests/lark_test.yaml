@@ -19,6 +19,7 @@ tests:
       backend.lark.callbackBaseUrl: https://open.larksuite.com
       backend.lark.registrationDomain: https://accounts.feishu.cn
       backend.lark.registrationLarkDomain: https://accounts.larksuite.com
+      backend.lark.wsProxyUrl: http://proxy.example.com:8080
     asserts:
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_PUBLIC_URL")].value
@@ -38,6 +39,9 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_LARK_REGISTRATION_LARK_DOMAIN")].value
           value: https://accounts.larksuite.com
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_LARK_WS_PROXY_URL")].value
+          value: http://proxy.example.com:8080
 
   - it: uses Lark secret refs when provided
     values:
@@ -63,3 +67,10 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: "multica: backend.extraEnv[0].name=MULTICA_LARK_SECRET_KEY is managed by the chart; use the dedicated value instead"
+
+  - it: rejects managed Lark WebSocket proxy overrides through extraEnv
+    values:
+      - values/invalid-managed-lark-ws-proxy-extraenv.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=MULTICA_LARK_WS_PROXY_URL is managed by the chart; use the dedicated value instead"

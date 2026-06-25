@@ -63,6 +63,29 @@ app.kubernetes.io/component: {{ .component }}
 {{- include "multica.fullname" . }}
 {{- end }}
 
+{{/* Feature flag ConfigMap name. */}}
+{{- define "multica.featureFlagsConfigMapName" -}}
+{{- printf "%s-feature-flags" (include "multica.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/* Feature flag ConfigMap key. */}}
+{{- define "multica.featureFlagsConfigMapKey" -}}
+{{- if .Values.backend.featureFlags.existingConfigMap.name -}}
+{{- .Values.backend.featureFlags.existingConfigMap.key -}}
+{{- else -}}
+feature-flags.yaml
+{{- end -}}
+{{- end }}
+
+{{/* Feature flag ConfigMap source name. */}}
+{{- define "multica.featureFlagsConfigMapSourceName" -}}
+{{- if .Values.backend.featureFlags.existingConfigMap.name -}}
+{{- .Values.backend.featureFlags.existingConfigMap.name -}}
+{{- else -}}
+{{- include "multica.featureFlagsConfigMapName" . -}}
+{{- end -}}
+{{- end }}
+
 {{/* Upload PVC name. */}}
 {{- define "multica.uploadsClaimName" -}}
 {{- if .Values.storage.local.persistence.existingClaim }}
@@ -169,6 +192,7 @@ app.kubernetes.io/component: {{ .component }}
 {{- with .Values.backend.github.webhookSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.github.appPrivateKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.lark.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.slack.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.storage.s3.accessKeyIdRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.storage.s3.secretAccessKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.storage.s3.cloudfrontPrivateKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
@@ -183,6 +207,25 @@ app.kubernetes.io/component: {{ .component }}
     {}
     {{- end }}
 {{- end }}
+{{- end }}
+
+{{- define "multica.featureFlagsChecksumInput" -}}
+rules:
+  {{- toYaml .Values.backend.featureFlags.rules | nindent 2 }}
+existingConfigMap:
+  name: {{ .Values.backend.featureFlags.existingConfigMap.name | quote }}
+  key: {{ .Values.backend.featureFlags.existingConfigMap.key | quote }}
+  data:
+    {{- if .Values.backend.featureFlags.existingConfigMap.name }}
+    {{- $cm := lookup "v1" "ConfigMap" .Release.Namespace .Values.backend.featureFlags.existingConfigMap.name }}
+    {{- if $cm }}
+    {{- toYaml $cm.data | nindent 4 }}
+    {{- else }}
+    {}
+    {{- end }}
+    {{- else }}
+    {}
+    {{- end }}
 {{- end }}
 
 {{/* Validate cross-field chart contracts. */}}
@@ -234,6 +277,18 @@ app.kubernetes.io/component: {{ .component }}
 {{- end -}}
 {{- if and .Values.backend.lark.secretKeyRef.name (not .Values.backend.lark.secretKeyRef.key) -}}
 {{- fail "multica: backend.lark.secretKeyRef.key is required when backend.lark.secretKeyRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.slack.secretKeyRef.name (not .Values.backend.slack.secretKeyRef.key) -}}
+{{- fail "multica: backend.slack.secretKeyRef.key is required when backend.slack.secretKeyRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name -}}
+{{- fail "multica: backend.featureFlags.rules and backend.featureFlags.existingConfigMap.name cannot both be set" -}}
+{{- end -}}
+{{- if and .Values.backend.featureFlags.existingConfigMap.name (not .Values.backend.featureFlags.existingConfigMap.key) -}}
+{{- fail "multica: backend.featureFlags.existingConfigMap.key is required when backend.featureFlags.existingConfigMap.name is set" -}}
+{{- end -}}
+{{- if and (or .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name) (not .Values.backend.featureFlags.mountPath) -}}
+{{- fail "multica: backend.featureFlags.mountPath is required when feature flags are configured" -}}
 {{- end -}}
 {{- if and .Values.redis.enabled (not .Values.realtime.redisUrl) (not .Values.realtime.redisUrlRef.name) .Values.redis.auth.enabled (or .Values.redis.auth.existingSecret .Values.redis.auth.acl.enabled) -}}
 {{- fail "multica: realtime.redisUrl or realtime.redisUrlRef is required when redis.enabled=true with redis.auth.existingSecret or redis.auth.acl.enabled" -}}

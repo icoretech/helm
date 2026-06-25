@@ -254,12 +254,34 @@ backend:
     registrationDomain: ""
     # -- Optional Lark international device-flow registration host override.
     registrationLarkDomain: ""
+    # -- Optional fixed HTTP CONNECT proxy URL for Lark/Feishu WebSocket long-connection handshakes.
+    wsProxyUrl: ""
+
+  slack:
+    # -- Base64-encoded 32-byte key enabling Slack integration and encrypting Slack app/bot tokens at rest. Prefer secretKeyRef in production.
+    secretKey: ""
+    secretKeyRef:
+      # -- Existing secret containing MULTICA_SLACK_SECRET_KEY.
+      name: ""
+      # -- Secret key for MULTICA_SLACK_SECRET_KEY.
+      key: ""
 
   usageRollups:
     # -- Enable runtime usage reads from the daily rollup table after external backfill/scheduler setup is complete.
     dailyEnabled: false
     # -- Enable dashboard usage reads from the dashboard rollup table after external backfill/scheduler setup is complete.
     dashboardEnabled: false
+
+  featureFlags:
+    # -- Inline Multica feature flag rules rendered to a ConfigMap and loaded from MULTICA_FEATURE_FLAGS_FILE. Leave empty to use upstream defaults plus any FF_* env overrides.
+    rules: {}
+    existingConfigMap:
+      # -- Existing ConfigMap containing the feature flag YAML file.
+      name: ""
+      # -- ConfigMap key containing feature flag YAML.
+      key: feature-flags.yaml
+    # -- Absolute file path mounted into the backend container and exported as MULTICA_FEATURE_FLAGS_FILE.
+    mountPath: /etc/multica/feature-flags.yaml
 
   # -- Extra backend env vars. Managed env names are rejected to avoid silent overrides.
   extraEnv: []

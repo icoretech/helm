@@ -1,0 +1,41 @@
+suite: slack integration wiring
+templates:
+  - backend-deployment.yaml
+tests:
+  - it: leaves Slack env unset by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_SLACK_SECRET_KEY")]
+
+  - it: renders Slack inline secret key
+    set:
+      backend.slack.secretKey: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_SLACK_SECRET_KEY")].value
+          value: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+
+  - it: uses Slack secret refs when provided
+    values:
+      - values/valid-secret-refs.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_SLACK_SECRET_KEY")].valueFrom.secretKeyRef.name
+          value: multica-slack
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_SLACK_SECRET_KEY")].valueFrom.secretKeyRef.key
+          value: MULTICA_SLACK_SECRET_KEY
+
+  - it: rejects Slack secret refs without a key
+    values:
+      - values/invalid-slack-secret-ref-missing-key.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.slack.secretKeyRef.key is required when backend.slack.secretKeyRef.name is set"
+
+  - it: rejects managed Slack env overrides through extraEnv
+    values:
+      - values/invalid-managed-slack-extraenv.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.extraEnv[0].name=MULTICA_SLACK_SECRET_KEY is managed by the chart; use the dedicated value instead"

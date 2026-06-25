@@ -1,0 +1,8 @@
+backend:
+  featureFlags:
+    rules:
+      runtime_brief_slim:
+        default: true
+    existingConfigMap:
+      name: multica-feature-flags
+      key: feature-flags.yaml

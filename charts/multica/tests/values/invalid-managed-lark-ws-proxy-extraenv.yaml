@@ -1,0 +1,4 @@
+backend:
+  extraEnv:
+    - name: MULTICA_LARK_WS_PROXY_URL
+      value: http://proxy.example.com:8080
