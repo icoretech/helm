@@ -162,6 +162,7 @@
               "additionalProperties": false,
               "properties": {
                 "enabled": { "type": "boolean" },
+                "drainTimeoutSeconds": { "type": "integer", "minimum": 1 },
                 "sleepSeconds": { "type": "integer", "minimum": 0 }
               }
             }

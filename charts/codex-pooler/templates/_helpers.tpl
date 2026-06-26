@@ -132,6 +132,15 @@ codex-pooler.icoretech.io/cluster-member: "true"
 {{- end }}
 {{- end -}}
 
+{{- define "codex-pooler.appLocalRpcEnv" -}}
+{{- if not (and .Values.clustering.enabled .Values.clustering.participants.app) }}
+- name: RELEASE_DISTRIBUTION
+  value: sname
+- name: RELEASE_NODE
+  value: codex_pooler
+{{- end }}
+{{- end -}}
+
 {{- define "codex-pooler.appReplicaCountAtLeastTwo" -}}
 {{- if and .Values.app.enabled (ge (int .Values.app.replicaCount) 2) -}}true{{- end -}}
 {{- end -}}
@@ -155,6 +164,18 @@ codex-pooler.icoretech.io/cluster-member: "true"
 {{- end -}}
 {{- if and $ownerForwardingEnabled (not .Values.clustering.participants.app) -}}
 {{- fail "websocket owner forwarding requires clustering.participants.app=true; worker or scheduler clustering cannot satisfy websocket owner forwarding" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "codex-pooler.validateAppLifecycleBudget" -}}
+{{- if and .Values.app.enabled .Values.app.lifecycle.preStop.enabled -}}
+{{- $drainTimeoutSeconds := int .Values.app.lifecycle.preStop.drainTimeoutSeconds -}}
+{{- $sleepSeconds := int .Values.app.lifecycle.preStop.sleepSeconds -}}
+{{- $terminationGracePeriodSeconds := int .Values.app.terminationGracePeriodSeconds -}}
+{{- $availableSeconds := sub $terminationGracePeriodSeconds 5 -}}
+{{- if gt (add $drainTimeoutSeconds $sleepSeconds) $availableSeconds -}}
+{{- fail (printf "invalid app lifecycle preStop budget: drainTimeoutSeconds (%d) + sleepSeconds (%d) must be <= terminationGracePeriodSeconds (%d) - 5" $drainTimeoutSeconds $sleepSeconds $terminationGracePeriodSeconds) -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 

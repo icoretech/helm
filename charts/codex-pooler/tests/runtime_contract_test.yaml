@@ -24,28 +24,28 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/icoretech/codex-pooler:0.1.1
+          value: ghcr.io/icoretech/codex-pooler:0.4.2
 
   - it: defaults the worker image tag to chart appVersion instead of latest
     template: oban-worker-deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/icoretech/codex-pooler:0.1.1
+          value: ghcr.io/icoretech/codex-pooler:0.4.2
 
   - it: defaults the scheduler image tag to chart appVersion instead of latest
     template: oban-scheduler-deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/icoretech/codex-pooler:0.1.1
+          value: ghcr.io/icoretech/codex-pooler:0.4.2
 
   - it: defaults the migration image tag to chart appVersion instead of latest
     template: migration-job.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/icoretech/codex-pooler:0.1.1
+          value: ghcr.io/icoretech/codex-pooler:0.4.2
 
   - it: allows overriding the runtime image tag explicitly
     template: app-deployment.yaml
@@ -81,6 +81,17 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_DRAIN_MARKER_PATH")].value
           value: /tmp/codex-pooler-draining
       - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_DRAIN_TIMEOUT_MS")].value
+          value: "50000"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="RELEASE_DISTRIBUTION")].value
+          value: sname
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="RELEASE_NODE")].value
+          value: codex_pooler
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="DNS_CLUSTER_QUERY")]
+      - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.path
           value: /readyz
       - equal:
@@ -96,8 +107,18 @@ tests:
           path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
           value:
             - /bin/sh
-            - -c
-            - touch "$CODEX_POOLER_DRAIN_MARKER_PATH"; sleep 10
+            - -ec
+            - touch "$CODEX_POOLER_DRAIN_MARKER_PATH"; timeout 50s /app/bin/codex_pooler rpc "CodexPooler.Gateway.Transports.Websocket.RolloutDrain.drain_for_shutdown()" || true; sleep 10
+
+  - it: rejects app preStop budgets without the 5 second shutdown margin
+    template: app-deployment.yaml
+    set:
+      app.lifecycle.preStop.drainTimeoutSeconds: 70
+      app.lifecycle.preStop.sleepSeconds: 10
+      app.terminationGracePeriodSeconds: 75
+    asserts:
+      - failedTemplate:
+          errorMessage: "invalid app lifecycle preStop budget: drainTimeoutSeconds (70) + sleepSeconds (10) must be <= terminationGracePeriodSeconds (75) - 5"
 
   - it: merges global and app pod annotations on app pods
     template: app-deployment.yaml

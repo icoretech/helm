@@ -98,6 +98,9 @@ app:
   lifecycle:
     preStop:
       enabled: true
+      # -- Maximum seconds to wait for the websocket rollout drain RPC before continuing pod shutdown.
+      drainTimeoutSeconds: 50
+      # -- Seconds to keep the pod unready after the drain marker/RPC before Kubernetes sends SIGTERM.
       sleepSeconds: 10
   podDisruptionBudget:
     enabled: true

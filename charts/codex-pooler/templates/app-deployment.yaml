@@ -1,4 +1,5 @@
 {{- include "codex-pooler.validateWebsocketTopology" . }}
+{{- include "codex-pooler.validateAppLifecycleBudget" . }}
 {{- if .Values.app.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -61,7 +62,10 @@ spec:
               value: web
             - name: CODEX_POOLER_DRAIN_MARKER_PATH
               value: {{ .Values.app.drainMarkerPath | quote }}
+            - name: CODEX_POOLER_WEBSOCKET_DRAIN_TIMEOUT_MS
+              value: {{ mul (int .Values.app.lifecycle.preStop.drainTimeoutSeconds) 1000 | quote }}
             {{- include "codex-pooler.clusteringEnv" (dict "root" . "role" "app") | nindent 12 }}
+            {{- include "codex-pooler.appLocalRpcEnv" . | nindent 12 }}
             {{- include "codex-pooler.websocketOwnerForwardingEnv" . | nindent 12 }}
             {{- include "codex-pooler.env" . | nindent 12 }}
           readinessProbe:
@@ -96,10 +100,15 @@ spec:
             timeoutSeconds: {{ .Values.app.startupProbe.timeoutSeconds }}
           {{- end }}
           {{- if .Values.app.lifecycle.preStop.enabled }}
+          {{- $preStopDrainTimeoutSeconds := int .Values.app.lifecycle.preStop.drainTimeoutSeconds }}
+          {{- $preStopSleepSeconds := int .Values.app.lifecycle.preStop.sleepSeconds }}
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "touch \"$CODEX_POOLER_DRAIN_MARKER_PATH\"; sleep {{ .Values.app.lifecycle.preStop.sleepSeconds }}"]
+                command:
+                  - /bin/sh
+                  - -ec
+                  - touch "$CODEX_POOLER_DRAIN_MARKER_PATH"; timeout {{ $preStopDrainTimeoutSeconds }}s /app/bin/codex_pooler rpc "CodexPooler.Gateway.Transports.Websocket.RolloutDrain.drain_for_shutdown()" || true; sleep {{ $preStopSleepSeconds }}
           {{- end }}
           resources:
             {{- toYaml .Values.app.resources | nindent 12 }}
