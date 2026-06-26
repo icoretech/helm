@@ -54,7 +54,7 @@ config:
 image:
   browser: firefox
   # repository: ghcr.io/browserless/firefox # optional explicit override
-  # tag: v2.42.0                           # optional override
+  # tag: v2.54.1                           # optional override
 ```
 
 ## Flux Example
@@ -106,13 +106,16 @@ spec:
 | autoscaling.minReplicas | int | `1` | Minimum replicas. |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` | Target CPU utilization percentage. |
 | autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Target memory utilization percentage. |
-| config | object | `{"allowFileProtocol":null,"allowGet":null,"concurrent":4,"corsAllowMethods":null,"corsAllowOrigin":null,"corsMaxAge":null,"dataDir":null,"debug":"-*","downloadDir":null,"enableCors":null,"errorAlertUrl":null,"external":null,"host":"0.0.0.0","maxCpuPercent":null,"maxMemoryPercent":null,"metricsJsonPath":null,"port":3000,"queued":10,"timeout":600000,"token":"change-me","tokenSecretRef":null}` | Browserless configuration mapped to environment variables. |
+| config | object | `{"allowFileProtocol":null,"allowGet":null,"concurrent":4,"corsAllowMethods":null,"corsAllowOrigin":null,"corsMaxAge":null,"cpuEmaAlpha":null,"cpuOverloadHysteresis":null,"cpuSampleIntervalMs":null,"dataDir":null,"debug":"-*","downloadDir":null,"enableCors":null,"errorAlertUrl":null,"external":null,"host":"0.0.0.0","machineStatsSource":null,"maxCpuPercent":null,"maxMemoryPercent":null,"metricsJsonPath":null,"port":3000,"queued":10,"timeout":600000,"token":"change-me","tokenSecretRef":null}` | Browserless configuration mapped to environment variables. |
 | config.allowFileProtocol | string | `nil` | Allow file:// protocol. |
 | config.allowGet | string | `nil` | Allow GET requests. |
 | config.concurrent | int | `4` | Max concurrent sessions. |
 | config.corsAllowMethods | string | `nil` | CORS allowed methods. |
 | config.corsAllowOrigin | string | `nil` | CORS allowed origins. |
 | config.corsMaxAge | string | `nil` | CORS max age (seconds). |
+| config.cpuEmaAlpha | string | `nil` | CPU exponential moving average alpha for overload smoothing. |
+| config.cpuOverloadHysteresis | string | `nil` | CPU overload hysteresis in percentage points. |
+| config.cpuSampleIntervalMs | string | `nil` | CPU sampler interval in milliseconds for overload smoothing. |
 | config.dataDir | string | `nil` | Data directory path. |
 | config.debug | string | `"-*"` | Debug selector (e.g. "-*" to reduce logs). |
 | config.downloadDir | string | `nil` | Download directory path. |
@@ -120,6 +123,7 @@ spec:
 | config.errorAlertUrl | string | `nil` | Callback URL for Browserless runtime errors. |
 | config.external | string | `nil` | Example: https://browserless.example.com |
 | config.host | string | `"0.0.0.0"` | Bind host. |
+| config.machineStatsSource | string | `nil` | Machine stats source for overload checks (`auto`, `host`, or `cgroup`). |
 | config.maxCpuPercent | string | `nil` | Overload protection CPU threshold percentage. |
 | config.maxMemoryPercent | string | `nil` | Overload protection memory threshold percentage. |
 | config.metricsJsonPath | string | `nil` | Metrics JSON path. |
