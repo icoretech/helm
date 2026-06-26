@@ -21,7 +21,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.2.0 \
+  --version 0.5.3 \
   --values values.production.yaml
 ```
 
@@ -30,19 +30,8 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.2.0 \
+  --version 0.5.3 \
   --values values.production.yaml
-```
-
-## Image
-
-The application image is published at `ghcr.io/icoretech/codex-pooler`. When `image.tag` is empty, the chart uses `appVersion`.
-
-```yaml
-image:
-  repository: ghcr.io/icoretech/codex-pooler
-  tag: 0.1.1
-  pullPolicy: IfNotPresent
 ```
 
 ## Required Secret
@@ -115,15 +104,12 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.2.0"
+      version: "0.5.3"
       sourceRef:
         kind: HelmRepository
         name: icoretech
         namespace: flux-system
   values:
-    image:
-      repository: ghcr.io/icoretech/codex-pooler
-      tag: "0.1.1"
     config:
       host: codex-pooler.example.com
     ingress:
@@ -147,8 +133,9 @@ spec:
 | app.affinity | object | `{}` |  |
 | app.drainMarkerPath | string | `"/tmp/codex-pooler-draining"` |  |
 | app.enabled | bool | `true` |  |
+| app.lifecycle.preStop.drainTimeoutSeconds | int | `50` | Maximum seconds to wait for the websocket rollout drain RPC before continuing pod shutdown. |
 | app.lifecycle.preStop.enabled | bool | `true` |  |
-| app.lifecycle.preStop.sleepSeconds | int | `10` |  |
+| app.lifecycle.preStop.sleepSeconds | int | `10` | Seconds to keep the pod unready after the drain marker/RPC before Kubernetes sends SIGTERM. |
 | app.nodeSelector | object | `{}` |  |
 | app.podAnnotations | object | `{}` |  |
 | app.podDisruptionBudget.enabled | bool | `true` |  |
