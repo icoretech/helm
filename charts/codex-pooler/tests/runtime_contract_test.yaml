@@ -24,28 +24,28 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/icoretech/codex-pooler:0.4.2
+          value: ghcr.io/icoretech/codex-pooler:0.4.4
 
   - it: defaults the worker image tag to chart appVersion instead of latest
     template: oban-worker-deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/icoretech/codex-pooler:0.4.2
+          value: ghcr.io/icoretech/codex-pooler:0.4.4
 
   - it: defaults the scheduler image tag to chart appVersion instead of latest
     template: oban-scheduler-deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/icoretech/codex-pooler:0.4.2
+          value: ghcr.io/icoretech/codex-pooler:0.4.4
 
   - it: defaults the migration image tag to chart appVersion instead of latest
     template: migration-job.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/icoretech/codex-pooler:0.4.2
+          value: ghcr.io/icoretech/codex-pooler:0.4.4
 
   - it: allows overriding the runtime image tag explicitly
     template: app-deployment.yaml
