@@ -1,0 +1,4 @@
+app:
+  lifecycle:
+    preStop:
+      drainTimeoutSeconds: 0

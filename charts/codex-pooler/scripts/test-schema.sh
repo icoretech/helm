@@ -39,11 +39,29 @@ echo "==> Invalid fixtures must fail"
 for f in \
   tests/values/invalid-image-pull-policy.yaml \
   tests/values/invalid-ingress-path-type.yaml \
+  tests/values/invalid-lifecycle-schema.yaml \
   tests/values/invalid-monitoring-bearer-secret.yaml \
   tests/values/invalid-secrets-create-missing-values.yaml \
   tests/values/invalid-unknown-top-level.yaml
   do
   expect_invalid "$f"
 done
+
+echo "==> preStop values remain shell-safe when schema validation is bypassed"
+adversarial_render="$(mktemp)"
+helm template adversarial . \
+  --skip-schema-validation \
+  --show-only templates/app-deployment.yaml \
+  --set-string 'app.lifecycle.preStop.drainTimeoutSeconds=1; touch /tmp/owned #' \
+  --set-string 'app.lifecycle.preStop.sleepSeconds=2; touch /tmp/sleep-owned #' \
+  >"$adversarial_render"
+
+if grep -E ';[[:space:]]*touch|touch /tmp/owned|touch /tmp/sleep-owned' "$adversarial_render" >/dev/null; then
+  echo "ERROR: adversarial preStop values rendered shell injection payload" >&2
+  cat "$adversarial_render" >&2
+  rm -f "$adversarial_render"
+  exit 1
+fi
+rm -f "$adversarial_render"
 
 echo "Schema tests passed."
