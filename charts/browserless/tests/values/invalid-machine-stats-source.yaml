@@ -1,0 +1,3 @@
+config:
+  token: changeme
+  machineStatsSource: container

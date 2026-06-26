@@ -1,0 +1,24 @@
+suite: monitoring env mapping
+templates:
+  - deployment.yaml
+tests:
+  - it: maps cgroup-aware overload tuning env vars
+    set:
+      config.token: changeme
+      config.machineStatsSource: cgroup
+      config.cpuSampleIntervalMs: 2500
+      config.cpuEmaAlpha: 0.5
+      config.cpuOverloadHysteresis: 15
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MACHINE_STATS_SOURCE")].value
+          value: cgroup
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CPU_SAMPLE_INTERVAL_MS")].value
+          value: "2500"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CPU_EMA_ALPHA")].value
+          value: "0.5"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="CPU_OVERLOAD_HYSTERESIS")].value
+          value: "15"

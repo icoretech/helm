@@ -1,0 +1,6 @@
+config:
+  token: changeme
+  machineStatsSource: cgroup
+  cpuSampleIntervalMs: 2500
+  cpuEmaAlpha: "0.5"
+  cpuOverloadHysteresis: 15

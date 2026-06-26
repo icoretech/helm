@@ -8,7 +8,7 @@ echo "==> Helm version"
 helm version --short
 
 echo "==> Lint/template with valid fixtures"
-for f in tests/values/valid-minimal.yaml tests/values/valid-secretref.yaml tests/values/valid-extraenv-token.yaml; do
+for f in tests/values/valid-minimal.yaml tests/values/valid-secretref.yaml tests/values/valid-extraenv-token.yaml tests/values/valid-monitoring.yaml; do
   echo "  - $f"
   helm lint . -f "$f" >/dev/null
   helm template test . -f "$f" >/dev/null
@@ -35,6 +35,8 @@ echo "==> Invalid fixtures must fail"
 for f in \
   tests/values/invalid-no-token.yaml \
   tests/values/invalid-browser.yaml \
+  tests/values/invalid-cpu-ema-alpha.yaml \
+  tests/values/invalid-machine-stats-source.yaml \
   tests/values/invalid-nodeport.yaml \
   tests/values/invalid-secretref-missing-key.yaml \
   tests/values/invalid-unknown-top-level.yaml \

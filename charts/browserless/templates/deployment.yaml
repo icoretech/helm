@@ -114,6 +114,26 @@ spec:
               value: {{ printf "%v" . | quote }}
             {{- $_ := set $configEnv "MAX_MEMORY_PERCENT" true }}
             {{- end }}
+            {{- if and (hasKey $config "machineStatsSource") (ne (index $config "machineStatsSource") nil) (ne (printf "%v" (index $config "machineStatsSource")) "") }}
+            - name: MACHINE_STATS_SOURCE
+              value: {{ printf "%v" (index $config "machineStatsSource") | quote }}
+            {{- $_ := set $configEnv "MACHINE_STATS_SOURCE" true }}
+            {{- end }}
+            {{- if and (hasKey $config "cpuSampleIntervalMs") (ne (index $config "cpuSampleIntervalMs") nil) }}
+            - name: CPU_SAMPLE_INTERVAL_MS
+              value: {{ printf "%v" (index $config "cpuSampleIntervalMs") | quote }}
+            {{- $_ := set $configEnv "CPU_SAMPLE_INTERVAL_MS" true }}
+            {{- end }}
+            {{- if and (hasKey $config "cpuEmaAlpha") (ne (index $config "cpuEmaAlpha") nil) }}
+            - name: CPU_EMA_ALPHA
+              value: {{ printf "%v" (index $config "cpuEmaAlpha") | quote }}
+            {{- $_ := set $configEnv "CPU_EMA_ALPHA" true }}
+            {{- end }}
+            {{- if and (hasKey $config "cpuOverloadHysteresis") (ne (index $config "cpuOverloadHysteresis") nil) }}
+            - name: CPU_OVERLOAD_HYSTERESIS
+              value: {{ printf "%v" (index $config "cpuOverloadHysteresis") | quote }}
+            {{- $_ := set $configEnv "CPU_OVERLOAD_HYSTERESIS" true }}
+            {{- end }}
             {{- with (index $config "allowFileProtocol") }}
             - name: ALLOW_FILE_PROTOCOL
               value: {{ printf "%v" . | quote }}

@@ -65,6 +65,31 @@
         "errorAlertUrl": { "type": ["string", "null"] },
         "maxCpuPercent": { "type": ["integer", "null"], "minimum": 1, "maximum": 100 },
         "maxMemoryPercent": { "type": ["integer", "null"], "minimum": 1, "maximum": 100 },
+        "machineStatsSource": {
+          "type": ["string", "null"],
+          "enum": ["auto", "host", "cgroup", null]
+        },
+        "cpuSampleIntervalMs": {
+          "anyOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "string", "pattern": "^[1-9][0-9]*$" },
+            { "type": "null" }
+          ]
+        },
+        "cpuEmaAlpha": {
+          "anyOf": [
+            { "type": "number", "minimum": 0, "maximum": 1 },
+            { "type": "string", "pattern": "^(0(\\.[0-9]+)?|1(\\.0+)?)$" },
+            { "type": "null" }
+          ]
+        },
+        "cpuOverloadHysteresis": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0, "maximum": 100 },
+            { "type": "string", "pattern": "^(100|[1-9]?[0-9])$" },
+            { "type": "null" }
+          ]
+        },
         "allowFileProtocol": { "type": ["boolean", "null"] },
         "allowGet": { "type": ["boolean", "null"] },
         "enableCors": { "type": ["boolean", "null"] },
