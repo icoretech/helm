@@ -2,8 +2,8 @@ apiVersion: v2
 name: codex-pooler
 description: Self-hosted gateway for sharing Codex account capacity across trusted agents and tools
 type: application
-version: 0.5.15
-appVersion: "0.4.17"
+version: 0.5.16
+appVersion: "0.4.18"
 kubeVersion: ">= 1.24.0-0"
 icon: https://icoretech.github.io/helm/charts/codex-pooler/logo.png
 keywords:
@@ -27,5 +27,5 @@ annotations:
     url: https://icoretech.github.io/helm/pgp-public-key.asc
   artifacthub.io/images: |
     - name: codex-pooler
-      image: ghcr.io/icoretech/codex-pooler:0.4.17
+      image: ghcr.io/icoretech/codex-pooler:0.4.18
   artifacthub.io/category: ai-machine-learning
