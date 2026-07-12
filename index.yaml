@@ -4926,6 +4926,42 @@ entries:
       artifacthub.io/category: ai-machine-learning
       artifacthub.io/images: |
         - name: codex-pooler
+          image: ghcr.io/icoretech/codex-pooler:0.4.25
+      artifacthub.io/license: Elastic-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 0.4.25
+    created: "2026-07-12T02:37:36.378606469Z"
+    description: Self-hosted gateway for sharing Codex account capacity across trusted
+      agents and tools
+    digest: ba5445865f4de1664725d688bbc7f2db674505f142f4d9deb17bc5438f5c2765
+    home: https://github.com/icoretech/codex-pooler
+    icon: https://icoretech.github.io/helm/charts/codex-pooler/logo.png
+    keywords:
+    - codex
+    - openai
+    - gateway
+    - pooler
+    - ai
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: codex-pooler
+    sources:
+    - https://github.com/icoretech/codex-pooler
+    - https://github.com/icoretech/helm/tree/main/charts/codex-pooler
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/codex-pooler-0.5.21/codex-pooler-0.5.21.tgz
+    version: 0.5.21
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/images: |
+        - name: codex-pooler
           image: ghcr.io/icoretech/codex-pooler:0.4.24
       artifacthub.io/license: Elastic-2.0
       artifacthub.io/signKey: |
@@ -16256,4 +16292,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-07-10T14:54:25.457537405Z"
+generated: "2026-07-12T02:37:36.379845591Z"
