@@ -114,7 +114,8 @@ app:
       memory: 512Mi
     limits:
       cpu: 1000m
-      memory: 768Mi
+      # -- Memory ceiling for the HTTP and long-lived WebSocket gateway process.
+      memory: 2Gi
   nodeSelector: {}
   tolerations: []
   affinity: {}
