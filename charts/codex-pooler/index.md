@@ -142,7 +142,7 @@ spec:
 | app.podDisruptionBudget.minAvailable | int | `1` |  |
 | app.replicaCount | int | `1` |  |
 | app.resources.limits.cpu | string | `"1000m"` |  |
-| app.resources.limits.memory | string | `"768Mi"` |  |
+| app.resources.limits.memory | string | `"2Gi"` | Memory ceiling for the HTTP and long-lived WebSocket gateway process. |
 | app.resources.requests.cpu | string | `"100m"` |  |
 | app.resources.requests.memory | string | `"512Mi"` |  |
 | app.service.port | int | `4000` |  |
