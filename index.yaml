@@ -4112,6 +4112,40 @@ entries:
         use Codex Pooler instead: https://icoretech.github.io/helm/charts/codex-pooler.'
       artifacthub.io/images: |
         - name: codex-lb
+          image: ghcr.io/soju06/codex-lb:1.21.0
+      artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.21.0
+    created: "2026-07-15T07:09:43.516663767Z"
+    deprecated: true
+    description: Codex LB – load balancer and account pool for ChatGPT / OpenAI proxying
+    digest: 3523f015440be1aa5158c50ab57573b7f9753e8ef42db931db12ce104f6666d4
+    home: https://github.com/icoretech/helm
+    keywords:
+    - codex
+    - codex-lb
+    - chatgpt
+    - openai
+    - load-balancer
+    - proxy
+    kubeVersion: '>= 1.24.0-0'
+    name: codex-lb
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/codex-lb
+    - https://github.com/Soju06/codex-lb
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/codex-lb-0.15.0/codex-lb-0.15.0.tgz
+    version: 0.15.0
+  - annotations:
+      artifacthub.io/deprecated: "true"
+      artifacthub.io/deprecationMessage: 'This Helm chart is deprecated. For new deployments,
+        use Codex Pooler instead: https://icoretech.github.io/helm/charts/codex-pooler.'
+      artifacthub.io/images: |
+        - name: codex-lb
           image: ghcr.io/soju06/codex-lb:1.20.1
       artifacthub.io/license: MIT
       artifacthub.io/signKey: |
@@ -16673,4 +16707,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-07-14T21:38:12.650206636Z"
+generated: "2026-07-15T07:09:43.517788738Z"
