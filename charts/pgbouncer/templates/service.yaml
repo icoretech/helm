@@ -14,6 +14,9 @@ spec:
   externalTrafficPolicy: {{ . }}
   {{- end }}
   internalTrafficPolicy: {{ .Values.service.internalTrafficPolicy | default "Cluster" }}
+  {{- with .Values.service.trafficDistribution }}
+  trafficDistribution: {{ . }}
+  {{- end }}
   ports:
     - port: {{ .Values.service.port }}
       {{- if .Values.service.nodePort }}

@@ -55,7 +55,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy: Always, IfNotPresent, or Never |
 | image.registry | string | `""` | Container image registry |
 | image.repository | string | `"ghcr.io/icoretech/pgbouncer-docker"` | Container image repository |
-| image.tag | string | `"1.25.1"` | Container image tag |
+| image.tag | string | `"1.25.2"` | Container image tag |
 | imagePullSecrets | list | `[]` | Array of imagePullSecrets to use for pulling private images. |
 | kind | string | `"Deployment"` | Resource type for PgBouncer (Deployment, DaemonSet). Defaults to Deployment. |
 | lifecycle | object | `{}` | See Kubernetes docs on lifecycle hooks. |
@@ -72,7 +72,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | pgbouncerExporter.image.pullPolicy | string | `"IfNotPresent"` | Exporter image pull policy |
 | pgbouncerExporter.image.registry | string | `""` | Exporter image registry |
 | pgbouncerExporter.image.repository | string | `"prometheuscommunity/pgbouncer-exporter"` | Exporter image repository |
-| pgbouncerExporter.image.tag | string | `"v0.12.0"` | Exporter image tag |
+| pgbouncerExporter.image.tag | string | `"v0.12.1"` | Exporter image tag |
 | pgbouncerExporter.imagePullSecrets | list | `[]` | Array of imagePullSecrets to use for pulling the pgbouncer-exporter image. |
 | pgbouncerExporter.log.format | string | `"logfmt"` | Exporter log format (logfmt or json) |
 | pgbouncerExporter.log.level | string | `"info"` | Exporter log level (debug, info, warn, error) |
@@ -99,6 +99,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | service.port | int | `5432` | The service port for PgBouncer. |
 | service.sessionAffinity | string | `"None"` | If "ClientIP", consecutive client requests will be directed to the same Pod |
 | service.sessionAffinityConfig | object | `{}` | sessionAffinityConfig Additional settings for the sessionAffinity sessionAffinityConfig:   clientIP:     timeoutSeconds: 180 |
+| service.trafficDistribution | string | `nil` | Traffic distribution preference for the Service (for example, PreferClose). Omitted when unset. |
 | service.type | string | `"ClusterIP"` | Service type (e.g. ClusterIP, NodePort, LoadBalancer). |
 | serviceAccount.annotations | object | `{}` | Annotations for the created ServiceAccount. |
 | serviceAccount.name | string | `""` | Creates a new ServiceAccount if this is empty. |

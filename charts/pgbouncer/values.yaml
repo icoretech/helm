@@ -62,6 +62,8 @@ service:
   externalTrafficPolicy:
   # -- Internal traffic policy for the Service (Cluster or Local).
   internalTrafficPolicy: Cluster
+  # -- Traffic distribution preference for the Service (for example, PreferClose). Omitted when unset.
+  trafficDistribution:
   # -- Session Affinity for Kubernetes service, can be "None" or "ClientIP"
   # -- If "ClientIP", consecutive client requests will be directed to the same Pod
   sessionAffinity: None
