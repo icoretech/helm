@@ -70,6 +70,8 @@ service:
   #   clientIP:
   #     timeoutSeconds: 180
   sessionAffinityConfig: {}
+  # -- Traffic distribution preference for the Service, e.g. "PreferClose" for topology-aware routing. Requires Kubernetes >= 1.31. Omitted when unset.
+  trafficDistribution:
 
 # -- Additional labels to add to each PgBouncer pod.
 podLabels: {}

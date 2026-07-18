@@ -99,6 +99,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | service.port | int | `5432` | The service port for PgBouncer. |
 | service.sessionAffinity | string | `"None"` | If "ClientIP", consecutive client requests will be directed to the same Pod |
 | service.sessionAffinityConfig | object | `{}` | sessionAffinityConfig Additional settings for the sessionAffinity sessionAffinityConfig:   clientIP:     timeoutSeconds: 180 |
+| service.trafficDistribution | string | `nil` | Traffic distribution preference for the Service, e.g. "PreferClose" for topology-aware routing. Requires Kubernetes >= 1.31. Omitted when unset. |
 | service.type | string | `"ClusterIP"` | Service type (e.g. ClusterIP, NodePort, LoadBalancer). |
 | serviceAccount.annotations | object | `{}` | Annotations for the created ServiceAccount. |
 | serviceAccount.name | string | `""` | Creates a new ServiceAccount if this is empty. |
