@@ -133,7 +133,7 @@ spec:
 | app.affinity | object | `{}` |  |
 | app.drainMarkerPath | string | `"/tmp/codex-pooler-draining"` |  |
 | app.enabled | bool | `true` |  |
-| app.lifecycle.preStop.drainTimeoutSeconds | int | `50` | Maximum seconds to wait for the websocket rollout drain RPC before continuing pod shutdown. |
+| app.lifecycle.preStop.drainTimeoutSeconds | int | `85` | Maximum seconds to wait for the websocket rollout drain RPC before continuing pod shutdown. The drain returns as soon as in-flight turns finish, so the budget is only consumed while a long turn is actually running; the default is sized so the effective wait (about 10 seconds under the budget) covers p99 in-flight turn durations instead of cutting at p95. |
 | app.lifecycle.preStop.enabled | bool | `true` |  |
 | app.lifecycle.preStop.sleepSeconds | int | `10` | Seconds to keep the pod unready after the drain marker/RPC before Kubernetes sends SIGTERM. |
 | app.nodeSelector | object | `{}` |  |
@@ -155,7 +155,7 @@ spec:
 | app.startupProbe.timeoutSeconds | int | `2` |  |
 | app.strategy.maxSurge | int | `1` |  |
 | app.strategy.maxUnavailable | int | `0` |  |
-| app.terminationGracePeriodSeconds | int | `75` |  |
+| app.terminationGracePeriodSeconds | int | `120` | Total shutdown budget. Formula: max(drainTimeoutSeconds + 2 seconds RPC allowance + sleepSeconds, 2 seconds RPC allowance + sleepSeconds + drainTimeoutSeconds for the full in-VM fallback) + 10 seconds endpoint shutdown + 5 seconds margin. |
 | app.tolerations | list | `[]` |  |
 | clustering.cookie.existingSecret | string | `""` |  |
 | clustering.cookie.existingSecretKey | string | `"release-cookie"` |  |
