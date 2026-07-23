@@ -172,9 +172,15 @@ codex-pooler.icoretech.io/cluster-member: "true"
 {{- $drainTimeoutSeconds := int .Values.app.lifecycle.preStop.drainTimeoutSeconds -}}
 {{- $sleepSeconds := int .Values.app.lifecycle.preStop.sleepSeconds -}}
 {{- $terminationGracePeriodSeconds := int .Values.app.terminationGracePeriodSeconds -}}
-{{- $availableSeconds := sub $terminationGracePeriodSeconds 5 -}}
-{{- if gt (add $drainTimeoutSeconds $sleepSeconds) $availableSeconds -}}
-{{- fail (printf "invalid app lifecycle preStop budget: drainTimeoutSeconds (%d) + sleepSeconds (%d) must be <= terminationGracePeriodSeconds (%d) - 5" $drainTimeoutSeconds $sleepSeconds $terminationGracePeriodSeconds) -}}
+{{- $rpcTimeoutAllowanceSeconds := 2 -}}
+{{- $endpointShutdownSeconds := 10 -}}
+{{- $shutdownMarginSeconds := 5 -}}
+{{- $preStopSeconds := add (add $drainTimeoutSeconds $rpcTimeoutAllowanceSeconds) $sleepSeconds -}}
+{{- $inVmFallbackSeconds := add (add $rpcTimeoutAllowanceSeconds $sleepSeconds) $drainTimeoutSeconds -}}
+{{- $drainAndSleepSeconds := max $preStopSeconds $inVmFallbackSeconds -}}
+{{- $requiredGraceSeconds := add (add $drainAndSleepSeconds $endpointShutdownSeconds) $shutdownMarginSeconds -}}
+{{- if lt $terminationGracePeriodSeconds $requiredGraceSeconds -}}
+{{- fail (printf "invalid app lifecycle preStop budget: terminationGracePeriodSeconds (%d) must be >= max(drainTimeoutSeconds (%d) + 2 + sleepSeconds (%d), 2 + sleepSeconds (%d) + drainTimeoutSeconds (%d)) + 10 endpoint shutdown + 5 margin = %d" $terminationGracePeriodSeconds $drainTimeoutSeconds $sleepSeconds $sleepSeconds $drainTimeoutSeconds $requiredGraceSeconds) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

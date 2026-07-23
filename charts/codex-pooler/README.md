@@ -150,7 +150,7 @@ spec:
 | app.startupProbe.timeoutSeconds | int | `2` |  |
 | app.strategy.maxSurge | int | `1` |  |
 | app.strategy.maxUnavailable | int | `0` |  |
-| app.terminationGracePeriodSeconds | int | `75` |  |
+| app.terminationGracePeriodSeconds | int | `90` | Total shutdown budget. Formula: max(drainTimeoutSeconds + 2 seconds RPC allowance + sleepSeconds, 2 seconds RPC allowance + sleepSeconds + drainTimeoutSeconds for the full in-VM fallback) + 10 seconds endpoint shutdown + 5 seconds margin. |
 | app.tolerations | list | `[]` |  |
 | clustering.cookie.existingSecret | string | `""` |  |
 | clustering.cookie.existingSecretKey | string | `"release-cookie"` |  |

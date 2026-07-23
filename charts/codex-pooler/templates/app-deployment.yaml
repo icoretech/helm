@@ -101,6 +101,7 @@ spec:
           {{- end }}
           {{- if .Values.app.lifecycle.preStop.enabled }}
           {{- $preStopDrainTimeoutSeconds := int .Values.app.lifecycle.preStop.drainTimeoutSeconds }}
+          {{- $preStopRpcTimeoutSeconds := add $preStopDrainTimeoutSeconds 2 }}
           {{- $preStopSleepSeconds := int .Values.app.lifecycle.preStop.sleepSeconds }}
           lifecycle:
             preStop:
@@ -108,7 +109,7 @@ spec:
                 command:
                   - /bin/sh
                   - -ec
-                  - touch "$CODEX_POOLER_DRAIN_MARKER_PATH"; timeout {{ $preStopDrainTimeoutSeconds }}s /app/bin/codex_pooler rpc "CodexPooler.Gateway.Transports.Websocket.RolloutDrain.drain_for_shutdown()" || true; sleep {{ $preStopSleepSeconds }}
+                  - touch "$CODEX_POOLER_DRAIN_MARKER_PATH"; ERL_AFLAGS= timeout {{ $preStopRpcTimeoutSeconds }}s /app/bin/codex_pooler rpc "CodexPooler.Gateway.Transports.Websocket.RolloutDrain.drain_for_shutdown()" || true; sleep {{ $preStopSleepSeconds }}
           {{- end }}
           resources:
             {{- toYaml .Values.app.resources | nindent 12 }}

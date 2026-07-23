@@ -86,7 +86,8 @@ app:
   strategy:
     maxUnavailable: 0
     maxSurge: 1
-  terminationGracePeriodSeconds: 75
+  # -- Total shutdown budget. Formula: max(drainTimeoutSeconds + 2 seconds RPC allowance + sleepSeconds, 2 seconds RPC allowance + sleepSeconds + drainTimeoutSeconds for the full in-VM fallback) + 10 seconds endpoint shutdown + 5 seconds margin.
+  terminationGracePeriodSeconds: 90
   drainMarkerPath: /tmp/codex-pooler-draining
   startupProbe:
     enabled: true
