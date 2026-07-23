@@ -87,7 +87,7 @@ app:
     maxUnavailable: 0
     maxSurge: 1
   # -- Total shutdown budget. Formula: max(drainTimeoutSeconds + 2 seconds RPC allowance + sleepSeconds, 2 seconds RPC allowance + sleepSeconds + drainTimeoutSeconds for the full in-VM fallback) + 10 seconds endpoint shutdown + 5 seconds margin.
-  terminationGracePeriodSeconds: 90
+  terminationGracePeriodSeconds: 120
   drainMarkerPath: /tmp/codex-pooler-draining
   startupProbe:
     enabled: true
@@ -99,8 +99,8 @@ app:
   lifecycle:
     preStop:
       enabled: true
-      # -- Maximum seconds to wait for the websocket rollout drain RPC before continuing pod shutdown.
-      drainTimeoutSeconds: 50
+      # -- Maximum seconds to wait for the websocket rollout drain RPC before continuing pod shutdown. The drain returns as soon as in-flight turns finish, so the budget is only consumed while a long turn is actually running; the default is sized so the effective wait (about 10 seconds under the budget) covers p99 in-flight turn durations instead of cutting at p95.
+      drainTimeoutSeconds: 85
       # -- Seconds to keep the pod unready after the drain marker/RPC before Kubernetes sends SIGTERM.
       sleepSeconds: 10
   podDisruptionBudget:
