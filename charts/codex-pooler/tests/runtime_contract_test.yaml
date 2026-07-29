@@ -112,6 +112,8 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].resources.limits.memory
           value: 2Gi
+      - notExists:
+          path: spec.template.spec.containers[0].resources.limits.cpu
       - equal:
           path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
           value:
