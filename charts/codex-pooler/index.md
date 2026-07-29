@@ -142,7 +142,7 @@ spec:
 | app.podDisruptionBudget.enabled | bool | `true` |  |
 | app.podDisruptionBudget.minAvailable | int | `1` |  |
 | app.replicaCount | int | `1` |  |
-| app.resources.limits.cpu | string | `"1000m"` |  |
+| app.resources.limits | object | `{"memory":"2Gi"}` | No CPU limit by default: the BEAM gateway must burst during post-rollout reconnect storms (TLS + replay body decompression), and CFS throttling there surfaces as client-visible 408 body-read timeouts. Set a limit explicitly only if your platform requires one. |
 | app.resources.limits.memory | string | `"2Gi"` | Memory ceiling for the HTTP and long-lived WebSocket gateway process. |
 | app.resources.requests.cpu | string | `"100m"` |  |
 | app.resources.requests.memory | string | `"512Mi"` |  |
