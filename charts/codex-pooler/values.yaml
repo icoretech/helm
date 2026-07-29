@@ -86,6 +86,8 @@ app:
   strategy:
     maxUnavailable: 0
     maxSurge: 1
+  # -- Seconds a newly ready app pod must stay ready before the rollout continues. Spacing the per-pod websocket drains keeps reconnecting clients from re-uploading their sessions all at once after a deploy; set 0 to disable the pause.
+  minReadySeconds: 120
   # -- Total shutdown budget. Formula: max(drainTimeoutSeconds + 2 seconds RPC allowance + sleepSeconds, 2 seconds RPC allowance + sleepSeconds + drainTimeoutSeconds for the full in-VM fallback) + 10 seconds endpoint shutdown + 5 seconds margin.
   terminationGracePeriodSeconds: 120
   drainMarkerPath: /tmp/codex-pooler-draining

@@ -139,6 +139,7 @@
           }
         },
         "strategy": { "$ref": "#/definitions/rollingUpdate" },
+        "minReadySeconds": { "type": "integer", "minimum": 0 },
         "terminationGracePeriodSeconds": { "type": "integer", "minimum": 0 },
         "drainMarkerPath": { "type": "string", "minLength": 1 },
         "startupProbe": {

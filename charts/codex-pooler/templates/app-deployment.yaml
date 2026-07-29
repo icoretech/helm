@@ -11,6 +11,9 @@ metadata:
 spec:
   replicas: {{ .Values.app.replicaCount }}
   revisionHistoryLimit: 2
+  {{- if .Values.app.minReadySeconds }}
+  minReadySeconds: {{ .Values.app.minReadySeconds }}
+  {{- end }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
