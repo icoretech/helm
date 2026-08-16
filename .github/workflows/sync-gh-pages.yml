@@ -11,6 +11,7 @@ on:
       - charts/**/README.md.gotmpl
       - charts/**/Readme.md
       - charts/**/Readme.md.gotmpl
+      - charts/**/Chart.yaml
       - charts/**/logo.*
   workflow_dispatch:
 
@@ -29,6 +30,14 @@ jobs:
         run: |
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Generate chart documentation
+        run: |
+          docker run --rm \
+            --volume "$PWD:/helm-docs" \
+            -u "$(id -u):$(id -g)" \
+            jnorwood/helm-docs:v1.14.2 \
+            --chart-search-root=charts
 
       - name: Sync files into gh-pages
         shell: bash
