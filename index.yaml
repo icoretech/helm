@@ -3099,6 +3099,41 @@ entries:
   - annotations:
       artifacthub.io/images: |
         - name: browserless-chromium
+          image: ghcr.io/browserless/chromium:v2.56.0
+      artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v2.56.0
+    created: "2026-08-20T20:03:59.760428045Z"
+    description: Browserless v2 browser automation service for Kubernetes
+    digest: 7a9fa71db22ba976a2cfd012fdd5729a8ff766c7f60b368542b01dbec857106e
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/browserless/logo.svg
+    keywords:
+    - browserless
+    - chromium
+    - chrome
+    - firefox
+    - playwright
+    - puppeteer
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: browserless
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/browserless
+    - https://github.com/browserless/browserless
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/browserless-0.16.0/browserless-0.16.0.tgz
+    version: 0.16.0
+  - annotations:
+      artifacthub.io/images: |
+        - name: browserless-chromium
           image: ghcr.io/browserless/chromium:v2.55.4
       artifacthub.io/license: MIT
       artifacthub.io/signKey: |
@@ -20056,4 +20091,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-08-20T11:06:42.225429244Z"
+generated: "2026-08-20T20:03:59.761377639Z"
