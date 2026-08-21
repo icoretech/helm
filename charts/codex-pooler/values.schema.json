@@ -56,7 +56,8 @@
         "obanJobsQueueLimit": { "type": "string", "pattern": "^[0-9]+$" },
         "obanShutdownGracePeriodMs": { "type": "string", "pattern": "^[0-9]+$" },
         "lang": { "type": "string", "minLength": 1 },
-        "lcAll": { "type": "string", "minLength": 1 }
+        "lcAll": { "type": "string", "minLength": 1 },
+        "erlMaxPorts": { "type": "string", "pattern": "^[1-9][0-9]*$" }
       }
     },
     "monitoring": {

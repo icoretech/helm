@@ -35,6 +35,8 @@ config:
   obanShutdownGracePeriodMs: "55000"
   lang: "C.UTF-8"
   lcAll: "C.UTF-8"
+  # -- Bound ERTS port-table capacity independently of a container's file-descriptor rlimit.
+  erlMaxPorts: "1048576"
 
 monitoring:
   serviceMonitor:

@@ -16,7 +16,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.7.5 \
+  --version 0.7.6 \
   --values values.production.yaml
 ```
 
@@ -25,7 +25,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.7.5 \
+  --version 0.7.6 \
   --values values.production.yaml
 ```
 
@@ -167,6 +167,7 @@ spec:
 | clustering.participants.worker | bool | `true` |  |
 | clustering.query | string | `""` |  |
 | config.ectoIpv6 | string | `"false"` |  |
+| config.erlMaxPorts | string | `"1048576"` | Bound ERTS port-table capacity independently of a container's file-descriptor rlimit. |
 | config.host | string | `"codex-pooler.example.com"` |  |
 | config.lang | string | `"C.UTF-8"` |  |
 | config.lcAll | string | `"C.UTF-8"` |  |

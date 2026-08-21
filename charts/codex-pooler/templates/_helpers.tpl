@@ -213,6 +213,8 @@ codex-pooler.icoretech.io/cluster-member: "true"
   value: {{ .Values.config.lang | quote }}
 - name: LC_ALL
   value: {{ .Values.config.lcAll | quote }}
+- name: ERL_MAX_PORTS
+  value: {{ .Values.config.erlMaxPorts | quote }}
 - name: DATABASE_URL
   valueFrom:
     secretKeyRef:

@@ -87,6 +87,9 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_DRAIN_TIMEOUT_MS")].value
           value: "85000"
       - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="ERL_MAX_PORTS")].value
+          value: "1048576"
+      - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="RELEASE_DISTRIBUTION")].value
           value: sname
       - equal:
