@@ -172,6 +172,7 @@ spec:
 | clustering.participants.worker | bool | `true` |  |
 | clustering.query | string | `""` |  |
 | config.ectoIpv6 | string | `"false"` |  |
+| config.erlMaxPorts | string | `"1048576"` | Bound ERTS port-table capacity independently of a container's file-descriptor rlimit. |
 | config.host | string | `"codex-pooler.example.com"` |  |
 | config.lang | string | `"C.UTF-8"` |  |
 | config.lcAll | string | `"C.UTF-8"` |  |
