@@ -10,6 +10,7 @@ helm version --short
 echo "==> Lint/template with valid fixtures"
 for f in \
   tests/values/valid-minimal.yaml \
+  tests/values/valid-app-service-affinity.yaml \
   tests/values/valid-secrets-create.yaml \
   tests/values/valid-monitoring-bearer-token.yaml
   do
@@ -37,6 +38,8 @@ expect_invalid() {
 
 echo "==> Invalid fixtures must fail"
 for f in \
+  tests/values/invalid-app-service-affinity-config.yaml \
+  tests/values/invalid-app-service-affinity-timeout.yaml \
   tests/values/invalid-image-pull-policy.yaml \
   tests/values/invalid-ingress-path-type.yaml \
   tests/values/invalid-lifecycle-schema.yaml \

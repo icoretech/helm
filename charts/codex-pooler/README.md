@@ -16,7 +16,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.7.6 \
+  --version 0.7.8 \
   --values values.production.yaml
 ```
 
@@ -25,7 +25,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.7.6 \
+  --version 0.7.8 \
   --values values.production.yaml
 ```
 
@@ -58,6 +58,46 @@ Do not put upstream access tokens, API keys, cookies, `auth.json`, SMTP password
 - `migrations` runs release migrations and imports the vendored pricing feed before app rollout
 
 Keep `app.replicaCount` at `1` unless app clustering is intentionally configured and verified. When `app.replicaCount` is `>= 2`, the chart requires app clustering and automatically enables websocket owner forwarding on app pods.
+
+## Rolling Updates And Browser Affinity
+
+Codex Pooler keeps its compiled browser assets inside the release image. No shared object storage or external asset synchronization is required.
+
+With multiple app replicas, a rolling update temporarily serves both the old and new release. Phoenix uses revision-specific digested CSS and JavaScript paths, so a browser can receive HTML from one revision and then request its asset from a pod running the other revision. Ingress controllers that balance every HTTP request independently can return a transient asset `404` in that mixed-revision window.
+
+The chart remains ingress-controller neutral:
+
+- `app.service.annotations` passes arbitrary annotations to the app Service
+- `ingress.annotations` passes arbitrary annotations to the Ingress
+- `app.service.sessionAffinity` and `app.service.sessionAffinityConfig` expose the standard Kubernetes Service affinity fields
+
+Configure browser cookie affinity using the annotations supported by your ingress controller. For example, Traefik reads its cookie-affinity configuration from the backend Service:
+
+```yaml
+app:
+  service:
+    annotations:
+      traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+      traefik.ingress.kubernetes.io/service.sticky.cookie.name: codex-pooler-affinity
+      traefik.ingress.kubernetes.io/service.sticky.cookie.secure: "true"
+      traefik.ingress.kubernetes.io/service.sticky.cookie.httponly: "true"
+      traefik.ingress.kubernetes.io/service.sticky.cookie.samesite: lax
+```
+
+Other controllers may require affinity annotations on the Ingress instead; use `ingress.annotations` for those integrations. Kubernetes `sessionAffinity: ClientIP` can help clients that connect directly to the Service, but it is not equivalent to per-browser cookie affinity when an ingress proxy is the Service client:
+
+```yaml
+app:
+  service:
+    sessionAffinity: ClientIP
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: 300
+```
+
+Do not shorten `app.minReadySeconds`, the websocket drain timeout, or the termination grace period to hide asset skew. Those settings protect in-flight websocket turns and spread reconnect load across the rollout; configure affinity at the HTTP routing layer instead.
+
+Browser affinity prevents cross-revision HTML and asset requests from bouncing between pods. It does not keep an already-open websocket alive beyond the configured rollout drain budget. A native Codex turn that exceeds that budget is closed as `owner_drained` and must follow the client's normal reconnect or retry path.
 
 ## Monitoring
 
@@ -99,7 +139,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.7.7"
+      version: "0.7.8"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -141,7 +181,10 @@ spec:
 | app.resources.limits.memory | string | `"2Gi"` | Memory ceiling for the HTTP and long-lived WebSocket gateway process. |
 | app.resources.requests.cpu | string | `"100m"` |  |
 | app.resources.requests.memory | string | `"512Mi"` |  |
+| app.service.annotations | object | `{}` | Arbitrary annotations for the app Service. Use the annotations supported by your ingress or load-balancer controller when browser-level cookie affinity is required during mixed-revision rolling updates. |
 | app.service.port | int | `4000` |  |
+| app.service.sessionAffinity | string | `"None"` | Kubernetes Service session affinity. ClientIP is useful for clients that reach the Service directly, but it is not a portable replacement for browser cookie affinity behind an ingress controller. |
+| app.service.sessionAffinityConfig | object | `{}` | Additional Kubernetes Service session-affinity settings. Set clientIP.timeoutSeconds only when sessionAffinity is ClientIP. |
 | app.service.type | string | `"ClusterIP"` |  |
 | app.startupProbe.enabled | bool | `true` |  |
 | app.startupProbe.failureThreshold | int | `12` |  |

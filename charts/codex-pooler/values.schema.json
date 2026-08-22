@@ -182,9 +182,27 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
+            "annotations": { "$ref": "#/definitions/metadataMap" },
             "type": { "type": "string", "enum": ["ClusterIP", "NodePort", "LoadBalancer", "ExternalName"] },
-            "port": { "$ref": "#/definitions/port" }
-          }
+            "port": { "$ref": "#/definitions/port" },
+            "sessionAffinity": { "type": "string", "enum": ["None", "ClientIP"] },
+            "sessionAffinityConfig": { "$ref": "#/definitions/serviceSessionAffinityConfig" }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "sessionAffinity": { "const": "ClientIP" }
+                },
+                "required": ["sessionAffinity"]
+              },
+              "else": {
+                "properties": {
+                  "sessionAffinityConfig": { "maxProperties": 0 }
+                }
+              }
+            }
+          ]
         },
         "resources": { "$ref": "#/definitions/resourceRequirements" },
         "nodeSelector": { "type": "object" },
@@ -352,6 +370,23 @@
         "relabelings": {
           "type": "array",
           "items": { "type": "object" }
+        }
+      }
+    },
+    "serviceSessionAffinityConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clientIP": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "timeoutSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 86400
+            }
+          }
         }
       }
     },

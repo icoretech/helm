@@ -111,8 +111,14 @@ app:
     enabled: true
     minAvailable: 1
   service:
+    # -- Arbitrary annotations for the app Service. Use the annotations supported by your ingress or load-balancer controller when browser-level cookie affinity is required during mixed-revision rolling updates.
+    annotations: {}
     type: ClusterIP
     port: 4000
+    # -- Kubernetes Service session affinity. ClientIP is useful for clients that reach the Service directly, but it is not a portable replacement for browser cookie affinity behind an ingress controller.
+    sessionAffinity: None
+    # -- Additional Kubernetes Service session-affinity settings. Set clientIP.timeoutSeconds only when sessionAffinity is ClientIP.
+    sessionAffinityConfig: {}
   resources:
     requests:
       cpu: 100m

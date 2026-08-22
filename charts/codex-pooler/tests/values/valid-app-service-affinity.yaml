@@ -1,0 +1,13 @@
+image:
+  tag: "0.0.1"
+secrets:
+  create: false
+  existingSecret: codex-pooler-secrets
+app:
+  service:
+    annotations:
+      example.com/session-affinity: cookie
+    sessionAffinity: ClientIP
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: 300

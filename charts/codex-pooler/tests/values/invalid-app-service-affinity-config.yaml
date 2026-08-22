@@ -1,0 +1,6 @@
+app:
+  service:
+    sessionAffinity: None
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: 300

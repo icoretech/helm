@@ -19,6 +19,43 @@ tests:
           path: spec.ports[0].name
           value: http
 
+  - it: keeps app service annotations empty and affinity disabled by default
+    template: app-service.yaml
+    asserts:
+      - notExists:
+          path: metadata.annotations
+      - equal:
+          path: spec.sessionAffinity
+          value: None
+      - notExists:
+          path: spec.sessionAffinityConfig
+
+  - it: renders controller-neutral app service metadata and Kubernetes affinity
+    template: app-service.yaml
+    set:
+      app:
+        service:
+          annotations:
+            example.com/session-affinity: cookie
+            example.com/secure: "true"
+          sessionAffinity: ClientIP
+          sessionAffinityConfig:
+            clientIP:
+              timeoutSeconds: 300
+    asserts:
+      - equal:
+          path: metadata.annotations["example.com/session-affinity"]
+          value: cookie
+      - equal:
+          path: metadata.annotations["example.com/secure"]
+          value: "true"
+      - equal:
+          path: spec.sessionAffinity
+          value: ClientIP
+      - equal:
+          path: spec.sessionAffinityConfig.clientIP.timeoutSeconds
+          value: 300
+
   - it: defaults the app image tag to chart appVersion instead of latest
     template: app-deployment.yaml
     asserts:

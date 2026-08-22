@@ -6,8 +6,17 @@ metadata:
   labels:
     {{- include "codex-pooler.labels" . | nindent 4 }}
     app.kubernetes.io/component: app
+  {{- with .Values.app.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   type: {{ .Values.app.service.type }}
+  sessionAffinity: {{ .Values.app.service.sessionAffinity }}
+  {{- with .Values.app.service.sessionAffinityConfig }}
+  sessionAffinityConfig:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     {{- include "codex-pooler.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: app
