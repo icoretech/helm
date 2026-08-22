@@ -97,7 +97,21 @@ app:
 
 Do not shorten `app.minReadySeconds`, the websocket drain timeout, or the termination grace period to hide asset skew. Those settings protect in-flight websocket turns and spread reconnect load across the rollout; configure affinity at the HTTP routing layer instead.
 
-Browser affinity prevents cross-revision HTML and asset requests from bouncing between pods. It does not keep an already-open websocket alive beyond the configured rollout drain budget. A native Codex turn that exceeds that budget is closed as `owner_drained` and must follow the client's normal reconnect or retry path.
+### Websocket Rollout Drain
+
+The app Deployment keeps `app.minReadySeconds: 120` by default. That delay spaces pod replacement so clients do not all reconnect at once; it is separate from the drain that starts when Kubernetes begins terminating an old pod.
+
+At termination, the app first closes admission for new upstream dispatches, then shares the configured 85-second drain budget across every websocket activity still owned by that pod:
+
+- local websocket owners
+- direct websocket turns being handled by the pod
+- proxy turns whose websocket is on the pod while their owner runs on another app pod
+
+The drain waits for these activities together, not one class after another. A turn that finishes naturally within the budget is allowed to complete. A turn still active at the deadline is finalized as `owner_drained`; clients should use their normal reconnect or retry path. New work that reaches the pod after the cutoff is rejected before upstream dispatch.
+
+This guarantee is Kubernetes- and ingress-controller-neutral: it does not depend on a particular ingress annotation, shared asset store, or external rollout controller. It takes effect only after the rollout that introduces this behavior has replaced all older app pods, because a terminating pod running an earlier release cannot apply the new admission and drain protocol.
+
+Browser affinity prevents cross-revision HTML and asset requests from bouncing between pods. It does not extend the websocket drain budget.
 
 ## Monitoring
 
