@@ -9,7 +9,8 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - External PostgreSQL mode for production deployments
 - Optional bundled Redis for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues
 - Local upload PVC support and S3-compatible storage configuration
-- Secret references for JWT, email, Google OAuth, metrics, database URL, GitHub App, Lark, Slack, and S3 credentials
+- Secret references for JWT, email, Google OAuth, metrics, database URL, GitHub App, Lark, Slack, DingTalk, Telegram, WeCom, Composio, VCS, plugins, LLM, and S3 credentials
+- Runtime URL configuration for current multica-web images, graceful shutdown, invitation limits, and realtime relay/channel lease tuning
 - Optional ConfigMap-backed feature flag rules
 - Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
 - Optional PrometheusRule alerts for Multica business sampler metrics
@@ -17,9 +18,9 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 
 ## Important Runtime Note
 
-The upstream `multica-web` image currently bakes its Next.js rewrites to `http://backend:8080` at build time. This chart creates a compatibility Service named `backend` by default so the official image works in Kubernetes. Because that Service name is intentionally unprefixed, run only one Multica release per namespace unless you disable the alias for a custom frontend image.
+Current upstream `multica-web` images resolve their API and documentation URLs from runtime environment variables. The chart sets `REMOTE_API_URL` to the release backend Service by default and exposes `frontend.config.*` for explicit URLs. It also keeps a compatibility Service named `backend` enabled by default for legacy images; because that Service name is intentionally unprefixed, run only one Multica release per namespace unless you disable the alias.
 
-If you build a custom frontend image with a different `REMOTE_API_URL`, disable it:
+If you build a custom frontend image and do not need the legacy alias, disable it:
 
 ```yaml
 frontend:

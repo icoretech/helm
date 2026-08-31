@@ -86,6 +86,8 @@ backend:
   deployment:
     # -- Time in seconds for the Deployment controller to wait before marking a rollout failed.
     progressDeadlineSeconds: 600
+    # -- Seconds Kubernetes allows the backend to shut down before sending SIGKILL. Set higher than shutdownHoldDuration when draining runtimes.
+    terminationGracePeriodSeconds: 30
     strategy:
       # -- Deployment strategy. `Recreate` avoids RWO upload PVC multi-attach deadlocks.
       type: Recreate
@@ -109,6 +111,8 @@ backend:
     port: 8080
     # -- Public frontend origin. Required for production links, cookies, CORS, and WebSocket origin checks.
     frontendOrigin: http://localhost:3000
+    # -- User-reachable web URL used by CLI sign-in and account links. Empty defaults to frontendOrigin.
+    appUrl: ""
     # -- Public API URL without a trailing slash. Empty defaults to frontendOrigin, which matches the chart-managed same-origin routes.
     publicUrl: ""
     # -- Additional CORS origins, comma-separated.
@@ -126,6 +130,21 @@ backend:
       key: ""
     # -- Optional AUTH_TOKEN_TTL override. Empty uses Multica's default auth token lifetime.
     authTokenTtl: ""
+    # -- Optional database startup timeout, e.g. `3m`. Empty uses Multica's default.
+    databaseStartupTimeout: 3m
+    # -- Optional database connection timeout, e.g. `5s`. Empty uses Multica's default.
+    databaseConnectTimeout: 5s
+    cloud:
+      # -- Public Multica Cloud URL used for cloud-linked flows. Empty disables the cloud link.
+      url: ""
+    # -- URL used by the backend to reach the daemon control API. Empty keeps the server default.
+    daemonServerUrl: ""
+    # -- Optional graceful shutdown hold duration. Keep terminationGracePeriodSeconds larger than this value.
+    shutdownHoldDuration: ""
+    # -- Optional runtime reconnect grace period, e.g. `3h`. Empty uses Multica's default.
+    runtimeReconnectGrace: ""
+    # -- Enable self-hosted VCS integration. Requires vcs.secretKey or vcs.secretKeyRef.
+    vcsIntegrationEnabled: false
     # -- Comma-separated CIDRs whose X-Forwarded-For/X-Real-IP headers are trusted by Multica's autopilot webhook limiter.
     trustedProxies: ""
     # -- JWT signing secret. Replace in production or use jwtSecretRef.
@@ -190,6 +209,8 @@ backend:
       tlsInsecure: false
       # -- EHLO/HELO hostname announced to strict SMTP relays. Empty lets Multica use the backend container hostname.
       ehloName: ""
+      # -- Optional sender address used by the SMTP transport.
+      fromEmail: ""
 
   google:
     # -- Google OAuth client ID.
@@ -237,6 +258,13 @@ backend:
       verifyMaxPerMinute:
       # -- Comma-separated CIDRs whose X-Forwarded-For header is trusted by the auth rate limiter.
       trustedProxies: ""
+    invitation:
+      # -- Optional RATE_LIMIT_INVITATION_ACTOR_10M override.
+      actor10m:
+      # -- Optional RATE_LIMIT_INVITATION_WORKSPACE_24H override.
+      workspace24h:
+      # -- Optional RATE_LIMIT_INVITATION_RECIPIENT_24H override.
+      recipient24h:
 
   lark:
     # -- Base64-encoded 32-byte key enabling Lark/Feishu Bot integration and encrypting Bot app secrets at rest. Prefer secretKeyRef in production.
@@ -265,6 +293,94 @@ backend:
       name: ""
       # -- Secret key for MULTICA_SLACK_SECRET_KEY.
       key: ""
+
+  dingtalk:
+    # -- Base64-encoded 32-byte key enabling DingTalk integration. Prefer secretKeyRef in production.
+    secretKey: ""
+    secretKeyRef:
+      # -- Existing secret containing MULTICA_DINGTALK_SECRET_KEY.
+      name: ""
+      # -- Secret key for MULTICA_DINGTALK_SECRET_KEY.
+      key: ""
+
+  telegram:
+    # -- Base64-encoded 32-byte key enabling Telegram integration. Prefer secretKeyRef in production.
+    secretKey: ""
+    secretKeyRef:
+      # -- Existing secret containing MULTICA_TELEGRAM_SECRET_KEY.
+      name: ""
+      # -- Secret key for MULTICA_TELEGRAM_SECRET_KEY.
+      key: ""
+
+  wecom:
+    # -- Base64-encoded 32-byte key enabling WeCom integration. Prefer secretKeyRef in production.
+    secretKey: ""
+    secretKeyRef:
+      # -- Existing secret containing MULTICA_WECOM_SECRET_KEY.
+      name: ""
+      # -- Secret key for MULTICA_WECOM_SECRET_KEY.
+      key: ""
+    # -- Optional CIDRs allowed to fetch WeCom media.
+    mediaAllowCidrs: ""
+    # -- Enable verbose WeCom tracing. Keep false outside debugging.
+    trace: false
+
+  composio:
+    # -- Composio API key. Prefer apiKeyRef in production.
+    apiKey: ""
+    apiKeyRef:
+      # -- Existing secret containing COMPOSIO_API_KEY.
+      name: ""
+      # -- Secret key for COMPOSIO_API_KEY.
+      key: ""
+    # -- Public callback base URL for Composio OAuth flows.
+    callbackBaseUrl: ""
+    # -- Composio state-signing secret. Prefer stateSecretRef in production.
+    stateSecret: ""
+    stateSecretRef:
+      # -- Existing secret containing COMPOSIO_STATE_SECRET.
+      name: ""
+      # -- Secret key for COMPOSIO_STATE_SECRET.
+      key: ""
+
+  vcs:
+    # -- Base64-encoded 32-byte key used to encrypt self-hosted VCS integration secrets. Prefer secretKeyRef in production.
+    secretKey: ""
+    secretKeyRef:
+      # -- Existing secret containing MULTICA_VCS_SECRET_KEY.
+      name: ""
+      # -- Secret key for MULTICA_VCS_SECRET_KEY.
+      key: ""
+
+  llm:
+    # -- Server-side LLM API key. Prefer apiKeyRef in production.
+    apiKey: ""
+    apiKeyRef:
+      # -- Existing secret containing MULTICA_LLM_API_KEY.
+      name: ""
+      # -- Secret key for MULTICA_LLM_API_KEY.
+      key: ""
+    # -- OpenAI-compatible LLM base URL.
+    baseUrl: ""
+    # -- Default server-side LLM model.
+    defaultModel: ""
+    # -- Maximum server-side LLM retries.
+    maxRetries:
+
+  plugins:
+    # -- Base64-encoded 32-byte key used to sign plugin sessions. Prefer secretKeyRef in production.
+    secretKey: ""
+    secretKeyRef:
+      # -- Existing secret containing MULTICA_PLUGIN_SECRET_KEY.
+      name: ""
+      # -- Secret key for MULTICA_PLUGIN_SECRET_KEY.
+      key: ""
+    # -- Public plugin surface origin.
+    surfaceOrigin: ""
+    # -- Plugin API URL.
+    apiUrl: ""
+    # -- Plugin installation directory inside the backend container.
+    dir: ""
 
   usageRollups:
     # -- Enable runtime usage reads from the daily rollup table after external backfill/scheduler setup is complete.
@@ -352,14 +468,24 @@ frontend:
     externalTrafficPolicy:
 
   backendServiceAlias:
-    # -- Create a Service named `backend` because upstream multica-web images bake Next.js rewrites to `http://backend:8080`. The unprefixed name means one Multica release per namespace unless you disable this for a custom frontend image.
+    # -- Create a Service named `backend` for legacy multica-web images that still use baked-in Next.js rewrites. Current images can use frontend.config.remoteApiUrl instead.
     enabled: true
     # -- Compatibility Service name.
     name: backend
     # -- Compatibility Service annotations.
     annotations: {}
 
-  # -- Extra frontend env vars. The official image bakes API rewrites at build time; use these only for custom images or generic runtime config.
+  config:
+    # -- Runtime API URL consumed by current multica-web images.
+    remoteApiUrl: ""
+    # -- Documentation site URL consumed by current multica-web images.
+    docsUrl: ""
+    # -- Public API URL used by generated links.
+    publicApiUrl: ""
+    # -- Public WebSocket URL used by generated links.
+    publicWsUrl: ""
+
+  # -- Extra frontend env vars. Managed frontend config names are rejected to avoid silent overrides.
   extraEnv: []
   # -- Extra frontend envFrom refs.
   envFrom: []
@@ -437,6 +563,61 @@ realtime:
     name: ""
     # -- Secret key for REDIS_URL.
     key: ""
+  # -- Set REDIS_DISABLE_CLIENT_NAME when Redis deployments reject CLIENT SETNAME.
+  redisDisableClientName: false
+  relay:
+    # -- Optional dedicated Redis URL for realtime relay streams.
+    redisUrl: ""
+    redisUrlRef:
+      # -- Existing secret containing REALTIME_RELAY_REDIS_URL.
+      name: ""
+      # -- Secret key for REALTIME_RELAY_REDIS_URL.
+      key: ""
+    # -- Relay mode, e.g. `stream`.
+    mode: ""
+    # -- Number of relay shards.
+    shards:
+    # -- Maximum stream length.
+    streamMaxLen:
+    # -- XREAD batch size.
+    xreadCount:
+    # -- XREAD block duration.
+    xreadBlock: ""
+    # -- Replay grace duration.
+    replayGrace: ""
+    # -- Trim horizon duration.
+    trimHorizon: ""
+    # -- Enable relay stream TTL maintenance.
+    streamTtlEnabled: false
+    # -- Relay stream TTL duration.
+    streamTtl: ""
+    # -- Relay TTL refresh interval.
+    ttlRefreshInterval: ""
+    # -- Relay maintenance interval.
+    maintenanceInterval: ""
+
+channelLeases:
+  # -- Lease backend, e.g. `postgres` or `redis`.
+  backend: ""
+  # -- Redis URL for channel WebSocket leases.
+  redisUrl: ""
+  redisUrlRef:
+    # -- Existing secret containing CHANNEL_WS_LEASE_REDIS_URL.
+    name: ""
+    # -- Secret key for CHANNEL_WS_LEASE_REDIS_URL.
+    key: ""
+  # -- Redis key namespace for channel leases.
+  namespace: ""
+  # -- Lease TTL.
+  ttl: ""
+  # -- Lease renewal interval.
+  renewInterval: ""
+  # -- Lease polling interval.
+  pollInterval: ""
+  # -- Retry interval after lease backend errors.
+  errorRetryInterval: ""
+  # -- Safety margin before lease expiry.
+  expirySafetyMargin: ""
 
 storage:
   attachments:
@@ -470,6 +651,8 @@ storage:
     region: us-west-2
     # -- S3-compatible endpoint URL, e.g. MinIO/R2/Wasabi.
     endpointUrl: ""
+    # -- Whether to use S3 path-style addressing (`true` or `false`). Empty uses the SDK default.
+    usePathStyle: ""
     # -- AWS access key ID.
     accessKeyId: ""
     accessKeyIdRef:

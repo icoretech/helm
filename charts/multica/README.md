@@ -9,7 +9,8 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - External PostgreSQL mode for production deployments
 - Optional bundled Redis for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues
 - Local upload PVC support and S3-compatible storage configuration
-- Secret references for JWT, email, Google OAuth, metrics, database URL, GitHub App, Lark, Slack, and S3 credentials
+- Secret references for JWT, email, Google OAuth, metrics, database URL, GitHub App, Lark, Slack, DingTalk, Telegram, WeCom, Composio, VCS, plugins, LLM, and S3 credentials
+- Runtime URL configuration for current multica-web images, graceful shutdown, invitation limits, and realtime relay/channel lease tuning
 - Optional ConfigMap-backed feature flag rules
 - Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
 - Optional PrometheusRule alerts for Multica business sampler metrics
@@ -17,9 +18,9 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 
 ## Important Runtime Note
 
-The upstream `multica-web` image currently bakes its Next.js rewrites to `http://backend:8080` at build time. This chart creates a compatibility Service named `backend` by default so the official image works in Kubernetes. Because that Service name is intentionally unprefixed, run only one Multica release per namespace unless you disable the alias for a custom frontend image.
+Current upstream `multica-web` images resolve their API and documentation URLs from runtime environment variables. The chart sets `REMOTE_API_URL` to the release backend Service by default and exposes `frontend.config.*` for explicit URLs. It also keeps a compatibility Service named `backend` enabled by default for legacy images; because that Service name is intentionally unprefixed, run only one Multica release per namespace unless you disable the alias.
 
-If you build a custom frontend image with a different `REMOTE_API_URL`, disable it:
+If you build a custom frontend image and do not need the legacy alias, disable it:
 
 ```yaml
 frontend:
@@ -209,6 +210,13 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.autoscaling.minReplicas | int | `1` | Minimum backend replicas. |
 | backend.autoscaling.targetCPUUtilizationPercentage | int | `80` | Target CPU utilization percentage. |
 | backend.autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Target memory utilization percentage. |
+| backend.composio.apiKey | string | `""` | Composio API key. Prefer apiKeyRef in production. |
+| backend.composio.apiKeyRef.key | string | `""` | Secret key for COMPOSIO_API_KEY. |
+| backend.composio.apiKeyRef.name | string | `""` | Existing secret containing COMPOSIO_API_KEY. |
+| backend.composio.callbackBaseUrl | string | `""` | Public callback base URL for Composio OAuth flows. |
+| backend.composio.stateSecret | string | `""` | Composio state-signing secret. Prefer stateSecretRef in production. |
+| backend.composio.stateSecretRef.key | string | `""` | Secret key for COMPOSIO_STATE_SECRET. |
+| backend.composio.stateSecretRef.name | string | `""` | Existing secret containing COMPOSIO_STATE_SECRET. |
 | backend.config.allowSignup | bool | `true` | Signup master switch. Keep true when using allowedEmails or allowedEmailDomains; set false only to block all first-time signup. |
 | backend.config.allowedEmailDomains | string | `""` | First-time signup domain allowlist, comma-separated. Existing users can still sign in even if their domain is removed from the allowlist. |
 | backend.config.allowedEmails | string | `""` | Explicit first-time signup email allowlist, comma-separated. Existing users can still sign in even if removed from the allowlist. |
@@ -216,9 +224,14 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.config.analyticsDisabled | bool | `true` | Disable backend/frontend analytics. Defaults to true for self-host privacy. |
 | backend.config.analyticsEnvironment | string | `""` | Optional PostHog environment property override. Empty lets Multica derive it from APP_ENV. |
 | backend.config.appEnv | string | `"production"` | Runtime environment. Keep `production` on public deployments. |
+| backend.config.appUrl | string | `""` | User-reachable web URL used by CLI sign-in and account links. Empty defaults to frontendOrigin. |
 | backend.config.authTokenTtl | string | `""` | Optional AUTH_TOKEN_TTL override. Empty uses Multica's default auth token lifetime. |
+| backend.config.cloud.url | string | `""` | Public Multica Cloud URL used for cloud-linked flows. Empty disables the cloud link. |
 | backend.config.cookieDomain | string | `""` | Optional cookie Domain attribute. Leave empty for single-host deployments. |
 | backend.config.corsAllowedOrigins | string | `""` | Additional CORS origins, comma-separated. |
+| backend.config.daemonServerUrl | string | `""` | URL used by the backend to reach the daemon control API. Empty keeps the server default. |
+| backend.config.databaseConnectTimeout | string | `"5s"` | Optional database connection timeout, e.g. `5s`. Empty uses Multica's default. |
+| backend.config.databaseStartupTimeout | string | `"3m"` | Optional database startup timeout, e.g. `3m`. Empty uses Multica's default. |
 | backend.config.devVerificationCode | string | `""` | Fixed local test verification code. Keep empty in production. |
 | backend.config.disableWorkspaceCreation | bool | `false` | Disable workspace creation globally. Bootstrap the shared workspace with this false, then set true so users can only join by invitation. |
 | backend.config.frontendOrigin | string | `"http://localhost:3000"` | Public frontend origin. Required for production links, cookies, CORS, and WebSocket origin checks. |
@@ -233,14 +246,22 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.config.realtimeMetricsToken | string | `""` | Token required to expose `/health/realtime` through a proxy. |
 | backend.config.realtimeMetricsTokenRef.key | string | `""` | Secret key for REALTIME_METRICS_TOKEN. |
 | backend.config.realtimeMetricsTokenRef.name | string | `""` | Existing secret containing REALTIME_METRICS_TOKEN. |
+| backend.config.runtimeReconnectGrace | string | `""` | Optional runtime reconnect grace period, e.g. `3h`. Empty uses Multica's default. |
+| backend.config.shutdownHoldDuration | string | `""` | Optional graceful shutdown hold duration. Keep terminationGracePeriodSeconds larger than this value. |
 | backend.config.trustedProxies | string | `""` | Comma-separated CIDRs whose X-Forwarded-For/X-Real-IP headers are trusted by Multica's autopilot webhook limiter. |
+| backend.config.vcsIntegrationEnabled | bool | `false` | Enable self-hosted VCS integration. Requires vcs.secretKey or vcs.secretKeyRef. |
 | backend.deployment.progressDeadlineSeconds | int | `600` | Time in seconds for the Deployment controller to wait before marking a rollout failed. |
 | backend.deployment.strategy.type | string | `"Recreate"` | Deployment strategy. `Recreate` avoids RWO upload PVC multi-attach deadlocks. |
+| backend.deployment.terminationGracePeriodSeconds | int | `30` | Seconds Kubernetes allows the backend to shut down before sending SIGKILL. Set higher than shutdownHoldDuration when draining runtimes. |
+| backend.dingtalk.secretKey | string | `""` | Base64-encoded 32-byte key enabling DingTalk integration. Prefer secretKeyRef in production. |
+| backend.dingtalk.secretKeyRef.key | string | `""` | Secret key for MULTICA_DINGTALK_SECRET_KEY. |
+| backend.dingtalk.secretKeyRef.name | string | `""` | Existing secret containing MULTICA_DINGTALK_SECRET_KEY. |
 | backend.email.resendApiKey | string | `""` | Resend API key. When empty, Multica prints verification codes to stdout. |
 | backend.email.resendApiKeyRef.key | string | `""` | Secret key for RESEND_API_KEY. |
 | backend.email.resendApiKeyRef.name | string | `""` | Existing secret containing RESEND_API_KEY. |
 | backend.email.resendFromEmail | string | `"noreply@multica.ai"` | Sender address for verification emails. |
 | backend.email.smtp.ehloName | string | `""` | EHLO/HELO hostname announced to strict SMTP relays. Empty lets Multica use the backend container hostname. |
+| backend.email.smtp.fromEmail | string | `""` | Optional sender address used by the SMTP transport. |
 | backend.email.smtp.host | string | `""` | SMTP relay host. When empty, Multica uses Resend or stdout fallback. |
 | backend.email.smtp.password | string | `""` | Optional SMTP auth password. |
 | backend.email.smtp.passwordRef.key | string | `""` | Secret key for SMTP_PASSWORD. |
@@ -283,13 +304,28 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.lark.secretKeyRef.key | string | `""` | Secret key for MULTICA_LARK_SECRET_KEY. |
 | backend.lark.secretKeyRef.name | string | `""` | Existing secret containing MULTICA_LARK_SECRET_KEY. |
 | backend.lark.wsProxyUrl | string | `""` | Optional fixed HTTP CONNECT proxy URL for Lark/Feishu WebSocket long-connection handshakes. |
+| backend.llm.apiKey | string | `""` | Server-side LLM API key. Prefer apiKeyRef in production. |
+| backend.llm.apiKeyRef.key | string | `""` | Secret key for MULTICA_LLM_API_KEY. |
+| backend.llm.apiKeyRef.name | string | `""` | Existing secret containing MULTICA_LLM_API_KEY. |
+| backend.llm.baseUrl | string | `""` | OpenAI-compatible LLM base URL. |
+| backend.llm.defaultModel | string | `""` | Default server-side LLM model. |
+| backend.llm.maxRetries | string | `nil` | Maximum server-side LLM retries. |
 | backend.nodeSelector | object | `{}` | Backend node selector. |
+| backend.plugins.apiUrl | string | `""` | Plugin API URL. |
+| backend.plugins.dir | string | `""` | Plugin installation directory inside the backend container. |
+| backend.plugins.secretKey | string | `""` | Base64-encoded 32-byte key used to sign plugin sessions. Prefer secretKeyRef in production. |
+| backend.plugins.secretKeyRef.key | string | `""` | Secret key for MULTICA_PLUGIN_SECRET_KEY. |
+| backend.plugins.secretKeyRef.name | string | `""` | Existing secret containing MULTICA_PLUGIN_SECRET_KEY. |
+| backend.plugins.surfaceOrigin | string | `""` | Public plugin surface origin. |
 | backend.podAnnotations | object | `{}` | Pod annotations for backend pods. |
 | backend.podLabels | object | `{}` | Pod labels for backend pods. |
 | backend.podSecurityContext | object | `{}` | Pod security context for backend pods. |
 | backend.rateLimits.auth.maxPerMinute | string | `nil` | Optional RATE_LIMIT_AUTH override for `/auth/send-code` and `/auth/google` requests per IP per minute. Empty uses Multica's default. |
 | backend.rateLimits.auth.trustedProxies | string | `""` | Comma-separated CIDRs whose X-Forwarded-For header is trusted by the auth rate limiter. |
 | backend.rateLimits.auth.verifyMaxPerMinute | string | `nil` | Optional RATE_LIMIT_AUTH_VERIFY override for `/auth/verify-code` requests per IP per minute. Empty uses Multica's default. |
+| backend.rateLimits.invitation.actor10m | string | `nil` | Optional RATE_LIMIT_INVITATION_ACTOR_10M override. |
+| backend.rateLimits.invitation.recipient24h | string | `nil` | Optional RATE_LIMIT_INVITATION_RECIPIENT_24H override. |
+| backend.rateLimits.invitation.workspace24h | string | `nil` | Optional RATE_LIMIT_INVITATION_WORKSPACE_24H override. |
 | backend.replicaCount | int | `1` | Number of backend replicas. |
 | backend.resources | object | `{}` | Backend resources. |
 | backend.securityContext | object | `{}` | Container security context for the backend container. |
@@ -301,11 +337,32 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.slack.secretKey | string | `""` | Base64-encoded 32-byte key enabling Slack integration and encrypting Slack app/bot tokens at rest. Prefer secretKeyRef in production. |
 | backend.slack.secretKeyRef.key | string | `""` | Secret key for MULTICA_SLACK_SECRET_KEY. |
 | backend.slack.secretKeyRef.name | string | `""` | Existing secret containing MULTICA_SLACK_SECRET_KEY. |
+| backend.telegram.secretKey | string | `""` | Base64-encoded 32-byte key enabling Telegram integration. Prefer secretKeyRef in production. |
+| backend.telegram.secretKeyRef.key | string | `""` | Secret key for MULTICA_TELEGRAM_SECRET_KEY. |
+| backend.telegram.secretKeyRef.name | string | `""` | Existing secret containing MULTICA_TELEGRAM_SECRET_KEY. |
 | backend.tolerations | list | `[]` | Backend tolerations. |
 | backend.usageRollups.dailyEnabled | bool | `false` | Enable runtime usage reads from the daily rollup table after external backfill/scheduler setup is complete. |
 | backend.usageRollups.dashboardEnabled | bool | `false` | Enable dashboard usage reads from the dashboard rollup table after external backfill/scheduler setup is complete. |
+| backend.vcs.secretKey | string | `""` | Base64-encoded 32-byte key used to encrypt self-hosted VCS integration secrets. Prefer secretKeyRef in production. |
+| backend.vcs.secretKeyRef.key | string | `""` | Secret key for MULTICA_VCS_SECRET_KEY. |
+| backend.vcs.secretKeyRef.name | string | `""` | Existing secret containing MULTICA_VCS_SECRET_KEY. |
 | backend.volumeMounts | list | `[]` | Additional backend volume mounts. |
 | backend.volumes | list | `[]` | Additional backend volumes. |
+| backend.wecom.mediaAllowCidrs | string | `""` | Optional CIDRs allowed to fetch WeCom media. |
+| backend.wecom.secretKey | string | `""` | Base64-encoded 32-byte key enabling WeCom integration. Prefer secretKeyRef in production. |
+| backend.wecom.secretKeyRef.key | string | `""` | Secret key for MULTICA_WECOM_SECRET_KEY. |
+| backend.wecom.secretKeyRef.name | string | `""` | Existing secret containing MULTICA_WECOM_SECRET_KEY. |
+| backend.wecom.trace | bool | `false` | Enable verbose WeCom tracing. Keep false outside debugging. |
+| channelLeases.backend | string | `""` | Lease backend, e.g. `postgres` or `redis`. |
+| channelLeases.errorRetryInterval | string | `""` | Retry interval after lease backend errors. |
+| channelLeases.expirySafetyMargin | string | `""` | Safety margin before lease expiry. |
+| channelLeases.namespace | string | `""` | Redis key namespace for channel leases. |
+| channelLeases.pollInterval | string | `""` | Lease polling interval. |
+| channelLeases.redisUrl | string | `""` | Redis URL for channel WebSocket leases. |
+| channelLeases.redisUrlRef.key | string | `""` | Secret key for CHANNEL_WS_LEASE_REDIS_URL. |
+| channelLeases.redisUrlRef.name | string | `""` | Existing secret containing CHANNEL_WS_LEASE_REDIS_URL. |
+| channelLeases.renewInterval | string | `""` | Lease renewal interval. |
+| channelLeases.ttl | string | `""` | Lease TTL. |
 | database.external.enabled | bool | `false` | Enable external PostgreSQL mode. When enabled, set postgres.enabled=false. |
 | database.external.host | string | `""` | External PostgreSQL host. Required for waitForReady when using urlFrom; optional with url because the chart can derive the host from the URL. |
 | database.external.name | string | `"multica"` | External PostgreSQL database name. |
@@ -331,10 +388,14 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | frontend.autoscaling.targetCPUUtilizationPercentage | int | `80` | Target CPU utilization percentage. |
 | frontend.autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Target memory utilization percentage. |
 | frontend.backendServiceAlias.annotations | object | `{}` | Compatibility Service annotations. |
-| frontend.backendServiceAlias.enabled | bool | `true` | Create a Service named `backend` because upstream multica-web images bake Next.js rewrites to `http://backend:8080`. The unprefixed name means one Multica release per namespace unless you disable this for a custom frontend image. |
+| frontend.backendServiceAlias.enabled | bool | `true` | Create a Service named `backend` for legacy multica-web images that still use baked-in Next.js rewrites. Current images can use frontend.config.remoteApiUrl instead. |
 | frontend.backendServiceAlias.name | string | `"backend"` | Compatibility Service name. |
+| frontend.config.docsUrl | string | `""` | Documentation site URL consumed by current multica-web images. |
+| frontend.config.publicApiUrl | string | `""` | Public API URL used by generated links. |
+| frontend.config.publicWsUrl | string | `""` | Public WebSocket URL used by generated links. |
+| frontend.config.remoteApiUrl | string | `""` | Runtime API URL consumed by current multica-web images. |
 | frontend.envFrom | list | `[]` | Extra frontend envFrom refs. |
-| frontend.extraEnv | list | `[]` | Extra frontend env vars. The official image bakes API rewrites at build time; use these only for custom images or generic runtime config. |
+| frontend.extraEnv | list | `[]` | Extra frontend env vars. Managed frontend config names are rejected to avoid silent overrides. |
 | frontend.image.pullPolicy | string | `"IfNotPresent"` | Frontend image pull policy. |
 | frontend.image.repository | string | `"ghcr.io/multica-ai/multica-web"` | Frontend image repository. |
 | frontend.image.tag | string | `""` | Frontend image tag override. Defaults to chart appVersion. |
@@ -421,9 +482,24 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | readinessProbe.frontend.periodSeconds | int | `10` |  |
 | readinessProbe.frontend.successThreshold | int | `1` |  |
 | readinessProbe.frontend.timeoutSeconds | int | `3` |  |
+| realtime.redisDisableClientName | bool | `false` | Set REDIS_DISABLE_CLIENT_NAME when Redis deployments reject CLIENT SETNAME. |
 | realtime.redisUrl | string | `""` | Redis connection URL for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues. Leave empty for single-backend in-memory mode or when using bundled Redis. |
 | realtime.redisUrlRef.key | string | `""` | Secret key for REDIS_URL. |
 | realtime.redisUrlRef.name | string | `""` | Existing secret containing REDIS_URL. |
+| realtime.relay.maintenanceInterval | string | `""` | Relay maintenance interval. |
+| realtime.relay.mode | string | `""` | Relay mode, e.g. `stream`. |
+| realtime.relay.redisUrl | string | `""` | Optional dedicated Redis URL for realtime relay streams. |
+| realtime.relay.redisUrlRef.key | string | `""` | Secret key for REALTIME_RELAY_REDIS_URL. |
+| realtime.relay.redisUrlRef.name | string | `""` | Existing secret containing REALTIME_RELAY_REDIS_URL. |
+| realtime.relay.replayGrace | string | `""` | Replay grace duration. |
+| realtime.relay.shards | string | `nil` | Number of relay shards. |
+| realtime.relay.streamMaxLen | string | `nil` | Maximum stream length. |
+| realtime.relay.streamTtl | string | `""` | Relay stream TTL duration. |
+| realtime.relay.streamTtlEnabled | bool | `false` | Enable relay stream TTL maintenance. |
+| realtime.relay.trimHorizon | string | `""` | Trim horizon duration. |
+| realtime.relay.ttlRefreshInterval | string | `""` | Relay TTL refresh interval. |
+| realtime.relay.xreadBlock | string | `""` | XREAD block duration. |
+| realtime.relay.xreadCount | string | `nil` | XREAD batch size. |
 | redis.architecture | string | `"standalone"` |  |
 | redis.auth.enabled | bool | `true` |  |
 | redis.enabled | bool | `false` | Enable bundled Redis for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues. |
@@ -463,6 +539,7 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | storage.s3.secretAccessKey | string | `""` | AWS secret access key. |
 | storage.s3.secretAccessKeyRef.key | string | `""` | Secret key for AWS_SECRET_ACCESS_KEY. |
 | storage.s3.secretAccessKeyRef.name | string | `""` | Existing secret containing AWS_SECRET_ACCESS_KEY. |
+| storage.s3.usePathStyle | string | `""` | Whether to use S3 path-style addressing (`true` or `false`). Empty uses the SDK default. |
 | tests.enabled | bool | `true` | Enable Helm test pod. |
 | tests.image.pullPolicy | string | `"IfNotPresent"` | Test image pull policy. |
 | tests.image.repository | string | `"busybox"` | Test image repository. |

@@ -30,6 +30,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      terminationGracePeriodSeconds: {{ .Values.backend.deployment.terminationGracePeriodSeconds }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -89,7 +90,7 @@ spec:
               value: {{ .Values.backend.config.frontendOrigin | quote }}
             {{- $_ := set $managed "FRONTEND_ORIGIN" true }}
             - name: MULTICA_APP_URL
-              value: {{ .Values.backend.config.frontendOrigin | quote }}
+              value: {{ default .Values.backend.config.frontendOrigin .Values.backend.config.appUrl | trimSuffix "/" | quote }}
             {{- $_ := set $managed "MULTICA_APP_URL" true }}
             - name: MULTICA_PUBLIC_URL
               value: {{ default .Values.backend.config.frontendOrigin .Values.backend.config.publicUrl | trimSuffix "/" | quote }}
@@ -137,6 +138,123 @@ spec:
               {{- end }}
             {{- end }}
             {{- $_ := set $managed "REDIS_URL" true }}
+            {{- if .Values.realtime.redisDisableClientName }}
+            - name: REDIS_DISABLE_CLIENT_NAME
+              value: "true"
+            {{- end }}
+            {{- $_ := set $managed "REDIS_DISABLE_CLIENT_NAME" true }}
+            {{- if .Values.realtime.relay.redisUrlRef.name }}
+            - name: REALTIME_RELAY_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.realtime.relay.redisUrlRef.name | quote }}
+                  key: {{ required "multica: realtime.relay.redisUrlRef.key is required when realtime.relay.redisUrlRef.name is set" .Values.realtime.relay.redisUrlRef.key | quote }}
+            {{- else if .Values.realtime.relay.redisUrl }}
+            - name: REALTIME_RELAY_REDIS_URL
+              value: {{ .Values.realtime.relay.redisUrl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "REALTIME_RELAY_REDIS_URL" true }}
+            {{- if .Values.realtime.relay.mode }}
+            - name: REALTIME_RELAY_MODE
+              value: {{ .Values.realtime.relay.mode | quote }}
+            {{- end }}
+            {{- $_ := set $managed "REALTIME_RELAY_MODE" true }}
+            {{- if ne (printf "%v" .Values.realtime.relay.shards) "<nil>" }}
+            - name: REALTIME_RELAY_SHARDS
+              value: {{ printf "%v" .Values.realtime.relay.shards | quote }}
+            {{- end }}
+            {{- $_ := set $managed "REALTIME_RELAY_SHARDS" true }}
+            {{- if ne (printf "%v" .Values.realtime.relay.streamMaxLen) "<nil>" }}
+            - name: REALTIME_RELAY_STREAM_MAXLEN
+              value: {{ printf "%v" .Values.realtime.relay.streamMaxLen | quote }}
+            {{- end }}
+            {{- $_ := set $managed "REALTIME_RELAY_STREAM_MAXLEN" true }}
+            {{- if ne (printf "%v" .Values.realtime.relay.xreadCount) "<nil>" }}
+            - name: REALTIME_RELAY_XREAD_COUNT
+              value: {{ printf "%v" .Values.realtime.relay.xreadCount | quote }}
+            {{- end }}
+            {{- $_ := set $managed "REALTIME_RELAY_XREAD_COUNT" true }}
+            {{- if .Values.realtime.relay.xreadBlock }}
+            - name: REALTIME_RELAY_XREAD_BLOCK
+              value: {{ .Values.realtime.relay.xreadBlock | quote }}
+            {{- end }}
+            {{- $_ := set $managed "REALTIME_RELAY_XREAD_BLOCK" true }}
+            {{- if .Values.realtime.relay.replayGrace }}
+            - name: REALTIME_RELAY_REPLAY_GRACE
+              value: {{ .Values.realtime.relay.replayGrace | quote }}
+            {{- end }}
+            {{- $_ := set $managed "REALTIME_RELAY_REPLAY_GRACE" true }}
+            {{- if .Values.realtime.relay.trimHorizon }}
+            - name: REALTIME_RELAY_TRIM_HORIZON
+              value: {{ .Values.realtime.relay.trimHorizon | quote }}
+            {{- end }}
+            {{- $_ := set $managed "REALTIME_RELAY_TRIM_HORIZON" true }}
+            {{- if .Values.realtime.relay.streamTtlEnabled }}
+            - name: REALTIME_RELAY_STREAM_TTL_ENABLED
+              value: "true"
+            {{- end }}
+            {{- $_ := set $managed "REALTIME_RELAY_STREAM_TTL_ENABLED" true }}
+            {{- if .Values.realtime.relay.streamTtl }}
+            - name: REALTIME_RELAY_STREAM_TTL
+              value: {{ .Values.realtime.relay.streamTtl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "REALTIME_RELAY_STREAM_TTL" true }}
+            {{- if .Values.realtime.relay.ttlRefreshInterval }}
+            - name: REALTIME_RELAY_TTL_REFRESH_INTERVAL
+              value: {{ .Values.realtime.relay.ttlRefreshInterval | quote }}
+            {{- end }}
+            {{- $_ := set $managed "REALTIME_RELAY_TTL_REFRESH_INTERVAL" true }}
+            {{- if .Values.realtime.relay.maintenanceInterval }}
+            - name: REALTIME_RELAY_MAINTENANCE_INTERVAL
+              value: {{ .Values.realtime.relay.maintenanceInterval | quote }}
+            {{- end }}
+            {{- $_ := set $managed "REALTIME_RELAY_MAINTENANCE_INTERVAL" true }}
+            {{- if .Values.channelLeases.backend }}
+            - name: CHANNEL_WS_LEASE_BACKEND
+              value: {{ .Values.channelLeases.backend | quote }}
+            {{- end }}
+            {{- $_ := set $managed "CHANNEL_WS_LEASE_BACKEND" true }}
+            {{- if .Values.channelLeases.redisUrlRef.name }}
+            - name: CHANNEL_WS_LEASE_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.channelLeases.redisUrlRef.name | quote }}
+                  key: {{ required "multica: channelLeases.redisUrlRef.key is required when channelLeases.redisUrlRef.name is set" .Values.channelLeases.redisUrlRef.key | quote }}
+            {{- else if .Values.channelLeases.redisUrl }}
+            - name: CHANNEL_WS_LEASE_REDIS_URL
+              value: {{ .Values.channelLeases.redisUrl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "CHANNEL_WS_LEASE_REDIS_URL" true }}
+            {{- if .Values.channelLeases.namespace }}
+            - name: CHANNEL_WS_LEASE_NAMESPACE
+              value: {{ .Values.channelLeases.namespace | quote }}
+            {{- end }}
+            {{- $_ := set $managed "CHANNEL_WS_LEASE_NAMESPACE" true }}
+            {{- if .Values.channelLeases.ttl }}
+            - name: CHANNEL_WS_LEASE_TTL
+              value: {{ .Values.channelLeases.ttl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "CHANNEL_WS_LEASE_TTL" true }}
+            {{- if .Values.channelLeases.renewInterval }}
+            - name: CHANNEL_WS_LEASE_RENEW_INTERVAL
+              value: {{ .Values.channelLeases.renewInterval | quote }}
+            {{- end }}
+            {{- $_ := set $managed "CHANNEL_WS_LEASE_RENEW_INTERVAL" true }}
+            {{- if .Values.channelLeases.pollInterval }}
+            - name: CHANNEL_WS_LEASE_POLL_INTERVAL
+              value: {{ .Values.channelLeases.pollInterval | quote }}
+            {{- end }}
+            {{- $_ := set $managed "CHANNEL_WS_LEASE_POLL_INTERVAL" true }}
+            {{- if .Values.channelLeases.errorRetryInterval }}
+            - name: CHANNEL_WS_LEASE_ERROR_RETRY_INTERVAL
+              value: {{ .Values.channelLeases.errorRetryInterval | quote }}
+            {{- end }}
+            {{- $_ := set $managed "CHANNEL_WS_LEASE_ERROR_RETRY_INTERVAL" true }}
+            {{- if .Values.channelLeases.expirySafetyMargin }}
+            - name: CHANNEL_WS_LEASE_EXPIRY_SAFETY_MARGIN
+              value: {{ .Values.channelLeases.expirySafetyMargin | quote }}
+            {{- end }}
+            {{- $_ := set $managed "CHANNEL_WS_LEASE_EXPIRY_SAFETY_MARGIN" true }}
             {{- if .Values.backend.config.jwtSecretRef.name }}
             - name: JWT_SECRET
               valueFrom:
@@ -173,6 +291,39 @@ spec:
               value: {{ .Values.backend.config.authTokenTtl | quote }}
             {{- end }}
             {{- $_ := set $managed "AUTH_TOKEN_TTL" true }}
+            {{- if .Values.backend.config.databaseStartupTimeout }}
+            - name: MULTICA_DATABASE_STARTUP_TIMEOUT
+              value: {{ .Values.backend.config.databaseStartupTimeout | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_DATABASE_STARTUP_TIMEOUT" true }}
+            {{- if .Values.backend.config.databaseConnectTimeout }}
+            - name: MULTICA_DATABASE_CONNECT_TIMEOUT
+              value: {{ .Values.backend.config.databaseConnectTimeout | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_DATABASE_CONNECT_TIMEOUT" true }}
+            {{- if .Values.backend.config.cloud.url }}
+            - name: MULTICA_CLOUD_URL
+              value: {{ .Values.backend.config.cloud.url | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_CLOUD_URL" true }}
+            {{- if .Values.backend.config.daemonServerUrl }}
+            - name: MULTICA_DAEMON_SERVER_URL
+              value: {{ .Values.backend.config.daemonServerUrl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_DAEMON_SERVER_URL" true }}
+            {{- if .Values.backend.config.shutdownHoldDuration }}
+            - name: MULTICA_SHUTDOWN_HOLD_DURATION
+              value: {{ .Values.backend.config.shutdownHoldDuration | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_SHUTDOWN_HOLD_DURATION" true }}
+            {{- if .Values.backend.config.runtimeReconnectGrace }}
+            - name: MULTICA_RUNTIME_RECONNECT_GRACE
+              value: {{ .Values.backend.config.runtimeReconnectGrace | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_RUNTIME_RECONNECT_GRACE" true }}
+            - name: MULTICA_VCS_INTEGRATION_ENABLED
+              value: {{ printf "%v" .Values.backend.config.vcsIntegrationEnabled | quote }}
+            {{- $_ := set $managed "MULTICA_VCS_INTEGRATION_ENABLED" true }}
             {{- if .Values.backend.config.trustedProxies }}
             - name: MULTICA_TRUSTED_PROXIES
               value: {{ .Values.backend.config.trustedProxies | quote }}
@@ -273,6 +424,11 @@ spec:
               value: {{ .Values.backend.email.smtp.ehloName | quote }}
             {{- end }}
             {{- $_ := set $managed "SMTP_EHLO_NAME" true }}
+            {{- if and .Values.backend.email.smtp.host .Values.backend.email.smtp.fromEmail }}
+            - name: SMTP_FROM_EMAIL
+              value: {{ .Values.backend.email.smtp.fromEmail | quote }}
+            {{- end }}
+            {{- $_ := set $managed "SMTP_FROM_EMAIL" true }}
             {{- if .Values.backend.google.clientIdRef.name }}
             - name: GOOGLE_CLIENT_ID
               valueFrom:
@@ -345,6 +501,21 @@ spec:
               value: {{ .Values.backend.rateLimits.auth.trustedProxies | quote }}
             {{- end }}
             {{- $_ := set $managed "RATE_LIMIT_TRUSTED_PROXIES" true }}
+            {{- if .Values.backend.rateLimits.invitation.actor10m }}
+            - name: RATE_LIMIT_INVITATION_ACTOR_10M
+              value: {{ printf "%v" .Values.backend.rateLimits.invitation.actor10m | quote }}
+            {{- end }}
+            {{- $_ := set $managed "RATE_LIMIT_INVITATION_ACTOR_10M" true }}
+            {{- if .Values.backend.rateLimits.invitation.workspace24h }}
+            - name: RATE_LIMIT_INVITATION_WORKSPACE_24H
+              value: {{ printf "%v" .Values.backend.rateLimits.invitation.workspace24h | quote }}
+            {{- end }}
+            {{- $_ := set $managed "RATE_LIMIT_INVITATION_WORKSPACE_24H" true }}
+            {{- if .Values.backend.rateLimits.invitation.recipient24h }}
+            - name: RATE_LIMIT_INVITATION_RECIPIENT_24H
+              value: {{ printf "%v" .Values.backend.rateLimits.invitation.recipient24h | quote }}
+            {{- end }}
+            {{- $_ := set $managed "RATE_LIMIT_INVITATION_RECIPIENT_24H" true }}
             {{- if .Values.backend.lark.secretKeyRef.name }}
             - name: MULTICA_LARK_SECRET_KEY
               valueFrom:
@@ -392,6 +563,139 @@ spec:
               value: {{ .Values.backend.slack.secretKey | quote }}
             {{- end }}
             {{- $_ := set $managed "MULTICA_SLACK_SECRET_KEY" true }}
+            {{- if .Values.backend.dingtalk.secretKeyRef.name }}
+            - name: MULTICA_DINGTALK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.dingtalk.secretKeyRef.name | quote }}
+                  key: {{ required "multica: backend.dingtalk.secretKeyRef.key is required when backend.dingtalk.secretKeyRef.name is set" .Values.backend.dingtalk.secretKeyRef.key | quote }}
+            {{- else if .Values.backend.dingtalk.secretKey }}
+            - name: MULTICA_DINGTALK_SECRET_KEY
+              value: {{ .Values.backend.dingtalk.secretKey | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_DINGTALK_SECRET_KEY" true }}
+            {{- if .Values.backend.telegram.secretKeyRef.name }}
+            - name: MULTICA_TELEGRAM_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.telegram.secretKeyRef.name | quote }}
+                  key: {{ required "multica: backend.telegram.secretKeyRef.key is required when backend.telegram.secretKeyRef.name is set" .Values.backend.telegram.secretKeyRef.key | quote }}
+            {{- else if .Values.backend.telegram.secretKey }}
+            - name: MULTICA_TELEGRAM_SECRET_KEY
+              value: {{ .Values.backend.telegram.secretKey | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_TELEGRAM_SECRET_KEY" true }}
+            {{- if .Values.backend.wecom.secretKeyRef.name }}
+            - name: MULTICA_WECOM_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.wecom.secretKeyRef.name | quote }}
+                  key: {{ required "multica: backend.wecom.secretKeyRef.key is required when backend.wecom.secretKeyRef.name is set" .Values.backend.wecom.secretKeyRef.key | quote }}
+            {{- else if .Values.backend.wecom.secretKey }}
+            - name: MULTICA_WECOM_SECRET_KEY
+              value: {{ .Values.backend.wecom.secretKey | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_WECOM_SECRET_KEY" true }}
+            {{- if .Values.backend.wecom.mediaAllowCidrs }}
+            - name: MULTICA_WECOM_MEDIA_ALLOW_CIDRS
+              value: {{ .Values.backend.wecom.mediaAllowCidrs | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_WECOM_MEDIA_ALLOW_CIDRS" true }}
+            {{- if .Values.backend.wecom.trace }}
+            - name: MULTICA_WECOM_TRACE
+              value: "1"
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_WECOM_TRACE" true }}
+            {{- if .Values.backend.composio.apiKeyRef.name }}
+            - name: COMPOSIO_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.composio.apiKeyRef.name | quote }}
+                  key: {{ required "multica: backend.composio.apiKeyRef.key is required when backend.composio.apiKeyRef.name is set" .Values.backend.composio.apiKeyRef.key | quote }}
+            {{- else if .Values.backend.composio.apiKey }}
+            - name: COMPOSIO_API_KEY
+              value: {{ .Values.backend.composio.apiKey | quote }}
+            {{- end }}
+            {{- $_ := set $managed "COMPOSIO_API_KEY" true }}
+            {{- if .Values.backend.composio.callbackBaseUrl }}
+            - name: COMPOSIO_CALLBACK_BASE_URL
+              value: {{ .Values.backend.composio.callbackBaseUrl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "COMPOSIO_CALLBACK_BASE_URL" true }}
+            {{- if .Values.backend.composio.stateSecretRef.name }}
+            - name: COMPOSIO_STATE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.composio.stateSecretRef.name | quote }}
+                  key: {{ required "multica: backend.composio.stateSecretRef.key is required when backend.composio.stateSecretRef.name is set" .Values.backend.composio.stateSecretRef.key | quote }}
+            {{- else if .Values.backend.composio.stateSecret }}
+            - name: COMPOSIO_STATE_SECRET
+              value: {{ .Values.backend.composio.stateSecret | quote }}
+            {{- end }}
+            {{- $_ := set $managed "COMPOSIO_STATE_SECRET" true }}
+            {{- if .Values.backend.vcs.secretKeyRef.name }}
+            - name: MULTICA_VCS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.vcs.secretKeyRef.name | quote }}
+                  key: {{ required "multica: backend.vcs.secretKeyRef.key is required when backend.vcs.secretKeyRef.name is set" .Values.backend.vcs.secretKeyRef.key | quote }}
+            {{- else if .Values.backend.vcs.secretKey }}
+            - name: MULTICA_VCS_SECRET_KEY
+              value: {{ .Values.backend.vcs.secretKey | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_VCS_SECRET_KEY" true }}
+            {{- if .Values.backend.llm.apiKeyRef.name }}
+            - name: MULTICA_LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.llm.apiKeyRef.name | quote }}
+                  key: {{ required "multica: backend.llm.apiKeyRef.key is required when backend.llm.apiKeyRef.name is set" .Values.backend.llm.apiKeyRef.key | quote }}
+            {{- else if .Values.backend.llm.apiKey }}
+            - name: MULTICA_LLM_API_KEY
+              value: {{ .Values.backend.llm.apiKey | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_LLM_API_KEY" true }}
+            {{- if .Values.backend.llm.baseUrl }}
+            - name: MULTICA_LLM_BASE_URL
+              value: {{ .Values.backend.llm.baseUrl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_LLM_BASE_URL" true }}
+            {{- if .Values.backend.llm.defaultModel }}
+            - name: MULTICA_LLM_DEFAULT_MODEL
+              value: {{ .Values.backend.llm.defaultModel | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_LLM_DEFAULT_MODEL" true }}
+            {{- if ne (printf "%v" .Values.backend.llm.maxRetries) "<nil>" }}
+            - name: MULTICA_LLM_MAX_RETRIES
+              value: {{ printf "%v" .Values.backend.llm.maxRetries | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_LLM_MAX_RETRIES" true }}
+            {{- if .Values.backend.plugins.secretKeyRef.name }}
+            - name: MULTICA_PLUGIN_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.plugins.secretKeyRef.name | quote }}
+                  key: {{ required "multica: backend.plugins.secretKeyRef.key is required when backend.plugins.secretKeyRef.name is set" .Values.backend.plugins.secretKeyRef.key | quote }}
+            {{- else if .Values.backend.plugins.secretKey }}
+            - name: MULTICA_PLUGIN_SECRET_KEY
+              value: {{ .Values.backend.plugins.secretKey | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_PLUGIN_SECRET_KEY" true }}
+            {{- if .Values.backend.plugins.surfaceOrigin }}
+            - name: MULTICA_PLUGIN_SURFACE_ORIGIN
+              value: {{ .Values.backend.plugins.surfaceOrigin | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_PLUGIN_SURFACE_ORIGIN" true }}
+            {{- if .Values.backend.plugins.apiUrl }}
+            - name: MULTICA_PLUGIN_API_URL
+              value: {{ .Values.backend.plugins.apiUrl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_PLUGIN_API_URL" true }}
+            {{- if .Values.backend.plugins.dir }}
+            - name: MULTICA_PLUGIN_DIR
+              value: {{ .Values.backend.plugins.dir | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MULTICA_PLUGIN_DIR" true }}
             {{- if or .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name }}
             - name: MULTICA_FEATURE_FLAGS_FILE
               value: {{ .Values.backend.featureFlags.mountPath | quote }}
@@ -422,6 +726,9 @@ spec:
             - name: AWS_ENDPOINT_URL
               value: {{ .Values.storage.s3.endpointUrl | quote }}
             {{- $_ := set $managed "AWS_ENDPOINT_URL" true }}
+            - name: S3_USE_PATH_STYLE
+              value: {{ .Values.storage.s3.usePathStyle | quote }}
+            {{- $_ := set $managed "S3_USE_PATH_STYLE" true }}
             - name: ATTACHMENT_DOWNLOAD_MODE
               value: {{ .Values.storage.attachments.downloadMode | quote }}
             {{- $_ := set $managed "ATTACHMENT_DOWNLOAD_MODE" true }}

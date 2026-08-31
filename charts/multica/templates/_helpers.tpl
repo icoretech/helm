@@ -181,6 +181,8 @@ feature-flags.yaml
 {{- $refs := list -}}
 {{- with .Values.database.external.urlFrom.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.realtime.redisUrlRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.realtime.relay.redisUrlRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.channelLeases.redisUrlRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- if and .Values.redis.enabled .Values.redis.auth.enabled (not .Values.realtime.redisUrl) (not .Values.realtime.redisUrlRef.name) }}{{- $refs = append $refs (dict "name" (include "multica.redis.fullname" .) "key" "uri") }}{{- end }}
 {{- with .Values.backend.config.jwtSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.config.realtimeMetricsTokenRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
@@ -188,6 +190,14 @@ feature-flags.yaml
 {{- with .Values.backend.email.smtp.usernameRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.email.smtp.passwordRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.google.clientIdRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.composio.apiKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.composio.stateSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.dingtalk.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.telegram.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.wecom.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.vcs.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.llm.apiKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.backend.plugins.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.google.clientSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.github.webhookSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.github.appPrivateKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
@@ -251,6 +261,18 @@ existingConfigMap:
 {{- if and .Values.realtime.redisUrlRef.name (not .Values.realtime.redisUrlRef.key) -}}
 {{- fail "multica: realtime.redisUrlRef.key is required when realtime.redisUrlRef.name is set" -}}
 {{- end -}}
+{{- if and .Values.realtime.relay.redisUrl .Values.realtime.relay.redisUrlRef.name -}}
+{{- fail "multica: realtime.relay.redisUrl and realtime.relay.redisUrlRef.name cannot both be set" -}}
+{{- end -}}
+{{- if and .Values.realtime.relay.redisUrlRef.name (not .Values.realtime.relay.redisUrlRef.key) -}}
+{{- fail "multica: realtime.relay.redisUrlRef.key is required when realtime.relay.redisUrlRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.channelLeases.redisUrl .Values.channelLeases.redisUrlRef.name -}}
+{{- fail "multica: channelLeases.redisUrl and channelLeases.redisUrlRef.name cannot both be set" -}}
+{{- end -}}
+{{- if and .Values.channelLeases.redisUrlRef.name (not .Values.channelLeases.redisUrlRef.key) -}}
+{{- fail "multica: channelLeases.redisUrlRef.key is required when channelLeases.redisUrlRef.name is set" -}}
+{{- end -}}
 {{- if and .Values.backend.github.appSlug (not (or .Values.backend.github.webhookSecret .Values.backend.github.webhookSecretRef.name)) -}}
 {{- fail "multica: backend.github.webhookSecret or backend.github.webhookSecretRef.name is required when backend.github.appSlug is set" -}}
 {{- end -}}
@@ -280,6 +302,33 @@ existingConfigMap:
 {{- end -}}
 {{- if and .Values.backend.slack.secretKeyRef.name (not .Values.backend.slack.secretKeyRef.key) -}}
 {{- fail "multica: backend.slack.secretKeyRef.key is required when backend.slack.secretKeyRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.dingtalk.secretKeyRef.name (not .Values.backend.dingtalk.secretKeyRef.key) -}}
+{{- fail "multica: backend.dingtalk.secretKeyRef.key is required when backend.dingtalk.secretKeyRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.telegram.secretKeyRef.name (not .Values.backend.telegram.secretKeyRef.key) -}}
+{{- fail "multica: backend.telegram.secretKeyRef.key is required when backend.telegram.secretKeyRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.wecom.secretKeyRef.name (not .Values.backend.wecom.secretKeyRef.key) -}}
+{{- fail "multica: backend.wecom.secretKeyRef.key is required when backend.wecom.secretKeyRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.composio.apiKeyRef.name (not .Values.backend.composio.apiKeyRef.key) -}}
+{{- fail "multica: backend.composio.apiKeyRef.key is required when backend.composio.apiKeyRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.composio.stateSecretRef.name (not .Values.backend.composio.stateSecretRef.key) -}}
+{{- fail "multica: backend.composio.stateSecretRef.key is required when backend.composio.stateSecretRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.vcs.secretKeyRef.name (not .Values.backend.vcs.secretKeyRef.key) -}}
+{{- fail "multica: backend.vcs.secretKeyRef.key is required when backend.vcs.secretKeyRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.llm.apiKeyRef.name (not .Values.backend.llm.apiKeyRef.key) -}}
+{{- fail "multica: backend.llm.apiKeyRef.key is required when backend.llm.apiKeyRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.plugins.secretKeyRef.name (not .Values.backend.plugins.secretKeyRef.key) -}}
+{{- fail "multica: backend.plugins.secretKeyRef.key is required when backend.plugins.secretKeyRef.name is set" -}}
+{{- end -}}
+{{- if and .Values.backend.config.vcsIntegrationEnabled (not (or .Values.backend.vcs.secretKey .Values.backend.vcs.secretKeyRef.name)) -}}
+{{- fail "multica: backend.vcs.secretKey or backend.vcs.secretKeyRef.name is required when backend.config.vcsIntegrationEnabled=true" -}}
 {{- end -}}
 {{- if and .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name -}}
 {{- fail "multica: backend.featureFlags.rules and backend.featureFlags.existingConfigMap.name cannot both be set" -}}

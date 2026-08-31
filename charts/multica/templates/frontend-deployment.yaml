@@ -42,8 +42,31 @@ spec:
               value: "0.0.0.0"
             - name: PORT
               value: {{ printf "%v" .Values.frontend.service.targetPort | quote }}
+            {{- $managed := dict }}
+            - name: REMOTE_API_URL
+              value: {{ default (printf "http://%s:%v" (include "multica.backendServiceName" .) .Values.backend.service.targetPort) .Values.frontend.config.remoteApiUrl | quote }}
+            {{- $_ := set $managed "REMOTE_API_URL" true }}
+            {{- if .Values.frontend.config.docsUrl }}
+            - name: DOCS_URL
+              value: {{ .Values.frontend.config.docsUrl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "DOCS_URL" true }}
+            {{- if .Values.frontend.config.publicApiUrl }}
+            - name: NEXT_PUBLIC_API_URL
+              value: {{ .Values.frontend.config.publicApiUrl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "NEXT_PUBLIC_API_URL" true }}
+            {{- if .Values.frontend.config.publicWsUrl }}
+            - name: NEXT_PUBLIC_WS_URL
+              value: {{ .Values.frontend.config.publicWsUrl | quote }}
+            {{- end }}
+            {{- $_ := set $managed "NEXT_PUBLIC_WS_URL" true }}
             {{- range $index, $env := .Values.frontend.extraEnv }}
-            - name: {{ required (printf "multica: frontend.extraEnv[%d].name is required" $index) $env.name | quote }}
+            {{- $name := required (printf "multica: frontend.extraEnv[%d].name is required" $index) $env.name }}
+            {{- if hasKey $managed $name }}
+            {{- fail (printf "multica: frontend.extraEnv[%d].name=%s is managed by the chart; use the dedicated value instead" $index $name) }}
+            {{- end }}
+            - name: {{ $name | quote }}
               {{- if hasKey $env "value" }}
               value: {{ $env.value | quote }}
               {{- end }}
