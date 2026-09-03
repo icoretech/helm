@@ -153,7 +153,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.7.15"
+      version: "0.7.16"
       sourceRef:
         kind: HelmRepository
         name: icoretech
