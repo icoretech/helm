@@ -55,7 +55,7 @@ web:
 
 ## Database
 
-The `database.url` and `database.migrations_url` values must be set to the connection string of your PostgreSQL database.
+The `database.url` and `database.migrations_url` values must be set to the connection string of your PostgreSQL database. When `database.enable_migration` is enabled, the migrations init container uses the exact same Airbroke image tag as the web container and executes its embedded Prisma CLI at `/app/migrations-runtime/node_modules/.bin/prisma`; it never downloads Prisma during deployment. Both containers run as the image's non-root UID/GID `1001` by default.
 
 ## Configuration
 
@@ -65,7 +65,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| database.enable_migration | bool | `true` |  |
+| database.enable_migration | bool | `true` | Run migrations before starting the web container using the image's embedded Prisma CLI. |
 | database.migrations_url | string | `""` |  |
 | database.url | string | `""` |  |
 | fullnameOverride | string | `""` |  |
@@ -127,7 +127,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | web.nodeSelector | object | `{}` |  |
 | web.podAnnotations | object | `{}` |  |
 | web.podLabels | object | `{}` |  |
-| web.prismaVersion | string | `"7"` |  |
+| web.podSecurityContext | object | `{"fsGroup":1001}` | Pod security context. Defaults keep shared volumes writable for the non-root Airbroke image user. |
 | web.readinessProbe.enabled | bool | `true` |  |
 | web.readinessProbe.failureThreshold | int | `2` |  |
 | web.readinessProbe.httpGet.endpoint | string | `"/api/hc?source=readinessProbe"` |  |
@@ -139,6 +139,7 @@ The following table lists the configurable parameters of the Airbroke chart and 
 | web.replicaCount | int | `1` |  |
 | web.resources | object | `{}` |  |
 | web.runtimeClassName | string | `nil` |  |
+| web.securityContext | object | `{"runAsGroup":1001,"runAsNonRoot":true,"runAsUser":1001}` | Container security context. Matches the `app` user baked into the Airbroke image and applies to web and migration containers. |
 | web.service.annotations | object | `{}` |  |
 | web.service.enabled | bool | `true` |  |
 | web.service.port | int | `3000` |  |
