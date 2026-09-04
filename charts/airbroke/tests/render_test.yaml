@@ -17,3 +17,51 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].image
           value: nginx:latest
+  - it: runs migrations from the web image's embedded Prisma runtime
+    template: templates/web-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      database.enable_migration: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: nginx:latest
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: nginx:latest
+      - equal:
+          path: spec.template.spec.initContainers[0].workingDir
+          value: /app/migrations-runtime
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value:
+            - /app/migrations-runtime/node_modules/.bin/prisma
+      - equal:
+          path: spec.template.spec.initContainers[0].args
+          value:
+            - migrate
+            - deploy
+      - equal:
+          path: spec.template.spec.initContainers[0].envFrom
+          value:
+            - configMapRef:
+                name: RELEASE-NAME-airbroke-web-env
+            - secretRef:
+                name: RELEASE-NAME-airbroke-web-env-migrations
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 1001
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001

@@ -39,8 +39,12 @@ spec:
       imagePullSecrets:
       - name: {{ .Values.web.imagePullSecrets }}
       {{- end }}
+      securityContext:
+        {{- toYaml .Values.web.podSecurityContext | nindent 8 }}
       containers:
       - name: {{ include "app.web.name" . }}
+        securityContext:
+          {{- toYaml .Values.web.securityContext | nindent 12 }}
         image: "{{ $webImage }}"
         imagePullPolicy: {{ .Values.web.imagePullPolicy }}
         envFrom:
@@ -102,6 +106,8 @@ spec:
       {{- if .Values.database.enable_migration }}
       initContainers:
         - name: migrations
+          securityContext:
+            {{- toYaml .Values.web.securityContext | nindent 12 }}
           image: "{{ $webImage }}"
           imagePullPolicy: {{ .Values.web.imagePullPolicy }}
           envFrom:
@@ -112,7 +118,12 @@ spec:
             {{- if .Values.web.extraEnvFrom }}
             {{- toYaml .Values.web.extraEnvFrom | nindent 12 }}
             {{- end }}
-          args: ['npx', 'prisma@{{ .Values.web.prismaVersion }}', 'migrate', 'deploy']
+          workingDir: /app/migrations-runtime
+          command:
+            - /app/migrations-runtime/node_modules/.bin/prisma
+          args:
+            - migrate
+            - deploy
       {{- end }}
       {{- if .Values.web.cachePersistentVolume.enabled }}
       volumes:

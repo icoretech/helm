@@ -4,10 +4,10 @@ fullnameOverride: ""
 database:
   url: ""  # postgres://airbroke:airbroke@airbroke-pgbouncer/airbroke_production?connection_limit=100&pool_timeout=10&application_name=airbroke
   migrations_url: ""  # postgres://airbroke:airbroke@pg/airbroke_production
+  # -- Run migrations before starting the web container using the image's embedded Prisma CLI.
   enable_migration: true
 
 web:
-  prismaVersion: "7"
   imagePullPolicy: IfNotPresent
   imagePullSecrets: ""  # must be present in namespace
   imageRepository: ghcr.io/icoretech/airbroke
@@ -20,6 +20,16 @@ web:
   podAnnotations: {}
   # podLabels -- Additional labels to add to the web Pod template.
   podLabels: {}
+  # -- Pod security context. Defaults keep shared volumes writable for the non-root Airbroke image user.
+  podSecurityContext:
+    fsGroup: 1001
+
+  # -- Container security context. Matches the `app` user baked into the Airbroke image and applies to web and migration containers.
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+
 
   updateStrategy:
     type: RollingUpdate

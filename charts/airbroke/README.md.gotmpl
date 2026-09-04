@@ -50,7 +50,7 @@ web:
 
 ## Database
 
-The `database.url` and `database.migrations_url` values must be set to the connection string of your PostgreSQL database.
+The `database.url` and `database.migrations_url` values must be set to the connection string of your PostgreSQL database. When `database.enable_migration` is enabled, the migrations init container uses the exact same Airbroke image tag as the web container and executes its embedded Prisma CLI at `/app/migrations-runtime/node_modules/.bin/prisma`; it never downloads Prisma during deployment. Both containers run as the image's non-root UID/GID `1001` by default.
 
 ## Configuration
 
