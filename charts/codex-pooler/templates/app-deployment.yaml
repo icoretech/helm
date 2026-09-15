@@ -109,10 +109,13 @@ spec:
           lifecycle:
             preStop:
               exec:
+                # The marker is touched first so readiness withdrawal never depends on the RPC.
+                # The RPC prefers Release.prepare_shutdown/0 (relay quiesce + marker + drain, 0.8.0+)
+                # and falls back to the drain entrypoint on images that predate it.
                 command:
                   - /bin/sh
                   - -ec
-                  - touch "$CODEX_POOLER_DRAIN_MARKER_PATH"; ERL_AFLAGS= timeout {{ $preStopRpcTimeoutSeconds }}s /app/bin/codex_pooler rpc "CodexPooler.Gateway.Transports.Websocket.RolloutDrain.drain_for_shutdown()" || true; sleep {{ $preStopSleepSeconds }}
+                  - 'touch "$CODEX_POOLER_DRAIN_MARKER_PATH" || true; ERL_AFLAGS= timeout {{ $preStopRpcTimeoutSeconds }}s /app/bin/codex_pooler rpc "if Code.ensure_loaded?(CodexPooler.Release) and function_exported?(CodexPooler.Release, :prepare_shutdown, 0), do: CodexPooler.Release.prepare_shutdown(), else: CodexPooler.Gateway.Transports.Websocket.RolloutDrain.drain_for_shutdown()" || true; sleep {{ $preStopSleepSeconds }}'
           {{- end }}
           resources:
             {{- toYaml .Values.app.resources | nindent 12 }}

@@ -159,7 +159,7 @@ tests:
           value:
             - /bin/sh
             - -ec
-            - touch "$CODEX_POOLER_DRAIN_MARKER_PATH"; ERL_AFLAGS= timeout 87s /app/bin/codex_pooler rpc "CodexPooler.Gateway.Transports.Websocket.RolloutDrain.drain_for_shutdown()" || true; sleep 10
+            - 'touch "$CODEX_POOLER_DRAIN_MARKER_PATH" || true; ERL_AFLAGS= timeout 87s /app/bin/codex_pooler rpc "if Code.ensure_loaded?(CodexPooler.Release) and function_exported?(CodexPooler.Release, :prepare_shutdown, 0), do: CodexPooler.Release.prepare_shutdown(), else: CodexPooler.Gateway.Transports.Websocket.RolloutDrain.drain_for_shutdown()" || true; sleep 10'
 
   - it: derives the RPC shell timeout and accepts the exact lifecycle budget
     template: app-deployment.yaml
@@ -176,7 +176,7 @@ tests:
           value:
             - /bin/sh
             - -ec
-            - touch "$CODEX_POOLER_DRAIN_MARKER_PATH"; ERL_AFLAGS= timeout 9s /app/bin/codex_pooler rpc "CodexPooler.Gateway.Transports.Websocket.RolloutDrain.drain_for_shutdown()" || true; sleep 3
+            - 'touch "$CODEX_POOLER_DRAIN_MARKER_PATH" || true; ERL_AFLAGS= timeout 9s /app/bin/codex_pooler rpc "if Code.ensure_loaded?(CodexPooler.Release) and function_exported?(CodexPooler.Release, :prepare_shutdown, 0), do: CodexPooler.Release.prepare_shutdown(), else: CodexPooler.Gateway.Transports.Websocket.RolloutDrain.drain_for_shutdown()" || true; sleep 3'
 
   - it: rejects app lifecycle budgets that cannot cover hook and shutdown paths
     template: app-deployment.yaml
