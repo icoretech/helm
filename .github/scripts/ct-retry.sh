@@ -21,6 +21,20 @@ if [[ "$#" -eq 0 ]]; then
   exit 2
 fi
 
+# A non-positive attempt budget skips the loop entirely and used to reach the
+# final `exit "$rc"` with rc still 0: the command never ran and the step went
+# green. Refuse it instead, so a bad budget fails the step like any other
+# configuration error.
+if [[ ! "$attempts" =~ ^[0-9]+$ ]] || [[ "$attempts" -lt 1 ]]; then
+  echo "::error::CT_RETRY_ATTEMPTS must be a positive integer (got '${attempts}')" >&2
+  exit 2
+fi
+
+if [[ ! "$backoff" =~ ^[0-9]+$ ]]; then
+  echo "::error::CT_RETRY_BACKOFF_SECONDS must be a non-negative integer (got '${backoff}')" >&2
+  exit 2
+fi
+
 rc=0
 for ((attempt = 1; attempt <= attempts; attempt++)); do
   rc=0

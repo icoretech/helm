@@ -74,6 +74,33 @@ status=0
 "$retry" >/dev/null 2>&1 || status=$?
 assert_eq "missing command is a usage error" 2 "$status"
 
+# A non-positive budget skipped the loop and exited 0 without running anything.
+for bad_attempts in 0 -1 abc; do
+  dir="$(mktemp -d)"
+  make_command "$dir" 0 0
+  status=0
+  CT_RETRY_BACKOFF_SECONDS=0 CT_RETRY_ATTEMPTS="$bad_attempts" \
+    "$retry" "${dir}/fake" >/dev/null 2>&1 || status=$?
+  assert_eq "CT_RETRY_ATTEMPTS='${bad_attempts}' is a usage error" 2 "$status"
+  assert_eq "CT_RETRY_ATTEMPTS='${bad_attempts}' runs nothing" 0 "$(calls_of "$dir")"
+  rm -rf "$dir"
+done
+
+status=0
+CT_RETRY_BACKOFF_SECONDS=abc "$retry" /usr/bin/true >/dev/null 2>&1 || status=$?
+assert_eq "a non-numeric backoff is a usage error" 2 "$status"
+
+# An empty value is an unset value: it must reach the default budget, not the
+# refusal above.
+dir="$(mktemp -d)"
+make_command "$dir" 2 7
+status=0
+CT_RETRY_BACKOFF_SECONDS=0 CT_RETRY_ATTEMPTS='' \
+  "$retry" "${dir}/fake" >/dev/null 2>&1 || status=$?
+assert_eq "an empty CT_RETRY_ATTEMPTS uses the default budget" 0 "$status"
+assert_eq "an empty CT_RETRY_ATTEMPTS keeps three attempts" 3 "$(calls_of "$dir")"
+rm -rf "$dir"
+
 echo "== workflow wiring =="
 # The helper only protects the workflow while the workflow actually calls it.
 for step in lint install; do
