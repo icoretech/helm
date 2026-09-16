@@ -16,7 +16,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.8.9 \
+  --version 0.8.10 \
   --values values.production.yaml
 ```
 
@@ -25,7 +25,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.8.9 \
+  --version 0.8.10 \
   --values values.production.yaml
 ```
 
@@ -153,7 +153,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.8.9"
+      version: "0.8.10"
       sourceRef:
         kind: HelmRepository
         name: icoretech

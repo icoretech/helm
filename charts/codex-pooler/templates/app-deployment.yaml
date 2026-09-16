@@ -80,6 +80,11 @@ spec:
                   value: https
             initialDelaySeconds: 5
             periodSeconds: 10
+            # The kubelet's default timeout is 1s, the same as the probe's own
+            # database timeout, so a probe that legitimately takes about a
+            # second was cut off for a reason that is not the database.
+            timeoutSeconds: 3
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /healthz

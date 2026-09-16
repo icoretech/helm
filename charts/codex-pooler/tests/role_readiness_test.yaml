@@ -1,0 +1,69 @@
+suite: role readiness
+# `helm install --wait` returned 0 and all three roles reported Ready against a
+# database with no schema: the worker and scheduler Deployments carried no probe
+# at all, so `kubectl rollout status` was not evidence that anything could work.
+# Their readiness now asks the release itself, over the same rpc contract the
+# app's preStop uses.
+templates:
+  - app-deployment.yaml
+  - oban-worker-deployment.yaml
+  - oban-scheduler-deployment.yaml
+tests:
+  - it: asks the worker release whether it can serve
+    template: oban-worker-deployment.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].readinessProbe.exec.command[2]
+          pattern: CodexPooler\.Release\.readiness_check
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].readinessProbe.periodSeconds
+          value: 30
+      # Readiness only: restarting a container cannot apply a migration, so a
+      # liveness or startup probe on this command would crash-loop the pod.
+      - notExists:
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].livenessProbe
+      - notExists:
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].startupProbe
+
+  - it: asks the scheduler release whether it can serve
+    template: oban-scheduler-deployment.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[?(@.name=="oban-scheduler")].readinessProbe.exec.command[2]
+          pattern: CodexPooler\.Release\.readiness_check
+      - notExists:
+          path: spec.template.spec.containers[?(@.name=="oban-scheduler")].livenessProbe
+      - notExists:
+          path: spec.template.spec.containers[?(@.name=="oban-scheduler")].startupProbe
+
+  - it: keeps older images Ready instead of never Ready
+    template: oban-worker-deployment.yaml
+    asserts:
+      # readiness_check/0 is newer than this chart's own appVersion, and an rpc
+      # to a function an image does not export raises.
+      - matchRegex:
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].readinessProbe.exec.command[2]
+          pattern: function_exported\?\(CodexPooler\.Release, :readiness_check, 0\)
+
+  - it: gives the app readiness probe a budget wider than the query it makes
+    template: app-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="app")].readinessProbe.httpGet.path
+          value: /readyz
+      # The kubelet default is 1s, which is the probe's own database timeout.
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="app")].readinessProbe.timeoutSeconds
+          value: 3
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="app")].readinessProbe.failureThreshold
+          value: 3
+
+  - it: keeps the startup probe off the readiness endpoint
+    template: app-deployment.yaml
+    asserts:
+      # /readyz depends on the database; a startup probe restarts the container,
+      # so pointing it there turns an unmigrated database into a crash loop.
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="app")].startupProbe.httpGet.path
+          value: /healthz

@@ -56,6 +56,26 @@ spec:
               value: scheduler
             {{- include "codex-pooler.clusteringEnv" (dict "root" . "role" "scheduler") | nindent 12 }}
             {{- include "codex-pooler.env" . | nindent 12 }}
+          # `rollout status` on these Deployments used to mean nothing: with no
+          # probe at all, a worker reported Ready against a database with no
+          # schema. Readiness deliberately, not startup or liveness — restarting
+          # a container cannot apply a migration, so those would crash-loop.
+          # `rpc` spawns a BEAM per call, hence the slow cadence and the
+          # generous timeout; `ERL_AFLAGS=` clears inherited flags the same way
+          # the app's preStop command does. `readiness_check/0` is a
+          # cross-repository contract like `prepare_shutdown/1`, and the
+          # `function_exported?` wrapper keeps images that predate it Ready
+          # instead of never becoming Ready at all.
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - 'ERL_AFLAGS= timeout 9s /app/bin/codex_pooler rpc "if function_exported?(CodexPooler.Release, :readiness_check, 0), do: CodexPooler.Release.readiness_check(), else: :ok"'
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
           resources:
             {{- toYaml .Values.oban.scheduler.resources | nindent 12 }}
       {{- with .Values.oban.scheduler.nodeSelector }}
