@@ -28,14 +28,14 @@ fi
 max_attempts=10
 max_backoff=600
 
-if [[ ! "$attempts" =~ ^[0-9]{1,3}$ ]] || [[ "$attempts" -lt 1 ]] || [[ "$attempts" -gt "$max_attempts" ]]; then
+if [[ ! "$attempts" =~ ^[0-9]+$ ]] || [[ "$attempts" -lt 1 ]] || [[ "$attempts" -gt "$max_attempts" ]]; then
   echo "::error::CT_RETRY_ATTEMPTS must be an integer between 1 and ${max_attempts} (got '${attempts}')" >&2
   exit 2
 fi
 
 # An enormous budget is not a fail-open — a hung job still fails the check — but
 # it burns a runner to the six-hour limit and buries the real failure.
-if [[ ! "$backoff" =~ ^[0-9]{1,4}$ ]] || [[ "$backoff" -gt "$max_backoff" ]]; then
+if [[ ! "$backoff" =~ ^[0-9]+$ ]] || [[ "$backoff" -gt "$max_backoff" ]]; then
   echo "::error::CT_RETRY_BACKOFF_SECONDS must be an integer between 0 and ${max_backoff} (got '${backoff}')" >&2
   exit 2
 fi
