@@ -96,8 +96,17 @@ jobs:
           readarray -t charts <<< "$CHANGED_CHARTS"
           .github/scripts/validate-rendered-topology.sh "${charts[@]}"
 
+      - name: Apply chart-testing cluster fixtures
+        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          CHANGED_CHARTS: ${{ steps.list-changed.outputs.charts }}
+        run: |
+          readarray -t charts <<< "$CHANGED_CHARTS"
+          .github/scripts/apply-ct-fixtures.sh "${charts[@]}"
+
       - name: Run chart-testing (install)
         if: steps.list-changed.outputs.changed == 'true'
         run: |
           .github/scripts/ct-retry.sh ct install \
-            --target-branch ${{ github.event.repository.default_branch }}
+            --target-branch ${{ github.event.repository.default_branch }} \
+            --helm-extra-args '--timeout 600s'

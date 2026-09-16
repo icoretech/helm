@@ -1,0 +1,75 @@
+# Ephemeral PostgreSQL for `ct install`, applied by
+# `.github/scripts/apply-ct-fixtures.sh` before chart-testing runs.
+#
+# The chart deliberately ships no database, and the release refuses to boot
+# without a reachable one, so without this fixture `ci/install-values.yaml` had
+# to disable app, migrations, worker and scheduler and chart-testing only ever
+# installed a ServiceAccount. It is a throwaway inside the CI kind cluster:
+# emptyDir storage, sample credentials, and it is never rendered by the chart.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: codex-pooler-ci-db
+  labels:
+    helm.icoretech.io/ct-fixture: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: codex-pooler-ci-db
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18-alpine
+          env:
+            - name: POSTGRES_USER
+              value: codex_pooler
+            - name: POSTGRES_PASSWORD
+              value: codex_pooler
+            - name: POSTGRES_DB
+              value: codex_pooler
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: postgres
+              containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "codex_pooler", "-d", "codex_pooler"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: codex-pooler-ci-db
+spec:
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres

@@ -1,13 +1,33 @@
-# Values used by chart-testing (ct install) to verify installability before a
-# public application image tag is necessarily available.
+# Values chart-testing installs with.
+#
+# This installs the topology an operator actually deploys — app, worker,
+# scheduler, the migration hook, the Service, the PDB and the Secret — against
+# the ephemeral PostgreSQL in `ci/fixtures/postgres.yaml`. Until that fixture
+# existed this file disabled every workload, so `ct lint` and `ct install`
+# validated a single ServiceAccount.
+#
+# Every credential here is a sample for a throwaway cluster, not a secret.
 app:
-  enabled: false
+  # The default spaces out per-pod websocket drains during a rollout; in CI it
+  # only delays the Deployment becoming available.
+  minReadySeconds: 0
+  replicaCount: 1
 
 migrations:
-  enabled: false
+  enabled: true
 
 oban:
   worker:
-    enabled: false
+    enabled: true
   scheduler:
-    enabled: false
+    enabled: true
+
+secrets:
+  create: true
+  existingSecret: ""
+  databaseUrl: postgres://codex_pooler:codex_pooler@postgres.codex-pooler-ci-db.svc.cluster.local:5432/codex_pooler
+  secretKeyBase: ci-only-secret-key-base-0000000000000000000000000000000000000000
+  totpEncryptionKey: "01234567890123456789012345678901"
+  totpKeyVersion: v1
+  upstreamSecretKey: "01234567890123456789012345678901"
+  upstreamSecretKeyVersion: v1
