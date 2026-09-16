@@ -27,6 +27,15 @@ merge_base="$(git merge-base "$base" HEAD)" || {
   exit 1
 }
 
+# `git diff` over a pathspec that matches nothing exits 0, so a wrong chart
+# directory would report agreement it never checked. This check exists because
+# chart-testing's empty answer is not to be trusted; its own input is not
+# either.
+if ! compgen -G "${chart_dir}/*/Chart.yaml" >/dev/null; then
+  echo "::error::no chart found under ${chart_dir}; this check cannot verify an empty chart list" >&2
+  exit 1
+fi
+
 changed_charts=()
 while IFS= read -r path; do
   [[ -n "$path" ]] || continue
