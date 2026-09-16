@@ -1,0 +1,128 @@
+suite: default topology
+# `ci/install-values.yaml` disables the app, migrations, worker and scheduler,
+# because `ct install` has no database or published image to install against.
+# That is the only values file chart-testing uses, so `ct lint` and `ct install`
+# validate a topology of one ServiceAccount: a template change that broke every
+# workload would pass both.
+#
+# The default posture is what an operator actually deploys, and this suite is
+# what asserts it renders. It stays deliberately structural — which objects
+# exist, what selects what, which role each one runs — so that behaviour
+# assertions keep living in the suites that own them.
+templates:
+  - app-deployment.yaml
+  - app-pdb.yaml
+  - app-service.yaml
+  - migration-job.yaml
+  - oban-scheduler-deployment.yaml
+  - oban-worker-deployment.yaml
+  - serviceaccount.yaml
+tests:
+  - it: renders the app Deployment on the web role
+    template: app-deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: app
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/component"]
+          value: app
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_MODE")].value
+          value: web
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")].value
+          value: "true"
+
+  - it: renders the app Service in front of the app Deployment
+    template: app-service.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: spec.selector["app.kubernetes.io/component"]
+          value: app
+      - equal:
+          path: spec.ports[0].name
+          value: http
+
+  - it: renders the app PodDisruptionBudget against the app selector
+    template: app-pdb.yaml
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/component"]
+          value: app
+      - exists:
+          path: spec.minAvailable
+
+  - it: renders the ServiceAccount every workload runs as
+    template: serviceaccount.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: codex-pooler
+
+  - it: renders the migration Job as a release hook
+    template: migration-job.yaml
+    asserts:
+      - isKind:
+          of: Job
+      - exists:
+          path: metadata.annotations["helm.sh/hook"]
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: OnFailure
+
+  - it: renders the Oban worker Deployment on the worker role
+    template: oban-worker-deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_MODE")].value
+          value: worker
+
+  - it: renders the Oban scheduler Deployment on the scheduler role
+    template: oban-scheduler-deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_MODE")].value
+          value: scheduler
+
+  - it: renders nothing for a workload its values disable
+    set:
+      app.enabled: false
+      migrations.enabled: false
+      oban.worker.enabled: false
+      oban.scheduler.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: app-deployment.yaml
+      - hasDocuments:
+          count: 0
+        template: app-pdb.yaml
+      - hasDocuments:
+          count: 0
+        template: app-service.yaml
+      - hasDocuments:
+          count: 0
+        template: migration-job.yaml
+      - hasDocuments:
+          count: 0
+        template: oban-worker-deployment.yaml
+      - hasDocuments:
+          count: 0
+        template: oban-scheduler-deployment.yaml
+      # What `ci/install-values.yaml` leaves chart-testing to validate.
+      - hasDocuments:
+          count: 1
+        template: serviceaccount.yaml
