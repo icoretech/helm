@@ -219,6 +219,8 @@
       "properties": {
         "enabled": { "type": "boolean" },
         "ttlSecondsAfterFinished": { "type": "integer", "minimum": 0 },
+        "backoffLimit": { "type": "integer", "minimum": 0 },
+        "activeDeadlineSeconds": { "type": "integer", "minimum": 1 },
         "resources": { "$ref": "#/definitions/resourceRequirements" }
       }
     },

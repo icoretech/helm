@@ -12,6 +12,11 @@ metadata:
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
 spec:
   ttlSecondsAfterFinished: {{ .Values.migrations.ttlSecondsAfterFinished }}
+  # A migration that cannot start — a missing Secret key, an unreachable
+  # database — must fail the release instead of sitting active forever and
+  # hanging `helm install` until the client timeout.
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.migrations.activeDeadlineSeconds }}
   template:
     metadata:
       labels:
@@ -36,7 +41,7 @@ spec:
           env:
             - name: OBAN_MODE
               value: web
-            {{- include "codex-pooler.env" . | nindent 12 }}
+            {{- include "codex-pooler.env" (dict "root" . "secretName" (include "codex-pooler.migrationsSecretName" .)) | nindent 12 }}
           resources:
             {{- toYaml .Values.migrations.resources | nindent 12 }}
 {{- end }}

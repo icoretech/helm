@@ -16,7 +16,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.8.8 \
+  --version 0.8.9 \
   --values values.production.yaml
 ```
 
@@ -25,7 +25,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.8.8 \
+  --version 0.8.9 \
   --values values.production.yaml
 ```
 
@@ -153,7 +153,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.8.8"
+      version: "0.8.9"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -244,6 +244,8 @@ spec:
 | ingress.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
 | ingress.tls | list | `[]` |  |
+| migrations.activeDeadlineSeconds | int | `900` | Wall-clock budget for the migration hook. Bounds a Job that can never start (a missing Secret key, an unreachable database), which would otherwise hang helm install until the client timeout. |
+| migrations.backoffLimit | int | `3` | Job retries before the migration hook is treated as failed. A migration that keeps failing must fail the release rather than retry indefinitely. |
 | migrations.enabled | bool | `true` |  |
 | migrations.resources.limits.cpu | string | `"250m"` |  |
 | migrations.resources.limits.memory | string | `"384Mi"` |  |
