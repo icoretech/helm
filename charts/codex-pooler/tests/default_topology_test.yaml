@@ -29,12 +29,22 @@ tests:
       - equal:
           path: spec.selector.matchLabels["app.kubernetes.io/component"]
           value: app
+      # Anchored by container name, not by index: the Service resolves its
+      # targetPort through a named port on this container, and every other
+      # assertion here is about this container rather than about whichever one
+      # happens to be first.
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_MODE")].value
+          path: spec.template.spec.containers[0].name
+          value: app
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="OBAN_MODE")].value
           value: web
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")].value
+          path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="PHX_SERVER")].value
           value: "true"
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="app")].ports[?(@.name=="http")].containerPort
+          value: 4000
 
   - it: renders the app Service in front of the app Deployment
     template: app-service.yaml
@@ -50,6 +60,11 @@ tests:
           value: app
       - equal:
           path: spec.ports[0].name
+          value: http
+      # The field that actually puts the Service in front of the container: a
+      # number no container exposes renders a Service that routes nowhere.
+      - equal:
+          path: spec.ports[0].targetPort
           value: http
 
   - it: renders the app PodDisruptionBudget against the app selector
