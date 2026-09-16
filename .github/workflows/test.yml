@@ -49,6 +49,14 @@ jobs:
           .github/scripts/ct-retry.sh ct lint \
             --target-branch ${{ github.event.repository.default_branch }}
 
+      - name: Check chart documentation is regenerated
+        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          CHANGED_CHARTS: ${{ steps.list-changed.outputs.charts }}
+        run: |
+          readarray -t charts <<< "$CHANGED_CHARTS"
+          .github/scripts/check-chart-docs.sh "${charts[@]}"
+
       - name: Set up helm-unittest
         if: steps.list-changed.outputs.changed == 'true'
         run: |
