@@ -1,0 +1,62 @@
+# Values for the full-topology validation in pull-request CI, run by
+# `.github/scripts/validate-rendered-topology.sh`.
+#
+# `ci/install-values.yaml` is what `ct install` uses, and it must stay
+# installable in a kind cluster that has no database, no secrets and no
+# published application image, so it disables app, migrations, worker and
+# scheduler: chart-testing only ever validates a single ServiceAccount. A real
+# `ct install` of this topology is blocked by the release itself — the app
+# refuses to boot without a reachable DATABASE_URL, so every workload would
+# crash-loop and `ct install --wait` would fail on readiness rather than on
+# anything about the chart.
+#
+# This file never starts a pod. It renders what an operator actually deploys and
+# sends it to the API server for server-side validation, which is the part of
+# `ct install` that does not need the application to run.
+#
+# ServiceMonitor stays disabled: its CRD is not installed in the CI cluster, and
+# `tests/secrets_and_monitoring_test.yaml` owns that object's rendering.
+image:
+  tag: "0.0.1"
+
+app:
+  enabled: true
+  replicaCount: 2
+  podDisruptionBudget:
+    enabled: true
+
+migrations:
+  enabled: true
+
+oban:
+  worker:
+    enabled: true
+  scheduler:
+    enabled: true
+
+clustering:
+  enabled: true
+  query: codex-pooler-cluster.default.svc.cluster.local
+  headlessService:
+    enabled: true
+  cookie:
+    value: sample-release-cookie
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: codex-pooler.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+secrets:
+  create: true
+  existingSecret: ""
+  databaseUrl: postgres://codex_pooler:secret@example-postgres/codex_pooler
+  secretKeyBase: sample-secret-key-base
+  totpEncryptionKey: sample-totp-encryption-key
+  totpKeyVersion: v1
+  upstreamSecretKey: "01234567890123456789012345678901"
+  upstreamSecretKeyVersion: v1

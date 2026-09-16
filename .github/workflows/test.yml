@@ -88,6 +88,14 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
         uses: helm/kind-action@v1.15.0
 
+      - name: Validate the rendered topology against the API server
+        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          CHANGED_CHARTS: ${{ steps.list-changed.outputs.charts }}
+        run: |
+          readarray -t charts <<< "$CHANGED_CHARTS"
+          .github/scripts/validate-rendered-topology.sh "${charts[@]}"
+
       - name: Run chart-testing (install)
         if: steps.list-changed.outputs.changed == 'true'
         run: |
