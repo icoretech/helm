@@ -83,6 +83,12 @@ EXPECTED_STEPS: list[dict[str, object]] = [
     {"name": None, "uses": "actions/setup-python@v7.0.0", "if": None, "run": None},
     {"name": "Set up chart-testing", "uses": "helm/chart-testing-action@v2.8.0", "if": None, "run": None},
     {
+        "name": "Lint the CI definition",
+        "uses": None,
+        "if": None,
+        "run": ".github/scripts/lint-ci.sh",
+    },
+    {
         "name": "Verify CI retry helper",
         "uses": None,
         "if": None,
