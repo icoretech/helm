@@ -38,6 +38,11 @@ jobs:
             echo "CHANGED_CHARTS_EOF"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Verify chart change detection
+        if: steps.list-changed.outputs.changed != 'true'
+        run: |
+          .github/scripts/assert-no-chart-changed.sh ${{ github.event.repository.default_branch }}
+
       - name: Run chart-testing (lint)
         if: steps.list-changed.outputs.changed == 'true'
         run: |
