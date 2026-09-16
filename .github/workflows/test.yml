@@ -22,6 +22,9 @@ jobs:
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.8.0
 
+      - name: Verify CI retry helper
+        run: .github/scripts/ct-retry-test.sh
+
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
@@ -38,16 +41,8 @@ jobs:
       - name: Run chart-testing (lint)
         if: steps.list-changed.outputs.changed == 'true'
         run: |
-          for attempt in 1 2 3; do
-            if ct lint --target-branch ${{ github.event.repository.default_branch }}; then
-              exit 0
-            fi
-            rc=$?
-            if [[ "$attempt" -eq 3 ]]; then
-              exit "$rc"
-            fi
-            sleep "$((attempt * 20))"
-          done
+          .github/scripts/ct-retry.sh ct lint \
+            --target-branch ${{ github.event.repository.default_branch }}
 
       - name: Set up helm-unittest
         if: steps.list-changed.outputs.changed == 'true'
@@ -83,13 +78,5 @@ jobs:
       - name: Run chart-testing (install)
         if: steps.list-changed.outputs.changed == 'true'
         run: |
-          for attempt in 1 2 3; do
-            if ct install --target-branch ${{ github.event.repository.default_branch }}; then
-              exit 0
-            fi
-            rc=$?
-            if [[ "$attempt" -eq 3 ]]; then
-              exit "$rc"
-            fi
-            sleep "$((attempt * 20))"
-          done
+          .github/scripts/ct-retry.sh ct install \
+            --target-branch ${{ github.event.repository.default_branch }}
