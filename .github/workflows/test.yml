@@ -2,9 +2,13 @@ name: Lint and Test Charts
 
 on: pull_request
 
+permissions:
+  contents: read
+
 jobs:
   lint-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -29,6 +33,7 @@ jobs:
         run: |
           .github/scripts/ct-retry-test.sh
           .github/scripts/verify-ci-gate.py
+          .github/scripts/verify-ci-gate.py --self-test
 
       - name: Run chart-testing (list-changed)
         id: list-changed

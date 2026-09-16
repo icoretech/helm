@@ -4,34 +4,44 @@
 `ct-retry-test.sh` proves the retry helper propagates a failure. That is only
 half of "chart-testing failures fail the pull request": the other half is that
 the workflow still *runs* chart-testing, and that nothing in the file quietly
-turns the result into a pass. Text greps are not enough for that — every one of
-these keeps a grep-based guard green while the required `lint-test` check goes
-green having validated nothing:
+turns the result into a pass.
 
-  * `if:` on the **job**, above `steps:` — GitHub reports a skipped job as
-    success, so the required check passes and no step ever runs;
-  * `shell: bash -c "exit 0" {0}`, at workflow level or on one step, which
-    makes every `run:` a no-op that succeeds;
-  * a quoted key (`"continue-on-error": true`, `"if": …`), which is the same
-    YAML and a different string;
-  * extra arguments (`ct lint --excluded-charts codex-pooler`), which lint
-    nothing and exit 0;
-  * an extra step that shadows `ct` on `$GITHUB_PATH`;
-  * `uses:` replacing the job body while keeping the job id, so branch
-    protection still sees a green `lint-test`;
-  * `env:` overriding a script's own knobs (`CHART_SEARCH_ROOT`, …).
+Two earlier versions of this guard read parts of the file — two step bodies, a
+grep for one key, a list of forbidden environment names — and each time the gate
+was turned off through a part they did not read. So this version reads the whole
+job and pins it: the trigger, the workflow's own keys, the job's keys, the
+ordered list of steps, and for every step its `uses`, its `with`, its `if`, its
+`env` and its exact command. Anything that differs fails here. Turning the gate
+off still requires an edit — it just has to be an edit to this file too, which
+is visible in review rather than silent.
 
-So this parses the workflow and pins its shape: which job, which steps in which
-order, which conditions, and the exact command of every step that is part of the
-gate. Anything else — an added step, a renamed job, a new key — fails here and
-has to be reflected in this file, which makes turning the gate off a visible
-edit instead of a silent one.
+`--self-test` re-applies the known defeats to the real workflow in memory and
+requires each of them to fail, so the guard cannot rot into agreeing with
+everything.
 
-The parser is deliberately small and fails closed: anything it does not
-understand (tabs, flow collections, anchors, a second document) is an error, not
-a shrug.
+WHAT THIS DOES NOT READ, and therefore does not protect (an honest list, because
+the last two versions each claimed a class was closed and it was not):
 
-Usage: verify-ci-gate.py [workflow-path]
+  * the contents of the scripts it names. `ct-retry.sh` has its own contract
+    test; `lint-ci.sh`, `check-chart-docs.sh`, `assert-no-chart-changed.sh`,
+    `validate-rendered-topology.sh` and `apply-ct-fixtures.sh` do not. Editing
+    one of them is an ordinary code change that only review catches.
+  * the behaviour of the actions behind the pinned `uses:` refs. `@v7` is a
+    moving tag; the pin is a name, not a digest.
+  * the other workflows in the repository, beyond refusing a second workflow
+    that declares a job with the required check's name. `release.yml` and
+    `sync-gh-pages.yml` are not part of this gate and are not checked.
+  * anything on the GitHub side: which contexts branch protection requires,
+    whether `enforce_admins` is on, whether a review is required, or how GitHub
+    resolves two check runs with the same name.
+  * the runner image, the network, and the registries the pinned tools are
+    pulled from.
+  * its own deletion. A pull request that removes the step that runs this file
+    also removes the run that would report it; nothing inside a workflow
+    survives that. Branch protection and review on `.github/**` are the only
+    answers, and they are outside this file.
+
+Usage: verify-ci-gate.py [workflow-path] [--self-test]
 """
 
 from __future__ import annotations
@@ -40,97 +50,142 @@ import sys
 from pathlib import Path
 
 WORKFLOW = ".github/workflows/test.yml"
+REQUIRED_CHECK = "lint-test"
 
 DEFAULT_BRANCH = "${{ github.event.repository.default_branch }}"
-CHANGED = "steps.list-changed.outputs.changed"
-IF_CHANGED = f"{CHANGED} == 'true'"
-IF_NOT_CHANGED = f"{CHANGED} != 'true'"
+IF_CHANGED = "steps.list-changed.outputs.changed == 'true'"
+IF_NOT_CHANGED = "steps.list-changed.outputs.changed != 'true'"
 CHANGED_CHARTS_ENV = {"CHANGED_CHARTS": "${{ steps.list-changed.outputs.charts }}"}
+
+EXPECTED_TOP = {
+    "name": "Lint and Test Charts",
+    "on": "pull_request",
+    "permissions": {"contents": "read"},
+}
+EXPECTED_JOB_KEYS = {"runs-on", "timeout-minutes", "steps"}
+EXPECTED_JOB = {"runs-on": "ubuntu-latest", "timeout-minutes": "30"}
 
 # Keys a step may carry at all. `shell` is absent on purpose: a custom shell
 # (`shell: bash -c "exit 0" {0}`) turns every `run:` in its scope into a no-op
-# that succeeds. `continue-on-error` is allowed only as the explicit safe value,
-# checked below.
+# that succeeds. `continue-on-error` is allowed only as the explicit safe value.
 ALLOWED_STEP_KEYS = {"name", "id", "uses", "with", "run", "if", "env", "continue-on-error"}
-ALLOWED_JOB_KEYS = {"runs-on", "steps"}
-ALLOWED_TOP_KEYS = {"name", "on", "jobs"}
-
-# Environment names the gate's own scripts read. A workflow- or step-level
-# override of any of them switches a check off without touching its command.
-PROTECTED_ENV = {
-    "PATH",
-    "CHART_SEARCH_ROOT",
-    "HELM_DOCS_IMAGE",
-    "TOPOLOGY_DRY_RUN_NAMESPACE",
-    "CT_FIXTURE_TIMEOUT",
-}
 
 
-def run_ct(step: str, *extra: str) -> str:
-    return " ".join((".github/scripts/ct-retry.sh", "ct", step, "--target-branch", DEFAULT_BRANCH) + extra)
+def for_each_changed_chart(script: str) -> list[str]:
+    return ['readarray -t charts <<< "$CHANGED_CHARTS"', f'{script} "${{charts[@]}}"']
 
 
-def for_each_changed_chart(script: str) -> str:
-    return f'readarray -t charts <<< "$CHANGED_CHARTS" {script} "${{charts[@]}}"'
-
-
-# The gate, step by step. `run` pins the exact command (whitespace normalised,
-# line continuations joined); `None` means the step's body is not part of the
-# gate and only its keys and condition are pinned.
-EXPECTED_STEPS: list[dict[str, object]] = [
-    {"name": "Checkout", "uses": "actions/checkout@v7", "if": None, "run": None},
-    {"name": "Set up Helm", "uses": "azure/setup-helm@v5.0.1", "if": None, "run": None},
-    {"name": None, "uses": "actions/setup-python@v7.0.0", "if": None, "run": None},
-    {"name": "Set up chart-testing", "uses": "helm/chart-testing-action@v2.8.0", "if": None, "run": None},
+# The gate, step by step. Every field is pinned: `None` means "must be absent",
+# and `run` is the list of logical commands (continuations joined, comments
+# dropped, whitespace collapsed) the step must run — no step is exempt, because
+# an unpinned body can shadow `ct`, `helm` or `helm-docs` for every step after it.
+EXPECTED_STEPS: list[dict] = [
     {
-        "name": "Lint the CI definition",
-        "uses": None,
-        "if": None,
-        "run": ".github/scripts/lint-ci.sh",
+        "name": "Checkout",
+        "uses": "actions/checkout@v7",
+        # `ref:` here would check out the base commit: the runner would then
+        # validate a tree without the pull request's chart changes, and both
+        # halves of the change detection would honestly agree that nothing
+        # changed.
+        "with": {"fetch-depth": "0"},
     },
+    {"name": "Set up Helm", "uses": "azure/setup-helm@v5.0.1"},
+    {
+        "name": None,
+        "uses": "actions/setup-python@v7.0.0",
+        "with": {"python-version": "3.14", "check-latest": "true"},
+    },
+    # `with: {version: …}` here would change which ct the pinned commands invoke.
+    {"name": "Set up chart-testing", "uses": "helm/chart-testing-action@v2.8.0"},
+    {"name": "Lint the CI definition", "run": [".github/scripts/lint-ci.sh"]},
     {
         "name": "Verify CI retry helper",
-        "uses": None,
-        "if": None,
-        "run": ".github/scripts/ct-retry-test.sh .github/scripts/verify-ci-gate.py",
+        "run": [
+            ".github/scripts/ct-retry-test.sh",
+            ".github/scripts/verify-ci-gate.py",
+            ".github/scripts/verify-ci-gate.py --self-test",
+        ],
     },
-    {"name": "Run chart-testing (list-changed)", "uses": None, "if": None, "run": None},
+    {
+        "name": "Run chart-testing (list-changed)",
+        "id": "list-changed",
+        "run": [
+            f"changed=$(ct list-changed --target-branch {DEFAULT_BRANCH})",
+            'if [[ -n "$changed" ]]; then',
+            'echo "changed=true" >> "$GITHUB_OUTPUT"',
+            "fi",
+            "{",
+            'echo "charts<<CHANGED_CHARTS_EOF"',
+            'echo "$changed"',
+            'echo "CHANGED_CHARTS_EOF"',
+            '} >> "$GITHUB_OUTPUT"',
+        ],
+    },
     {
         "name": "Verify chart change detection",
-        "uses": None,
         "if": IF_NOT_CHANGED,
-        "run": f".github/scripts/assert-no-chart-changed.sh {DEFAULT_BRANCH}",
+        "run": [f".github/scripts/assert-no-chart-changed.sh {DEFAULT_BRANCH}"],
     },
-    {"name": "Run chart-testing (lint)", "uses": None, "if": IF_CHANGED, "run": run_ct("lint")},
+    {
+        "name": "Run chart-testing (lint)",
+        "if": IF_CHANGED,
+        "run": [f".github/scripts/ct-retry.sh ct lint --target-branch {DEFAULT_BRANCH}"],
+    },
     {
         "name": "Check chart documentation is regenerated",
-        "uses": None,
         "if": IF_CHANGED,
-        "run": for_each_changed_chart(".github/scripts/check-chart-docs.sh"),
         "env": CHANGED_CHARTS_ENV,
+        "run": for_each_changed_chart(".github/scripts/check-chart-docs.sh"),
     },
-    {"name": "Set up helm-unittest", "uses": None, "if": IF_CHANGED, "run": None},
-    {"name": "Run helm unittest (changed charts only)", "uses": None, "if": IF_CHANGED, "run": None},
-    {"name": "Create kind cluster", "uses": "helm/kind-action@v1.15.0", "if": IF_CHANGED, "run": None},
+    {
+        "name": "Set up helm-unittest",
+        "if": IF_CHANGED,
+        "run": [
+            "helm plugin install https://github.com/helm-unittest/helm-unittest"
+            " --version v0.5.1 --verify=false"
+        ],
+    },
+    {
+        "name": "Run helm unittest (changed charts only)",
+        "if": IF_CHANGED,
+        "env": CHANGED_CHARTS_ENV,
+        "run": [
+            "status=0",
+            "while IFS= read -r chart; do",
+            '[[ -n "$chart" ]] || continue',
+            'if [[ ! -d "$chart/tests" ]]; then',
+            'echo "::notice::skipping $chart (no tests directory)"',
+            "continue",
+            "fi",
+            'echo "==> helm unittest $chart"',
+            'if ! helm unittest "$chart"; then',
+            'echo "::error::helm unittest failed for $chart"',
+            "status=1",
+            "fi",
+            'done <<< "$CHANGED_CHARTS"',
+            'exit "$status"',
+        ],
+    },
+    {"name": "Create kind cluster", "if": IF_CHANGED, "uses": "helm/kind-action@v1.15.0"},
     {
         "name": "Validate the rendered topology against the API server",
-        "uses": None,
         "if": IF_CHANGED,
-        "run": for_each_changed_chart(".github/scripts/validate-rendered-topology.sh"),
         "env": CHANGED_CHARTS_ENV,
+        "run": for_each_changed_chart(".github/scripts/validate-rendered-topology.sh"),
     },
     {
         "name": "Apply chart-testing cluster fixtures",
-        "uses": None,
         "if": IF_CHANGED,
-        "run": for_each_changed_chart(".github/scripts/apply-ct-fixtures.sh"),
         "env": CHANGED_CHARTS_ENV,
+        "run": for_each_changed_chart(".github/scripts/apply-ct-fixtures.sh"),
     },
     {
         "name": "Run chart-testing (install)",
-        "uses": None,
         "if": IF_CHANGED,
-        "run": run_ct("install", "--helm-extra-args", "'--timeout 600s'"),
+        "run": [
+            f".github/scripts/ct-retry.sh ct install --target-branch {DEFAULT_BRANCH}"
+            " --helm-extra-args '--timeout 600s'"
+        ],
     },
 ]
 
@@ -140,7 +195,7 @@ class GateError(Exception):
 
 
 # --------------------------------------------------------------------------
-# a small, strict YAML subset
+# a small, strict YAML subset — anything it does not understand is an error
 # --------------------------------------------------------------------------
 
 
@@ -178,7 +233,6 @@ class Parser:
         self.lines = text.splitlines()
         self.index = 0
 
-    # -- helpers ---------------------------------------------------------
     def peek(self) -> tuple[int, str] | None:
         while self.index < len(self.lines):
             line = self.lines[self.index]
@@ -197,7 +251,6 @@ class Parser:
             raise GateError(f"flow collections are not understood: {value!r}")
         return unquote(value)
 
-    # -- structure -------------------------------------------------------
     def parse_block(self, indent: int):
         head = self.peek()
         if head is None or head[0] < indent:
@@ -228,7 +281,6 @@ class Parser:
                 mapping[key] = self.parse_block(indent + 2)
             else:
                 mapping[key] = self.check_value(value)
-        return mapping
 
     def parse_sequence(self, indent: int) -> list:
         items: list[object] = []
@@ -240,10 +292,8 @@ class Parser:
             stripped = line.lstrip()
             if level != indent or not stripped.startswith("- "):
                 raise GateError(f"expected a sequence item: {line!r}")
-            # Rewrite the item's first line as part of a mapping at indent + 2.
             self.lines[self.index] = " " * (indent + 2) + stripped[2:]
-            item = self.parse_block(indent + 2)
-            items.append(item)
+            items.append(self.parse_block(indent + 2))
 
     def parse_block_scalar(self, indent: int) -> str:
         body: list[str] = []
@@ -283,54 +333,96 @@ def logical_commands(body: str) -> list[str]:
 # --------------------------------------------------------------------------
 
 
-def check(workflow_path: Path) -> list[str]:
+def other_workflows_claiming_the_check(workflow_path: Path) -> list[str]:
+    """Other workflow files that declare a job with the required check's name.
+
+    Branch protection requires a context name, not a file. A second workflow
+    with a job called `lint-test` produces a second check run with that name,
+    which this guard would otherwise never see.
+    """
+    offenders: list[str] = []
+    directory = workflow_path.parent
+    if not directory.is_dir():
+        return offenders
+    for candidate in sorted(directory.glob("*.y*ml")):
+        if candidate.resolve() == workflow_path.resolve():
+            continue
+        # A line scan, not the strict parser: the other workflows in this
+        # repository use YAML this parser deliberately refuses, and all that
+        # matters here is whether they declare a job with the required name.
+        in_jobs = False
+        for line in candidate.read_text().splitlines():
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            indent = len(line) - len(line.lstrip(" "))
+            if indent == 0:
+                in_jobs = line.split(":")[0].strip().strip("\"'") == "jobs"
+                continue
+            if in_jobs and indent == 2:
+                job = line.split(":")[0].strip().strip("\"'")
+                if job == REQUIRED_CHECK:
+                    offenders.append(candidate.name)
+                    break
+    return offenders
+
+
+def check(workflow_path: Path, quiet: bool = False) -> list[str]:
     failures: list[str] = []
 
     def fail(message: str) -> None:
         failures.append(message)
-        print(f"FAIL - {message}", file=sys.stderr)
+        if not quiet:
+            print(f"FAIL - {message}", file=sys.stderr)
 
     def ok(message: str) -> None:
-        print(f"ok   - {message}")
+        if not quiet:
+            print(f"ok   - {message}")
 
     document = Parser(workflow_path.read_text()).parse_block(0)
 
-    extra_top = set(document) - ALLOWED_TOP_KEYS
+    extra_top = set(document) - (set(EXPECTED_TOP) | {"jobs"})
     if extra_top:
         fail(f"the workflow declares {sorted(extra_top)} at the top level (a `defaults:` or `env:` here reaches every step)")
-    else:
-        ok("the workflow declares no top-level defaults or env")
-
-    if document.get("on") != "pull_request":
-        fail(f"the workflow no longer runs unconditionally on pull_request (on: {document.get('on')!r})")
-    else:
-        ok("the workflow runs on every pull request, with no path filter")
+    for key, value in EXPECTED_TOP.items():
+        if document.get(key) != value:
+            fail(f"the workflow's {key} is {document.get(key)!r}, expected {value!r}")
+    if not failures:
+        ok("the workflow runs on every pull request, read-only, with no defaults or env")
 
     jobs = document.get("jobs")
-    if not isinstance(jobs, dict) or list(jobs) != ["lint-test"]:
-        fail(f"the required check is job lint-test; the workflow declares {list(jobs) if isinstance(jobs, dict) else jobs}")
+    if not isinstance(jobs, dict) or list(jobs) != [REQUIRED_CHECK]:
+        fail(f"the required check is job {REQUIRED_CHECK}; the workflow declares {list(jobs) if isinstance(jobs, dict) else jobs}")
         return failures
-    job = jobs["lint-test"]
+    job = jobs[REQUIRED_CHECK]
 
-    extra_job = set(job) - ALLOWED_JOB_KEYS
+    extra_job = set(job) - EXPECTED_JOB_KEYS
     if extra_job:
         # `if` skips the job and GitHub reports that as success; `uses` replaces
         # the body while keeping the context name green.
-        fail(f"job lint-test declares {sorted(extra_job)}; only {sorted(ALLOWED_JOB_KEYS)} are allowed")
+        fail(f"job {REQUIRED_CHECK} declares {sorted(extra_job)}; only {sorted(EXPECTED_JOB_KEYS)} are allowed")
+    for key, value in EXPECTED_JOB.items():
+        if job.get(key) != value:
+            fail(f"job {REQUIRED_CHECK} has {key}: {job.get(key)!r}, expected {value!r}")
+    if not extra_job:
+        ok(f"job {REQUIRED_CHECK} has no condition, no defaults and no reusable-workflow body")
+
+    offenders = other_workflows_claiming_the_check(workflow_path)
+    if offenders:
+        fail(f"another workflow declares a job named {REQUIRED_CHECK}, producing a second check run with the required name: {offenders}")
     else:
-        ok("job lint-test has no condition, no defaults and no reusable-workflow body")
+        ok(f"no other workflow produces a {REQUIRED_CHECK} check run")
 
     steps = job.get("steps")
     if not isinstance(steps, list):
-        fail("job lint-test has no steps")
+        fail(f"job {REQUIRED_CHECK} has no steps")
         return failures
 
     identity = [(s.get("name"), s.get("uses")) for s in steps]
-    expected_identity = [(e["name"], e["uses"]) for e in EXPECTED_STEPS]
+    expected_identity = [(e.get("name"), e.get("uses")) for e in EXPECTED_STEPS]
     if identity != expected_identity:
-        fail(f"the steps of lint-test changed.\n    expected: {expected_identity}\n    found:    {identity}")
+        fail(f"the steps of {REQUIRED_CHECK} changed.\n    expected: {expected_identity}\n    found:    {identity}")
         return failures
-    ok(f"lint-test runs the expected {len(steps)} steps, in order")
+    ok(f"{REQUIRED_CHECK} runs the expected {len(steps)} steps, in order")
 
     for step, expected in zip(steps, EXPECTED_STEPS):
         label = step.get("name") or step.get("uses")
@@ -346,45 +438,187 @@ def check(workflow_path: Path) -> list[str]:
         if continue_on_error not in (None, "false"):
             fail(f"step {label!r} is continue-on-error: {continue_on_error!r}")
 
-        if step.get("if") != expected["if"]:
-            fail(f"step {label!r} runs under `if: {step.get('if')!r}`, expected {expected['if']!r}")
-
-        env = step.get("env") or {}
-        if not isinstance(env, dict):
-            fail(f"step {label!r} has an env block this guard cannot read")
-        else:
-            overridden = sorted(set(env) & PROTECTED_ENV)
-            if overridden:
-                fail(f"step {label!r} overrides {overridden}, which the gate's own scripts read")
-            if expected.get("env") is not None and env != expected["env"]:
-                fail(f"step {label!r} declares env {env!r}, expected {expected['env']!r}")
+        for key in ("if", "id", "with", "env"):
+            if step.get(key) != expected.get(key):
+                fail(f"step {label!r} has {key}: {step.get(key)!r}, expected {expected.get(key)!r}")
 
         body = step.get("run")
-        if body is None:
+        if body is None and expected.get("run") is None:
             continue
         if not isinstance(body, str):
-            fail(f"step {label!r} has a run body this guard cannot read")
+            fail(f"step {label!r} has no run body, expected {expected.get('run')!r}")
             continue
-        if "GITHUB_PATH" in body or "GITHUB_ENV" in body:
-            fail(f"step {label!r} writes to GITHUB_PATH or GITHUB_ENV, which can shadow ct for every later step")
-
-        if expected["run"] is None:
+        if expected.get("run") is None:
+            fail(f"step {label!r} runs a command and should not: {logical_commands(body)!r}")
             continue
-        found = " ".join(logical_commands(body))
+        found = logical_commands(body)
         if found != expected["run"]:
             fail(f"step {label!r} runs:\n      {found}\n    expected:\n      {expected['run']}")
 
     if not failures:
-        ok("every gate step runs exactly the command it is supposed to run")
+        ok("every step runs exactly the command it is supposed to run")
     return failures
 
 
+# --------------------------------------------------------------------------
+# self-test: the guard must still reject the known defeats
+# --------------------------------------------------------------------------
+
+MUTATIONS: list[tuple[str, tuple[str, str]]] = [
+    (
+        "an if: on the job, which GitHub reports as a successful skip",
+        ("  lint-test:\n    runs-on:", "  lint-test:\n    if: github.event.pull_request.number == 0\n    runs-on:"),
+    ),
+    (
+        "a workflow-level custom shell, which makes every run a no-op",
+        ("on: pull_request\n", 'on: pull_request\n\ndefaults:\n  run:\n    shell: bash -c "exit 0" {0}\n'),
+    ),
+    (
+        "a step-level custom shell",
+        ("      - name: Run chart-testing (install)\n", '      - name: Run chart-testing (install)\n        shell: bash -c "exit 0" {0}\n'),
+    ),
+    (
+        "a quoted continue-on-error key",
+        ("      - name: Run chart-testing (lint)\n", '      - name: Run chart-testing (lint)\n        "continue-on-error": true\n'),
+    ),
+    (
+        "a quoted if key on the guard step",
+        ("      - name: Verify CI retry helper\n", '      - name: Verify CI retry helper\n        "if": ${{ false }}\n'),
+    ),
+    (
+        "an extra ct flag that excludes the chart",
+        ("ct-retry.sh ct lint \\", "ct-retry.sh ct lint --excluded-charts codex-pooler \\"),
+    ),
+    (
+        "CT_EXCLUDED_CHARTS in a step env, which turns ct off without touching its command",
+        (
+            "      - name: Run chart-testing (lint)\n        if:",
+            "      - name: Run chart-testing (lint)\n        env:\n          CT_EXCLUDED_CHARTS: codex-pooler\n        if:",
+        ),
+    ),
+    (
+        "a workflow-level env override of a script's own knobs",
+        ("on: pull_request\n", "on: pull_request\n\nenv:\n  CHART_SEARCH_ROOT: /tmp\n"),
+    ),
+    (
+        "an inserted step that shadows ct on PATH",
+        (
+            "      - name: Run chart-testing (list-changed)\n",
+            '      - name: Cache warmup\n        run: echo /tmp/bin >> "$GITHUB_PATH"\n\n      - name: Run chart-testing (list-changed)\n',
+        ),
+    ),
+    (
+        "the job replaced by a reusable workflow, keeping the required context name",
+        ("    runs-on: ubuntu-latest\n    timeout-minutes: 30\n", "    uses: ./.github/workflows/ct-reusable.yml\n"),
+    ),
+    (
+        "checkout pinned to the base commit, so the runner validates the base tree",
+        (
+            "        with:\n          fetch-depth: 0\n",
+            "        with:\n          fetch-depth: 0\n          ref: ${{ github.event.pull_request.base.sha }}\n",
+        ),
+    ),
+    (
+        "a different chart-testing version behind the pinned commands",
+        (
+            "      - name: Set up chart-testing\n        uses: helm/chart-testing-action@v2.8.0\n",
+            "      - name: Set up chart-testing\n        uses: helm/chart-testing-action@v2.8.0\n        with:\n          version: v3.7.1\n",
+        ),
+    ),
+    (
+        "the unit suite turned into a no-op inside an unpinned body",
+        ('if ! helm unittest "$chart"; then', "if ! true; then"),
+    ),
+    (
+        "an unpinned body overwriting a tool the later steps run",
+        (
+            '          changed=$(ct list-changed',
+            '          printf "exit 0" > /usr/local/bin/ct\n          changed=$(ct list-changed',
+        ),
+    ),
+    (
+        "an or-true after the helper",
+        (
+            "          .github/scripts/ct-retry.sh ct lint \\\n            --target-branch ${{ github.event.repository.default_branch }}",
+            "          .github/scripts/ct-retry.sh ct lint \\\n            --target-branch ${{ github.event.repository.default_branch }} || true",
+        ),
+    ),
+    (
+        "the change-detection cross-check inverted so it never runs",
+        (
+            "      - name: Verify chart change detection\n        if: steps.list-changed.outputs.changed != 'true'",
+            "      - name: Verify chart change detection\n        if: steps.list-changed.outputs.changed == 'true'",
+        ),
+    ),
+    (
+        "the guard step deleted",
+        (
+            "      - name: Verify CI retry helper\n        run: |\n          .github/scripts/ct-retry-test.sh\n          .github/scripts/verify-ci-gate.py\n          .github/scripts/verify-ci-gate.py --self-test\n\n",
+            "",
+        ),
+    ),
+]
+
+
+def self_test(workflow_path: Path) -> int:
+    import tempfile
+
+    source = workflow_path.read_text()
+    failures = 0
+
+    if check(workflow_path, quiet=True):
+        print("FAIL - the unmutated workflow does not pass its own contract", file=sys.stderr)
+        failures += 1
+    else:
+        print("ok   - the unmutated workflow passes")
+
+    with tempfile.TemporaryDirectory() as directory:
+        for description, (old, new) in MUTATIONS:
+            if old not in source:
+                print(f"FAIL - the workflow no longer contains the text this case mutates: {description}", file=sys.stderr)
+                failures += 1
+                continue
+            mutated = Path(directory) / "test.yml"
+            mutated.write_text(source.replace(old, new, 1))
+            try:
+                detected = bool(check(mutated, quiet=True))
+            except GateError:
+                detected = True
+            if detected:
+                print(f"ok   - rejected: {description}")
+            else:
+                print(f"FAIL - accepted: {description}", file=sys.stderr)
+                failures += 1
+
+        # The second-workflow case needs a directory, not a single file.
+        shadow_dir = Path(directory) / "workflows"
+        shadow_dir.mkdir()
+        (shadow_dir / "test.yml").write_text(source)
+        (shadow_dir / "zz-shadow.yml").write_text(
+            "name: Shadow\non: pull_request\n\njobs:\n  lint-test:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Nothing\n        run: 'true'\n"
+        )
+        if check(shadow_dir / "test.yml", quiet=True):
+            print("ok   - rejected: a second workflow producing the required check name")
+        else:
+            print("FAIL - accepted: a second workflow producing the required check name", file=sys.stderr)
+            failures += 1
+
+    if failures:
+        print(f"{failures} self-test case(s) failed", file=sys.stderr)
+        return 1
+    print(f"self-test passed: {len(MUTATIONS) + 1} defeats rejected")
+    return 0
+
+
 def main() -> int:
-    workflow_path = Path(sys.argv[1] if len(sys.argv) > 1 else WORKFLOW)
+    arguments = [argument for argument in sys.argv[1:] if argument != "--self-test"]
+    workflow_path = Path(arguments[0] if arguments else WORKFLOW)
     if not workflow_path.is_file():
         print(f"FAIL - {workflow_path} does not exist", file=sys.stderr)
         return 1
     try:
+        if "--self-test" in sys.argv[1:]:
+            return self_test(workflow_path)
         failures = check(workflow_path)
     except GateError as error:
         print(f"FAIL - the workflow cannot be verified: {error}", file=sys.stderr)
