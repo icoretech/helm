@@ -184,7 +184,7 @@ EXPECTED_STEPS: list[dict] = [
         "if": IF_CHANGED,
         "run": [
             f".github/scripts/ct-retry.sh ct install --target-branch {DEFAULT_BRANCH}"
-            " --helm-extra-args '--timeout 600s'"
+            " --helm-extra-args '--timeout 600s --wait-for-jobs'"
         ],
     },
 ]
