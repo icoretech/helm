@@ -1,15 +1,22 @@
 {{- if .Values.migrations.enabled }}
+# Deliberately not a Helm hook. A pre-install hook runs before the release
+# manifests exist, so it cannot read a Secret this chart creates; giving it a
+# copy of that Secret left secret material in the namespace whenever the hook
+# phase was interrupted, with nothing owning it. As a release manifest the Job
+# is created after the Secret (Helm orders Secret before Job), belongs to the
+# release, is visible in `helm get manifest`, and goes away with it.
+#
+# Ordering for the workloads is enforced where it belongs: every role's
+# readiness probe asks the release whether the schema is usable, so a pod cannot
+# serve ahead of the migration it needs. The name carries the release revision
+# because a Job's pod template is immutable and every upgrade renders a new one.
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "codex-pooler.fullname" . }}-migrations
+  name: {{ include "codex-pooler.migrationJobName" . }}
   labels:
     {{- include "codex-pooler.labels" . | nindent 4 }}
     app.kubernetes.io/component: migrations
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-weight: "0"
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
 spec:
   ttlSecondsAfterFinished: {{ .Values.migrations.ttlSecondsAfterFinished }}
   # A migration that cannot start — a missing Secret key, an unreachable
@@ -41,7 +48,7 @@ spec:
           env:
             - name: OBAN_MODE
               value: web
-            {{- include "codex-pooler.env" (dict "root" . "secretName" (include "codex-pooler.migrationsSecretName" .)) | nindent 12 }}
+            {{- include "codex-pooler.env" . | nindent 12 }}
           resources:
             {{- toYaml .Values.migrations.resources | nindent 12 }}
 {{- end }}

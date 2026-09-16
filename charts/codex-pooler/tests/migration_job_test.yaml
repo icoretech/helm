@@ -1,0 +1,100 @@
+suite: migration job ownership
+# The migration Job used to be a pre-install hook, which runs before Helm applies
+# the release manifests — so it could not read a Secret this chart creates, and a
+# fresh install with `secrets.create=true` failed with `secret "…" not found`.
+# Giving the hook its own copy of that Secret fixed the install and introduced a
+# worse problem: an interrupted hook phase left secret material in the namespace
+# with no owner, no TTL and no presence in `helm get manifest`, and `helm
+# uninstall` reported success and left it there.
+#
+# So the Job is an ordinary release manifest. Helm applies Secret before Job, the
+# Job belongs to the release, and ordering for the serving pods comes from their
+# readiness probes instead (see role_readiness_test.yaml).
+templates:
+  - migration-job.yaml
+  - secret.yaml
+tests:
+  - it: renders the migration Job as a release manifest, not as a hook
+    template: migration-job.yaml
+    release:
+      revision: 1
+    asserts:
+      - isKind:
+          of: Job
+      - notExists:
+          path: metadata.annotations["helm.sh/hook"]
+      - notExists:
+          path: metadata.annotations["helm.sh/hook-delete-policy"]
+      - equal:
+          path: metadata.name
+          value: codex-pooler-migrate-1
+
+  - it: keeps the Job name inside the 63 bytes its pod label allows
+    template: migration-job.yaml
+    release:
+      revision: 1
+    set:
+      fullnameOverride: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    asserts:
+      # 53 characters of prefix plus "-migrate-1": the API server copies this
+      # into batch.kubernetes.io/job-name, where 64 bytes is rejected.
+      - equal:
+          path: metadata.name
+          value: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-migrate-1
+
+  - it: reads the Secret the release itself creates
+    template: migration-job.yaml
+    set:
+      secrets.create: true
+      secrets.databaseUrl: postgres://example-postgres/codex_pooler
+      secrets.secretKeyBase: example-secret-key-base
+      secrets.totpEncryptionKey: example-totp-key
+      secrets.upstreamSecretKey: rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="migrations")].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.name
+          value: codex-pooler-secrets
+
+  - it: creates exactly one Secret, with nothing left to outlive the release
+    template: secret.yaml
+    set:
+      secrets.create: true
+      secrets.databaseUrl: postgres://example-postgres/codex_pooler
+      secrets.secretKeyBase: example-secret-key-base
+      secrets.totpEncryptionKey: example-totp-key
+      secrets.upstreamSecretKey: rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: metadata.annotations["helm.sh/hook"]
+
+  - it: reads an operator-supplied Secret when the chart creates none
+    template: migration-job.yaml
+    set:
+      secrets.create: false
+      secrets.existingSecret: codex-pooler-secrets
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="migrations")].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.name
+          value: codex-pooler-secrets
+
+  - it: bounds a migration that cannot finish
+    template: migration-job.yaml
+    asserts:
+      # Without these a Job that can never start — a missing Secret key, an
+      # unreachable database — stays active until the client times out.
+      - equal:
+          path: spec.backoffLimit
+          value: 3
+      - equal:
+          path: spec.activeDeadlineSeconds
+          value: 900
+
+  - it: renders no Job when migrations are disabled
+    template: migration-job.yaml
+    set:
+      migrations.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

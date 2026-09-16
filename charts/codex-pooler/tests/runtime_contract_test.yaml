@@ -298,12 +298,11 @@ tests:
           path: spec.template.metadata.annotations.shared
           value: scheduler
 
-  - it: keeps migration hook command and role env aligned
+  - it: keeps the migration command and role env aligned
     template: migration-job.yaml
     asserts:
-      - equal:
+      - notExists:
           path: metadata.annotations["helm.sh/hook"]
-          value: pre-install,pre-upgrade
       - equal:
           path: spec.template.spec.containers[?(@.name=="migrations")].command
           value:

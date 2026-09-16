@@ -104,12 +104,15 @@ tests:
           path: metadata.name
           value: codex-pooler
 
-  - it: renders the migration Job as a release hook
+  - it: renders the migration Job as part of the release
     template: migration-job.yaml
     asserts:
       - isKind:
           of: Job
-      - exists:
+      # Not a hook: hooks run before the release manifests exist, so the Job
+      # could not read a Secret this chart creates. tests/migration_job_test.yaml
+      # owns that contract.
+      - notExists:
           path: metadata.annotations["helm.sh/hook"]
       - equal:
           path: spec.template.spec.restartPolicy

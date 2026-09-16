@@ -54,33 +54,18 @@ annotations:
 {{- end -}}
 
 {{/*
-The Secret the migration hook reads.
+The migration Job's name.
 
-`migration-job.yaml` is a pre-install/pre-upgrade hook, and hooks run before the
-release manifests are applied. When the chart creates the Secret itself, that
-Secret is a manifest and does not exist yet when the hook starts, so the hook
-gets its own copy: same data, created earlier in the same hook phase, removed
-again when the phase succeeds. When the operator supplies `secrets.existingSecret`,
-that Secret already exists and the hook reads it directly.
+A Job's pod template is immutable, so every release revision needs its own Job.
+The API server copies this name into `batch.kubernetes.io/job-name` on the pod
+template, and a label value may not exceed 63 bytes, so the prefix is truncated
+to leave room for the suffix rather than failing every install behind a long
+`fullnameOverride`.
 */}}
-{{- define "codex-pooler.migrationsSecretName" -}}
-{{- if .Values.secrets.create -}}
-{{- printf "%s-migrations" (include "codex-pooler.secretName" .) | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- include "codex-pooler.secretName" . -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "codex-pooler.secretData" -}}
-database-url: {{ required "secrets.databaseUrl is required when secrets.create=true" .Values.secrets.databaseUrl | quote }}
-secret-key-base: {{ required "secrets.secretKeyBase is required when secrets.create=true" .Values.secrets.secretKeyBase | quote }}
-totp-encryption-key: {{ required "secrets.totpEncryptionKey is required when secrets.create=true" .Values.secrets.totpEncryptionKey | quote }}
-totp-key-version: {{ .Values.secrets.totpKeyVersion | quote }}
-upstream-secret-key: {{ include "codex-pooler.validatedUpstreamSecretKey" . | quote }}
-upstream-secret-key-version: {{ .Values.secrets.upstreamSecretKeyVersion | quote }}
-{{- if and .Values.clustering.enabled (not .Values.clustering.cookie.existingSecret) .Values.clustering.cookie.value }}
-{{ .Values.clustering.cookie.existingSecretKey }}: {{ .Values.clustering.cookie.value | quote }}
-{{- end }}
+{{- define "codex-pooler.migrationJobName" -}}
+{{- $suffix := printf "-migrate-%d" (int .Release.Revision) -}}
+{{- $prefix := include "codex-pooler.fullname" . | trunc (int (sub 63 (len $suffix))) | trimSuffix "-" -}}
+{{- printf "%s%s" $prefix $suffix -}}
 {{- end -}}
 
 {{- define "codex-pooler.validatedUpstreamSecretKey" -}}
@@ -227,54 +212,52 @@ codex-pooler.icoretech.io/cluster-member: "true"
 {{- end -}}
 
 {{- define "codex-pooler.env" -}}
-{{- $root := default . .root -}}
-{{- $secretName := default (include "codex-pooler.secretName" $root) .secretName -}}
 - name: PORT
-  value: {{ $root.Values.config.port | quote }}
+  value: {{ .Values.config.port | quote }}
 - name: PHX_HOST
-  value: {{ $root.Values.config.host | quote }}
+  value: {{ .Values.config.host | quote }}
 - name: POOL_SIZE
-  value: {{ $root.Values.config.poolSize | quote }}
+  value: {{ .Values.config.poolSize | quote }}
 - name: ECTO_IPV6
-  value: {{ $root.Values.config.ectoIpv6 | quote }}
+  value: {{ .Values.config.ectoIpv6 | quote }}
 - name: OBAN_JOBS_QUEUE_LIMIT
-  value: {{ $root.Values.config.obanJobsQueueLimit | quote }}
+  value: {{ .Values.config.obanJobsQueueLimit | quote }}
 - name: OBAN_SHUTDOWN_GRACE_PERIOD_MS
-  value: {{ $root.Values.config.obanShutdownGracePeriodMs | quote }}
+  value: {{ .Values.config.obanShutdownGracePeriodMs | quote }}
 - name: LANG
-  value: {{ $root.Values.config.lang | quote }}
+  value: {{ .Values.config.lang | quote }}
 - name: LC_ALL
-  value: {{ $root.Values.config.lcAll | quote }}
+  value: {{ .Values.config.lcAll | quote }}
 - name: ERL_MAX_PORTS
-  value: {{ $root.Values.config.erlMaxPorts | quote }}
+  value: {{ .Values.config.erlMaxPorts | quote }}
 - name: DATABASE_URL
   valueFrom:
     secretKeyRef:
-      name: {{ $secretName }}
+      name: {{ include "codex-pooler.secretName" . }}
       key: database-url
 - name: SECRET_KEY_BASE
   valueFrom:
     secretKeyRef:
-      name: {{ $secretName }}
+      name: {{ include "codex-pooler.secretName" . }}
       key: secret-key-base
 - name: CODEX_POOLER_TOTP_ENCRYPTION_KEY
   valueFrom:
     secretKeyRef:
-      name: {{ $secretName }}
+      name: {{ include "codex-pooler.secretName" . }}
       key: totp-encryption-key
 - name: CODEX_POOLER_TOTP_KEY_VERSION
   valueFrom:
     secretKeyRef:
-      name: {{ $secretName }}
+      name: {{ include "codex-pooler.secretName" . }}
       key: totp-key-version
 - name: CODEX_POOLER_UPSTREAM_SECRET_KEY
   valueFrom:
     secretKeyRef:
-      name: {{ $secretName }}
+      name: {{ include "codex-pooler.secretName" . }}
       key: upstream-secret-key
 - name: CODEX_POOLER_UPSTREAM_SECRET_KEY_VERSION
   valueFrom:
     secretKeyRef:
-      name: {{ $secretName }}
+      name: {{ include "codex-pooler.secretName" . }}
       key: upstream-secret-key-version
 {{- end -}}

@@ -55,7 +55,11 @@ Do not put upstream access tokens, API keys, cookies, `auth.json`, SMTP password
 - `app` serves HTTP with `OBAN_MODE=web` and `PHX_SERVER=true`
 - `oban.worker` runs background jobs with `OBAN_MODE=worker`
 - `oban.scheduler` runs scheduled jobs with `OBAN_MODE=scheduler`
-- `migrations` runs release migrations and imports the vendored pricing feed before app rollout
+- `migrations` runs release migrations and imports the vendored pricing feed
+
+The migration Job is part of the release, not a Helm hook, so it is visible in `helm get manifest` and removed by `helm uninstall`. Helm creates the Secret before the Job, and each release revision renders its own Job because a Job's pod template is immutable.
+
+Nothing serves ahead of its schema: every role's readiness probe asks the release whether the database is usable, so pods started before the migration finishes stay out of the Service until it does. `helm --wait` does not wait for Jobs unless you also pass `--wait-for-jobs` (`spec.install.waitForJobs` and `spec.upgrade.waitForJobs` in a Flux `HelmRelease`); set it if you want a failed migration to fail the release rather than leave a Deployment that never becomes ready.
 
 Keep `app.replicaCount` at `1` unless app clustering is intentionally configured and verified. When `app.replicaCount` is `>= 2`, the chart requires app clustering and automatically enables websocket owner forwarding on app pods.
 
@@ -150,6 +154,10 @@ metadata:
   namespace: codex-pooler
 spec:
   interval: 5m
+  install:
+    waitForJobs: true
+  upgrade:
+    waitForJobs: true
   chart:
     spec:
       chart: codex-pooler
