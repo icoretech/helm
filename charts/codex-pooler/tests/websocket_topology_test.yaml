@@ -33,7 +33,7 @@ tests:
           path: spec.replicas
           value: 2
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")].value
+          path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")].value
           value: "true"
 
   - it: rejects owner forwarding unless clustering is enabled
@@ -61,7 +61,7 @@ tests:
       app.websocketContinuity.ownerForwarding.enabled: true
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")].value
+          path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")].value
           value: "true"
 
   - it: does not render owner forwarding on worker pods
@@ -71,7 +71,7 @@ tests:
       app.websocketContinuity.ownerForwarding.enabled: true
     asserts:
       - notExists:
-          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")]
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")]
 
   - it: does not render owner forwarding on scheduler pods
     template: oban-scheduler-deployment.yaml
@@ -80,7 +80,7 @@ tests:
       app.websocketContinuity.ownerForwarding.enabled: true
     asserts:
       - notExists:
-          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")]
+          path: spec.template.spec.containers[?(@.name=="oban-scheduler")].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")]
 
   - it: does not render owner forwarding on migration pods
     template: migration-job.yaml
@@ -89,7 +89,7 @@ tests:
       app.websocketContinuity.ownerForwarding.enabled: true
     asserts:
       - notExists:
-          path: spec.template.spec.containers[0].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")]
+          path: spec.template.spec.containers[?(@.name=="migrations")].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")]
 
   - it: renders clustering env for app pods
     template: app-deployment.yaml
@@ -97,16 +97,16 @@ tests:
       clustering.enabled: true
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="DNS_CLUSTER_QUERY")].value
+          path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="DNS_CLUSTER_QUERY")].value
           value: codex-pooler-cluster.NAMESPACE.svc.cluster.local
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="RELEASE_DISTRIBUTION")].value
+          path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="RELEASE_DISTRIBUTION")].value
           value: name
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="RELEASE_COOKIE")].valueFrom.secretKeyRef.key
+          path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="RELEASE_COOKIE")].valueFrom.secretKeyRef.key
           value: release-cookie
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="RELEASE_NODE")].value
+          path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="RELEASE_NODE")].value
           value: codex_pooler@$(POD_IP)
       - equal:
           path: spec.template.spec.subdomain
@@ -118,7 +118,7 @@ tests:
       clustering.enabled: true
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="DNS_CLUSTER_QUERY")].value
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].env[?(@.name=="DNS_CLUSTER_QUERY")].value
           value: codex-pooler-cluster.NAMESPACE.svc.cluster.local
 
   - it: renders clustering env for scheduler pods
@@ -127,7 +127,7 @@ tests:
       clustering.enabled: true
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="DNS_CLUSTER_QUERY")].value
+          path: spec.template.spec.containers[?(@.name=="oban-scheduler")].env[?(@.name=="DNS_CLUSTER_QUERY")].value
           value: codex-pooler-cluster.NAMESPACE.svc.cluster.local
 
   - it: does not render clustering env for migration pods
@@ -136,7 +136,7 @@ tests:
       clustering.enabled: true
     asserts:
       - notExists:
-          path: spec.template.spec.containers[0].env[?(@.name=="DNS_CLUSTER_QUERY")]
+          path: spec.template.spec.containers[?(@.name=="migrations")].env[?(@.name=="DNS_CLUSTER_QUERY")]
 
   - it: keeps http alongside the distribution ports on clustered app pods
     template: app-deployment.yaml
@@ -144,19 +144,19 @@ tests:
       clustering.enabled: true
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")].value
+          path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="PHX_SERVER")].value
           value: "true"
       - equal:
-          path: spec.template.spec.containers[0].ports[?(@.name=="http")].containerPort
+          path: spec.template.spec.containers[?(@.name=="app")].ports[?(@.name=="http")].containerPort
           value: 4000
       - equal:
-          path: spec.template.spec.containers[0].ports[?(@.name=="epmd")].containerPort
+          path: spec.template.spec.containers[?(@.name=="app")].ports[?(@.name=="epmd")].containerPort
           value: 4369
       - equal:
-          path: spec.template.spec.containers[0].ports[?(@.name=="distribution")].containerPort
+          path: spec.template.spec.containers[?(@.name=="app")].ports[?(@.name=="distribution")].containerPort
           value: 9000
       - lengthEqual:
-          path: spec.template.spec.containers[0].ports
+          path: spec.template.spec.containers[?(@.name=="app")].ports
           count: 3
 
   - it: keeps http off clustered app pods that do not participate in clustering
@@ -166,14 +166,14 @@ tests:
       clustering.participants.app: false
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].ports[?(@.name=="http")].containerPort
+          path: spec.template.spec.containers[?(@.name=="app")].ports[?(@.name=="http")].containerPort
           value: 4000
       - notExists:
-          path: spec.template.spec.containers[0].ports[?(@.name=="epmd")]
+          path: spec.template.spec.containers[?(@.name=="app")].ports[?(@.name=="epmd")]
       - notExists:
-          path: spec.template.spec.containers[0].ports[?(@.name=="distribution")]
+          path: spec.template.spec.containers[?(@.name=="app")].ports[?(@.name=="distribution")]
       - lengthEqual:
-          path: spec.template.spec.containers[0].ports
+          path: spec.template.spec.containers[?(@.name=="app")].ports
           count: 1
 
   - it: exposes only distribution ports and no PHX_SERVER on clustered worker pods
@@ -182,17 +182,17 @@ tests:
       clustering.enabled: true
     asserts:
       - notExists:
-          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].env[?(@.name=="PHX_SERVER")]
       - notExists:
-          path: spec.template.spec.containers[0].ports[?(@.name=="http")]
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].ports[?(@.name=="http")]
       - equal:
-          path: spec.template.spec.containers[0].ports[?(@.name=="epmd")].containerPort
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].ports[?(@.name=="epmd")].containerPort
           value: 4369
       - equal:
-          path: spec.template.spec.containers[0].ports[?(@.name=="distribution")].containerPort
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].ports[?(@.name=="distribution")].containerPort
           value: 9000
       - lengthEqual:
-          path: spec.template.spec.containers[0].ports
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].ports
           count: 2
 
   - it: exposes only distribution ports and no PHX_SERVER on clustered scheduler pods
@@ -201,17 +201,17 @@ tests:
       clustering.enabled: true
     asserts:
       - notExists:
-          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+          path: spec.template.spec.containers[?(@.name=="oban-scheduler")].env[?(@.name=="PHX_SERVER")]
       - notExists:
-          path: spec.template.spec.containers[0].ports[?(@.name=="http")]
+          path: spec.template.spec.containers[?(@.name=="oban-scheduler")].ports[?(@.name=="http")]
       - equal:
-          path: spec.template.spec.containers[0].ports[?(@.name=="epmd")].containerPort
+          path: spec.template.spec.containers[?(@.name=="oban-scheduler")].ports[?(@.name=="epmd")].containerPort
           value: 4369
       - equal:
-          path: spec.template.spec.containers[0].ports[?(@.name=="distribution")].containerPort
+          path: spec.template.spec.containers[?(@.name=="oban-scheduler")].ports[?(@.name=="distribution")].containerPort
           value: 9000
       - lengthEqual:
-          path: spec.template.spec.containers[0].ports
+          path: spec.template.spec.containers[?(@.name=="oban-scheduler")].ports
           count: 2
 
   - it: exposes no ports and no PHX_SERVER on clustered migration hook pods
@@ -220,8 +220,8 @@ tests:
       clustering.enabled: true
     asserts:
       - notExists:
-          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+          path: spec.template.spec.containers[?(@.name=="migrations")].env[?(@.name=="PHX_SERVER")]
       - notExists:
-          path: spec.template.spec.containers[0].ports[?(@.name=="http")]
+          path: spec.template.spec.containers[?(@.name=="migrations")].ports[?(@.name=="http")]
       - notExists:
-          path: spec.template.spec.containers[0].ports
+          path: spec.template.spec.containers[?(@.name=="migrations")].ports

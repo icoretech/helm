@@ -11,6 +11,7 @@ suite: default topology
 # assertions keep living in the suites that own them.
 templates:
   - app-deployment.yaml
+  - ingress.yaml
   - app-pdb.yaml
   - app-service.yaml
   - migration-job.yaml
@@ -29,13 +30,11 @@ tests:
       - equal:
           path: spec.selector.matchLabels["app.kubernetes.io/component"]
           value: app
-      # Anchored by container name, not by index: the Service resolves its
-      # targetPort through a named port on this container, and every other
-      # assertion here is about this container rather than about whichever one
-      # happens to be first.
-      - equal:
-          path: spec.template.spec.containers[0].name
-          value: app
+      # Anchored by container name, not by index: a renamed container reddens
+      # every assertion below with `unknown path`, and a legitimate sidecar
+      # inserted ahead of it does not.
+      - exists:
+          path: spec.template.spec.containers[?(@.name=="app")]
       - equal:
           path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="OBAN_MODE")].value
           value: web
@@ -65,6 +64,24 @@ tests:
       # number no container exposes renders a Service that routes nowhere.
       - equal:
           path: spec.ports[0].targetPort
+          value: http
+
+  - it: points the Ingress at the app Service and the port it publishes
+    templates:
+      - ingress.yaml
+    set:
+      ingress.enabled: true
+    asserts:
+      - isKind:
+          of: Ingress
+      # The same class of dangling reference as targetPort, one object further
+      # out: a renamed backend leaves every object individually valid, and the
+      # Ingress serving 503s.
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.name
+          value: codex-pooler-app
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.port.name
           value: http
 
   - it: renders the app PodDisruptionBudget against the app selector
@@ -104,7 +121,7 @@ tests:
       - isKind:
           of: Deployment
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_MODE")].value
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].env[?(@.name=="OBAN_MODE")].value
           value: worker
 
   - it: renders the Oban scheduler Deployment on the scheduler role
@@ -113,7 +130,7 @@ tests:
       - isKind:
           of: Deployment
       - equal:
-          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_MODE")].value
+          path: spec.template.spec.containers[?(@.name=="oban-scheduler")].env[?(@.name=="OBAN_MODE")].value
           value: scheduler
 
   - it: renders nothing for a workload its values disable
