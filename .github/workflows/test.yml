@@ -23,7 +23,9 @@ jobs:
         uses: helm/chart-testing-action@v2.8.0
 
       - name: Verify CI retry helper
-        run: .github/scripts/ct-retry-test.sh
+        run: |
+          .github/scripts/ct-retry-test.sh
+          .github/scripts/verify-ci-gate.py
 
       - name: Run chart-testing (list-changed)
         id: list-changed
