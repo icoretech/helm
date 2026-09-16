@@ -38,6 +38,10 @@ tests:
 
   - it: renders the app Service in front of the app Deployment
     template: app-service.yaml
+    # The clustering headless Service renders from the same template, and path
+    # assertions apply to every document: without this, enabling clustering
+    # would red this test instead of the suite that owns clustering.
+    documentIndex: 0
     asserts:
       - isKind:
           of: Service

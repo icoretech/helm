@@ -8,6 +8,9 @@ templates:
 tests:
   - it: renders the app service selector and component labels
     template: app-service.yaml
+    # The clustering headless Service renders from the same template; without
+    # this, enabling clustering would red the app Service tests.
+    documentIndex: 0
     asserts:
       - equal:
           path: metadata.labels["app.kubernetes.io/component"]
@@ -21,6 +24,7 @@ tests:
 
   - it: keeps app service annotations empty and affinity disabled by default
     template: app-service.yaml
+    documentIndex: 0
     asserts:
       - notExists:
           path: metadata.annotations
@@ -32,6 +36,7 @@ tests:
 
   - it: renders controller-neutral app service metadata and Kubernetes affinity
     template: app-service.yaml
+    documentIndex: 0
     set:
       app:
         service:
