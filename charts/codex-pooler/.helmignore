@@ -1,0 +1,26 @@
+# Patterns to ignore when building packages.
+.DS_Store
+.git/
+.gitignore
+.bzr/
+.bzrignore
+.hg/
+.hgignore
+.svn/
+*.swp
+*.bak
+*.tmp
+*.orig
+*~
+.project
+.idea/
+*.tmproj
+.vscode/
+# Local agent guidance: deliberately untracked, and packaging is the one path
+# that would publish it.
+AGENTS.md
+# Validation inputs, not chart content: the unit suites and their fixtures, the
+# chart-testing values and cluster fixtures, and the local schema harness.
+tests/
+ci/
+scripts/
