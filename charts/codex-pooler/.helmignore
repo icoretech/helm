@@ -24,3 +24,4 @@ AGENTS.md
 tests/
 ci/
 scripts/
+README.md.gotmpl
