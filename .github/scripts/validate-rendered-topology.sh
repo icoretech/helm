@@ -2,17 +2,20 @@
 #
 # Sends a chart's real topology to the API server for validation.
 #
-# `ci/install-values.yaml` is what `ct install` uses, and it has to stay
-# installable in a kind cluster with no database, no secrets and no published
-# application image. For codex-pooler that means app, migrations, worker and
-# scheduler are all disabled there, so `ct lint` and `ct install` only ever see
-# a ServiceAccount: a template change that broke every workload would pass both.
+# This runs in addition to `ct install`, not instead of it. `ct install` starts
+# the real workloads against the fixtures in `ci/fixtures/`, which is the only
+# thing that sees ordering — hook phases, readiness, a Secret that does not
+# exist yet. This step sees what a running install cannot report cheaply: every
+# object checked by the API server's own validation, including the ones a
+# release would never reach because it failed earlier.
 #
-# A chart opts into this check by committing `tests/server-dry-run-values.yaml`.
-# The rendered manifests go to `kubectl apply --dry-run=server`, which validates
-# them against the real API server — apiVersions, unknown or mistyped fields,
-# required fields, name and port-name syntax, label values — without creating
-# anything and without needing a pod to start.
+# A chart opts in by committing `tests/server-dry-run-values.yaml`. The rendered
+# manifests go to `kubectl apply --dry-run=server`, which validates them against
+# the real API server — apiVersions, unknown or mistyped fields, required
+# fields, name and port-name syntax, label values — without creating anything
+# and without needing a pod to start. It resolves no reference between objects:
+# a Service pointing at a port no container exposes is valid to it, which is why
+# those live in the chart's unit tests.
 #
 # Usage: validate-rendered-topology.sh <chart-dir>...
 set -uo pipefail
@@ -31,6 +34,9 @@ for chart in "$@"; do
 
   echo "==> rendering ${chart} with ${values_file}"
   rendered="$(mktemp)"
+  # The render contains the chart's Secret in cleartext; do not leave it behind
+  # if the run is interrupted between here and the cleanup below.
+  trap 'rm -f "$rendered"' EXIT INT TERM
   if ! helm template topology "$chart" \
     --namespace "$namespace" \
     --values "${chart}/${values_file}" >"$rendered"; then

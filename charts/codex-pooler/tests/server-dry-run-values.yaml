@@ -1,18 +1,14 @@
 # Values for the full-topology validation in pull-request CI, run by
 # `.github/scripts/validate-rendered-topology.sh`.
 #
-# `ci/install-values.yaml` is what `ct install` uses, and it must stay
-# installable in a kind cluster that has no database, no secrets and no
-# published application image, so it disables app, migrations, worker and
-# scheduler: chart-testing only ever validates a single ServiceAccount. A real
-# `ct install` of this topology is blocked by the release itself — the app
-# refuses to boot without a reachable DATABASE_URL, so every workload would
-# crash-loop and `ct install --wait` would fail on readiness rather than on
-# anything about the chart.
+# This is not a substitute for `ct install`: chart-testing installs this chart
+# for real against `ci/fixtures/postgres.yaml`, which is the only thing that
+# sees hook ordering, readiness and the application actually starting. This file
+# is the cheap, exhaustive half — every rendered object handed to the API
+# server's own validation, including objects a failed install would never reach.
 #
-# This file never starts a pod. It renders what an operator actually deploys and
-# sends it to the API server for server-side validation, which is the part of
-# `ct install` that does not need the application to run.
+# It deliberately renders more than `ci/install-values.yaml`: clustering and an
+# Ingress are off in the installed topology and still worth validating.
 #
 # ServiceMonitor stays disabled: its CRD is not installed in the CI cluster, and
 # `tests/secrets_and_monitoring_test.yaml` owns that object's rendering.
