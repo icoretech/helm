@@ -7,6 +7,13 @@
 # validated a single ServiceAccount.
 #
 # Every credential here is a sample for a throwaway cluster, not a secret.
+#
+# Known gap: chart-testing passes --helm-extra-args to its uninstall as well,
+# and `helm uninstall` has no --wait-for-jobs, so the install cannot ask Helm to
+# wait for the migration Job. A migration that fails therefore does not by
+# itself fail this step; on an image that exports readiness_check/0 the role
+# readiness probes make it fail through the rollout instead, and this chart's
+# own appVersion predates that function.
 app:
   # The default spaces out per-pod websocket drains during a rollout; in CI it
   # only delays the Deployment becoming available.
