@@ -11,6 +11,11 @@
 # into the throwaway CI cluster only; they are never part of the chart's
 # rendered output (`ci/` is excluded from the package by `.helmignore`).
 #
+# This script MUTATES the cluster its kubeconfig points at — it is the only
+# script under `.github/scripts/` that does — so it refuses any context that is
+# not a kind cluster. Set CT_FIXTURE_ALLOW_CONTEXT to the context name to
+# override that deliberately.
+#
 # Usage: apply-ct-fixtures.sh <chart-dir>...
 set -uo pipefail
 
@@ -19,6 +24,19 @@ fixture_label="helm.icoretech.io/ct-fixture=true"
 timeout="${CT_FIXTURE_TIMEOUT:-300s}"
 applied=0
 status=0
+
+context="$(kubectl config current-context 2>/dev/null)" || context=""
+allowed="${CT_FIXTURE_ALLOW_CONTEXT:-}"
+if [[ -z "$context" ]]; then
+  echo "::error::no current kubectl context; refusing to guess where to apply cluster fixtures" >&2
+  exit 1
+fi
+if [[ "$context" != kind-* && "$context" != "$allowed" ]]; then
+  echo "::error::refusing to apply cluster fixtures to context '${context}': it is not a kind cluster" >&2
+  echo "Set CT_FIXTURE_ALLOW_CONTEXT='${context}' if that is really what you want." >&2
+  exit 1
+fi
+echo "==> applying ct fixtures to context ${context}"
 
 for chart in "$@"; do
   [[ -n "$chart" ]] || continue
