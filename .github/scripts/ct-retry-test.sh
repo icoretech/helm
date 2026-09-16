@@ -94,6 +94,20 @@ status=0
 CT_RETRY_BACKOFF_SECONDS=abc "$retry" /usr/bin/true >/dev/null 2>&1 || status=$?
 assert_eq "a non-numeric backoff is a usage error" 2 "$status"
 
+# The other end of the range: a budget nothing bounds burns the runner to the
+# six-hour job limit and buries the failure it was retrying.
+for huge in 11 9223372036854775807 99999999999999999999; do
+  status=0
+  CT_RETRY_BACKOFF_SECONDS=0 CT_RETRY_ATTEMPTS="$huge" \
+    "$retry" /usr/bin/false >/dev/null 2>&1 || status=$?
+  assert_eq "CT_RETRY_ATTEMPTS='${huge}' is refused" 2 "$status"
+done
+
+status=0
+CT_RETRY_ATTEMPTS=1 CT_RETRY_BACKOFF_SECONDS=99999999999999999999 \
+  "$retry" /usr/bin/true >/dev/null 2>&1 || status=$?
+assert_eq "an unbounded backoff is refused" 2 "$status"
+
 # An empty value is an unset value: it must reach the default budget, not the
 # refusal above.
 dir="$(mktemp -d)"

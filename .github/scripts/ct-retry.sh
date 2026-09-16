@@ -8,9 +8,9 @@
 # `ct install` failure could ever fail a pull request.
 #
 # Env:
-#   CT_RETRY_ATTEMPTS         total attempts (default 3)
+#   CT_RETRY_ATTEMPTS         total attempts (default 3, at most 10)
 #   CT_RETRY_BACKOFF_SECONDS  base backoff, multiplied by the attempt number
-#                             (default 20; 0 disables sleeping)
+#                             (default 20, at most 600; 0 disables sleeping)
 set -uo pipefail
 
 attempts="${CT_RETRY_ATTEMPTS:-3}"
@@ -25,13 +25,18 @@ fi
 # final `exit "$rc"` with rc still 0: the command never ran and the step went
 # green. Refuse it instead, so a bad budget fails the step like any other
 # configuration error.
-if [[ ! "$attempts" =~ ^[0-9]+$ ]] || [[ "$attempts" -lt 1 ]]; then
-  echo "::error::CT_RETRY_ATTEMPTS must be a positive integer (got '${attempts}')" >&2
+max_attempts=10
+max_backoff=600
+
+if [[ ! "$attempts" =~ ^[0-9]{1,3}$ ]] || [[ "$attempts" -lt 1 ]] || [[ "$attempts" -gt "$max_attempts" ]]; then
+  echo "::error::CT_RETRY_ATTEMPTS must be an integer between 1 and ${max_attempts} (got '${attempts}')" >&2
   exit 2
 fi
 
-if [[ ! "$backoff" =~ ^[0-9]+$ ]]; then
-  echo "::error::CT_RETRY_BACKOFF_SECONDS must be a non-negative integer (got '${backoff}')" >&2
+# An enormous budget is not a fail-open — a hung job still fails the check — but
+# it burns a runner to the six-hour limit and buries the real failure.
+if [[ ! "$backoff" =~ ^[0-9]{1,4}$ ]] || [[ "$backoff" -gt "$max_backoff" ]]; then
+  echo "::error::CT_RETRY_BACKOFF_SECONDS must be an integer between 0 and ${max_backoff} (got '${backoff}')" >&2
   exit 2
 fi
 
