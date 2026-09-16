@@ -36,7 +36,11 @@ for chart in "$@"; do
   rendered="$(mktemp)"
   # The render contains the chart's Secret in cleartext; do not leave it behind
   # if the run is interrupted between here and the cleanup below.
-  trap 'rm -f "$rendered"' EXIT INT TERM
+  # `exit` on a signal as well: cleaning up and then carrying on would validate
+  # a file that no longer exists and report it as a chart failure.
+  trap 'rm -f "$rendered"' EXIT
+  trap 'rm -f "$rendered"; exit 130' INT
+  trap 'rm -f "$rendered"; exit 143' TERM
   if ! helm template topology "$chart" \
     --namespace "$namespace" \
     --values "${chart}/${values_file}" >"$rendered"; then
