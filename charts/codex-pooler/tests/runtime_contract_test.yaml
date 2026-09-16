@@ -437,3 +437,46 @@ tests:
           value: "8"
       - notExists:
           path: spec.template.spec.containers[0].env[?(@.name=="SMTP_PASSWORD")]
+
+  - it: declares the http container port and PHX_SERVER on app pods when clustering is disabled
+    template: app-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].ports[?(@.name=="http")].containerPort
+          value: 4000
+      - lengthEqual:
+          path: spec.template.spec.containers[0].ports
+          count: 1
+
+  - it: keeps the http container port and PHX_SERVER off worker pods when clustering is disabled
+    template: oban-worker-deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+      - notExists:
+          path: spec.template.spec.containers[0].ports[?(@.name=="http")]
+      - notExists:
+          path: spec.template.spec.containers[0].ports
+
+  - it: keeps the http container port and PHX_SERVER off scheduler pods when clustering is disabled
+    template: oban-scheduler-deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+      - notExists:
+          path: spec.template.spec.containers[0].ports[?(@.name=="http")]
+      - notExists:
+          path: spec.template.spec.containers[0].ports
+
+  - it: keeps the http container port and PHX_SERVER off migration hook pods when clustering is disabled
+    template: migration-job.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+      - notExists:
+          path: spec.template.spec.containers[0].ports[?(@.name=="http")]
+      - notExists:
+          path: spec.template.spec.containers[0].ports

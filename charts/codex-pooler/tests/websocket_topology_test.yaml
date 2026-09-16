@@ -137,3 +137,91 @@ tests:
     asserts:
       - notExists:
           path: spec.template.spec.containers[0].env[?(@.name=="DNS_CLUSTER_QUERY")]
+
+  - it: keeps http alongside the distribution ports on clustered app pods
+    template: app-deployment.yaml
+    set:
+      clustering.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].ports[?(@.name=="http")].containerPort
+          value: 4000
+      - equal:
+          path: spec.template.spec.containers[0].ports[?(@.name=="epmd")].containerPort
+          value: 4369
+      - equal:
+          path: spec.template.spec.containers[0].ports[?(@.name=="distribution")].containerPort
+          value: 9000
+      - lengthEqual:
+          path: spec.template.spec.containers[0].ports
+          count: 3
+
+  - it: keeps http off clustered app pods that do not participate in clustering
+    template: app-deployment.yaml
+    set:
+      clustering.enabled: true
+      clustering.participants.app: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[?(@.name=="http")].containerPort
+          value: 4000
+      - notExists:
+          path: spec.template.spec.containers[0].ports[?(@.name=="epmd")]
+      - notExists:
+          path: spec.template.spec.containers[0].ports[?(@.name=="distribution")]
+      - lengthEqual:
+          path: spec.template.spec.containers[0].ports
+          count: 1
+
+  - it: exposes only distribution ports and no PHX_SERVER on clustered worker pods
+    template: oban-worker-deployment.yaml
+    set:
+      clustering.enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+      - notExists:
+          path: spec.template.spec.containers[0].ports[?(@.name=="http")]
+      - equal:
+          path: spec.template.spec.containers[0].ports[?(@.name=="epmd")].containerPort
+          value: 4369
+      - equal:
+          path: spec.template.spec.containers[0].ports[?(@.name=="distribution")].containerPort
+          value: 9000
+      - lengthEqual:
+          path: spec.template.spec.containers[0].ports
+          count: 2
+
+  - it: exposes only distribution ports and no PHX_SERVER on clustered scheduler pods
+    template: oban-scheduler-deployment.yaml
+    set:
+      clustering.enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+      - notExists:
+          path: spec.template.spec.containers[0].ports[?(@.name=="http")]
+      - equal:
+          path: spec.template.spec.containers[0].ports[?(@.name=="epmd")].containerPort
+          value: 4369
+      - equal:
+          path: spec.template.spec.containers[0].ports[?(@.name=="distribution")].containerPort
+          value: 9000
+      - lengthEqual:
+          path: spec.template.spec.containers[0].ports
+          count: 2
+
+  - it: exposes no ports and no PHX_SERVER on clustered migration hook pods
+    template: migration-job.yaml
+    set:
+      clustering.enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="PHX_SERVER")]
+      - notExists:
+          path: spec.template.spec.containers[0].ports[?(@.name=="http")]
+      - notExists:
+          path: spec.template.spec.containers[0].ports
