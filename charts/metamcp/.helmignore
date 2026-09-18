@@ -1,0 +1,26 @@
+# Local and repository metadata.
+.DS_Store
+.git/
+.gitignore
+AGENTS.md
+*.swp
+*.bak
+*.tmp
+*.orig
+*~
+.idea/
+.vscode/
+
+# Validation and example inputs are repository tooling, not runtime chart data.
+/ci/
+/examples/
+/hack/
+/tests/
+/README.md.gotmpl
+/scripts/test-render.sh
+/scripts/test-schema.sh
+/scripts/__pycache__/
+*.pyc
+
+# The chart embeds provision.py, provision_lib.py and user-bootstrap.py through
+# `.Files.Get`; keep those runtime scripts packaged.
