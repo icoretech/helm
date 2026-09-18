@@ -63,6 +63,12 @@ if [[ "${#chart_scripts[@]}" -gt 0 ]] &&
   status=1
 fi
 
+echo "==> workflow action pins"
+if ! .github/scripts/check-workflow-action-pins.py; then
+  echo "::error::a workflow action uses a mutable ref"
+  status=1
+fi
+
 # The Python guard is not syntax-checked here: compiling it proves nothing about
 # it. `verify-ci-gate.py --self-test`, which the next step runs, re-applies every
 # known way of turning the gate off and requires the guard to reject each one.
