@@ -62,16 +62,30 @@ spec:
           # a container cannot apply a migration, so those would crash-loop.
           # `rpc` spawns a BEAM per call, hence the slow cadence and the
           # generous timeout; `ERL_AFLAGS=` clears inherited flags the same way
-          # the app's preStop command does. `readiness_check/0` is a
-          # cross-repository contract like `prepare_shutdown/1`, and the
-          # `function_exported?` wrapper keeps images that predate it Ready
-          # instead of never becoming Ready at all.
+          # the app's preStop command does.
+          #
+          # Two arms, because the first one is empty on every image published so
+          # far. `readiness_check/0` is a cross-repository contract like
+          # `prepare_shutdown/1` and verifies that every migration the image
+          # carries is applied — but it exists only in unreleased Pooler, so a
+          # wrapper that fell back to `:ok` made the probe answer Ready without
+          # touching the database on exactly the images operators can install.
+          # The fallback queries `schema_migrations` instead, which any image
+          # can answer, and requires at least one applied row: the table alone
+          # proves nothing, because Ecto creates it empty the first time a
+          # migrator starts. Both arms fail
+          # by raising: `rpc` discards return values, so an arm that returned
+          # `{:error, …}` would exit 0 and report Ready.
+          #
+          # `Code.ensure_loaded?` first: `function_exported?/3` answers false for
+          # a module that is merely not loaded, which would route to the weaker
+          # arm for the wrong reason.
           readinessProbe:
             exec:
               command:
                 - /bin/sh
                 - -ec
-                - 'ERL_AFLAGS= timeout 9s /app/bin/codex_pooler rpc "if function_exported?(CodexPooler.Release, :readiness_check, 0), do: CodexPooler.Release.readiness_check(), else: :ok"'
+                - 'ERL_AFLAGS= timeout 9s /app/bin/codex_pooler rpc "if Code.ensure_loaded?(CodexPooler.Release) and function_exported?(CodexPooler.Release, :readiness_check, 0), do: CodexPooler.Release.readiness_check(), else: ([_ | _] = Ecto.Adapters.SQL.query!(CodexPooler.Repo, ~s(select true from schema_migrations limit 1), []).rows)"'
             initialDelaySeconds: 20
             periodSeconds: 30
             timeoutSeconds: 10

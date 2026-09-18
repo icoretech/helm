@@ -13,6 +13,7 @@ suite: migration job ownership
 templates:
   - migration-job.yaml
   - secret.yaml
+  - tests/migrations-applied.yaml
 tests:
   - it: renders the migration Job as a release manifest, not as a hook
     template: migration-job.yaml
@@ -40,7 +41,7 @@ tests:
       # into batch.kubernetes.io/job-name, where 64 bytes is rejected.
       - equal:
           path: metadata.name
-          value: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-migrate-1
+          value: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-11ee39-migrate-1
 
   - it: reads the Secret the release itself creates
     template: migration-job.yaml
@@ -90,6 +91,71 @@ tests:
       - equal:
           path: spec.activeDeadlineSeconds
           value: 900
+
+  - it: keeps two long release names on two different Jobs
+    template: migration-job.yaml
+    release:
+      revision: 1
+    set:
+      fullnameOverride: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbb
+    asserts:
+      # Truncation alone gave two releases differing only past character 53 the
+      # same Job name, in a namespace where everything else about them differs.
+      - equal:
+          path: metadata.name
+          value: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-682256-migrate-1
+
+  - it: fails helm test when a migration has not been applied
+    template: tests/migrations-applied.yaml
+    asserts:
+      - isKind:
+          of: Pod
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: test
+      # chart-testing runs helm test after the rollout, and it is the only gate
+      # that fails when the Job did not finish: helm --wait does not wait for
+      # Jobs, and neither helm test nor helm uninstall accepts --wait-for-jobs.
+      - matchRegex:
+          path: spec.containers[?(@.name=="test-migrations")].args[0]
+          pattern: 'Ecto\.Migrator\.migrations\(repo\)'
+      - matchRegex:
+          path: spec.containers[?(@.name=="test-migrations")].args[0]
+          pattern: 'System\.monotonic_time\(:millisecond\) \+ 540_000'
+      - equal:
+          path: spec.activeDeadlineSeconds
+          value: 570
+      - equal:
+          path: spec.restartPolicy
+          value: Never
+
+  - it: keeps the migration test Pod name within the Kubernetes limit
+    template: tests/migrations-applied.yaml
+    set:
+      fullnameOverride: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbb
+    asserts:
+      - equal:
+          path: metadata.name
+          value: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-682256-test-migrations
+
+  - it: keeps two long release names on two different migration test Pods
+    template: tests/migrations-applied.yaml
+    set:
+      fullnameOverride: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacccccccccc
+    asserts:
+      - equal:
+          path: metadata.name
+          value: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-b85ac5-test-migrations
+
+  - it: still asks whether the schema is applied when the chart does not migrate
+    set:
+      migrations.enabled: false
+    asserts:
+      # An operator who migrates out of band has the same question to answer,
+      # and `ct install` needs an answer that does not depend on this toggle.
+      - hasDocuments:
+          count: 1
+        template: tests/migrations-applied.yaml
 
   - it: renders no Job when migrations are disabled
     template: migration-job.yaml

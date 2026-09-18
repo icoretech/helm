@@ -1,0 +1,46 @@
+# `helm test` — and therefore `ct install`, which runs it — fails when the
+# database does not get every migration this image carries applied to it. It is
+# rendered whether or not the chart runs the migration itself: an operator who
+# migrates out of band has the same question to answer.
+#
+# The Job is a release manifest rather than a hook, and `helm --wait` does not
+# wait for Jobs unless `--wait-for-jobs` is passed (which chart-testing cannot
+# forward: `helm test` and `helm uninstall` both reject it). Without this test a
+# failed migration left the release green, because the app's `/readyz` answers
+# on connectivity alone on published images.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "codex-pooler.migrationTestName" . }}
+  labels:
+    {{- include "codex-pooler.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 570
+  serviceAccountName: {{ include "codex-pooler.serviceAccountName" . }}
+  {{- with .Values.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  containers:
+    - name: test-migrations
+      image: {{ include "codex-pooler.image" . }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      command: ["/bin/sh", "-ec"]
+      args:
+        # `ct install` starts this test after the Deployments become Ready, which
+        # can precede the migration Job on older images. Poll inside one bounded
+        # repo lifetime instead of racing the Job or starting a new BEAM per
+        # check. A pending migration after nine minutes raises and fails the hook
+        # before the workflow's ten-minute Helm timeout.
+        - '/app/bin/codex_pooler eval "{:ok, _, _} = Ecto.Migrator.with_repo(CodexPooler.Repo, fn repo -> deadline = System.monotonic_time(:millisecond) + 540_000; await = fn await -> case Enum.filter(Ecto.Migrator.migrations(repo), fn {status, _, _} -> status == :down end) do [] -> :ok; pending when System.monotonic_time(:millisecond) < deadline -> Process.sleep(1_000); await.(await); pending -> raise \"pending migrations after timeout: #{inspect(Enum.map(pending, fn {_, version, _} -> version end))}\" end end; await.(await) end)"'
+      env:
+        - name: OBAN_MODE
+          value: web
+        {{- include "codex-pooler.env" . | nindent 8 }}
+      resources:
+        {{- toYaml .Values.migrations.resources | nindent 8 }}

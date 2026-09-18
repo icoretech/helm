@@ -214,7 +214,7 @@ tests:
           path: spec.template.spec.containers[?(@.name=="oban-scheduler")].ports
           count: 2
 
-  - it: exposes no ports and no PHX_SERVER on clustered migration hook pods
+  - it: exposes no ports and no PHX_SERVER on clustered migration pods
     template: migration-job.yaml
     set:
       clustering.enabled: true

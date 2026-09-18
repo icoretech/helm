@@ -20,8 +20,10 @@
 # that would publish it.
 AGENTS.md
 # Validation inputs, not chart content: the unit suites and their fixtures, the
-# chart-testing values and cluster fixtures, and the local schema harness.
-tests/
-ci/
-scripts/
-README.md.gotmpl
+# chart-testing values and cluster fixtures, the local schema harness and the
+# README generator's input. Anchored at the chart root: an unanchored `tests/`
+# also matches `templates/tests/`, which is where the chart's `helm test` lives.
+/tests/
+/ci/
+/scripts/
+/README.md.gotmpl

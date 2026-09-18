@@ -3,7 +3,8 @@
 #
 # This is not a substitute for `ct install`: chart-testing installs this chart
 # for real against `ci/fixtures/postgres.yaml`, which is the only thing that
-# sees hook ordering, readiness and the application actually starting. This file
+# sees readiness, the migration running and the application actually starting.
+# This file
 # is the cheap, exhaustive half — every rendered object handed to the API
 # server's own validation, including objects a failed install would never reach.
 #

@@ -320,7 +320,7 @@ tests:
       - notExists:
           path: spec.template.spec.containers[?(@.name=="migrations")].env[?(@.name=="PHX_SERVER")]
 
-  - it: does not apply runtime pod annotations to migration hook pods
+  - it: does not apply runtime pod annotations to migration pods
     template: migration-job.yaml
     set:
       podAnnotations:
@@ -475,7 +475,7 @@ tests:
       - notExists:
           path: spec.template.spec.containers[?(@.name=="oban-scheduler")].ports
 
-  - it: keeps the http container port and PHX_SERVER off migration hook pods when clustering is disabled
+  - it: keeps the http container port and PHX_SERVER off migration pods when clustering is disabled
     template: migration-job.yaml
     asserts:
       - notExists:

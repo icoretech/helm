@@ -137,9 +137,9 @@ app:
 migrations:
   enabled: true
   ttlSecondsAfterFinished: 300
-  # -- Job retries before the migration hook is treated as failed. A migration that keeps failing must fail the release rather than retry indefinitely.
+  # -- Job retries before the migration is treated as failed. A migration that keeps failing must fail the release rather than retry indefinitely.
   backoffLimit: 3
-  # -- Wall-clock budget for the migration hook. Bounds a Job that can never start (a missing Secret key, an unreachable database), which would otherwise hang helm install until the client timeout.
+  # -- Wall-clock budget for the migration Job. Bounds a Job that can never start (a missing Secret key, an unreachable database), which would otherwise hang helm install until the client timeout.
   activeDeadlineSeconds: 900
   resources:
     requests:

@@ -12,9 +12,12 @@ tests:
   - it: asks the worker release whether it can serve
     template: oban-worker-deployment.yaml
     asserts:
-      - matchRegex:
+      # The whole command, not a substring: a probe commented out to an
+      # unconditional `true` keeps a substring match green, which is exactly the
+      # behaviour that shipped in 0.8.10.
+      - equal:
           path: spec.template.spec.containers[?(@.name=="oban-worker")].readinessProbe.exec.command[2]
-          pattern: CodexPooler\.Release\.readiness_check
+          value: 'ERL_AFLAGS= timeout 9s /app/bin/codex_pooler rpc "if Code.ensure_loaded?(CodexPooler.Release) and function_exported?(CodexPooler.Release, :readiness_check, 0), do: CodexPooler.Release.readiness_check(), else: ([_ | _] = Ecto.Adapters.SQL.query!(CodexPooler.Repo, ~s(select true from schema_migrations limit 1), []).rows)"'
       - equal:
           path: spec.template.spec.containers[?(@.name=="oban-worker")].readinessProbe.periodSeconds
           value: 30
@@ -28,22 +31,32 @@ tests:
   - it: asks the scheduler release whether it can serve
     template: oban-scheduler-deployment.yaml
     asserts:
-      - matchRegex:
+      # The whole command, not a substring: a probe commented out to an
+      # unconditional `true` keeps a substring match green, which is exactly the
+      # behaviour that shipped in 0.8.10.
+      - equal:
           path: spec.template.spec.containers[?(@.name=="oban-scheduler")].readinessProbe.exec.command[2]
-          pattern: CodexPooler\.Release\.readiness_check
+          value: 'ERL_AFLAGS= timeout 9s /app/bin/codex_pooler rpc "if Code.ensure_loaded?(CodexPooler.Release) and function_exported?(CodexPooler.Release, :readiness_check, 0), do: CodexPooler.Release.readiness_check(), else: ([_ | _] = Ecto.Adapters.SQL.query!(CodexPooler.Repo, ~s(select true from schema_migrations limit 1), []).rows)"'
       - notExists:
           path: spec.template.spec.containers[?(@.name=="oban-scheduler")].livenessProbe
       - notExists:
           path: spec.template.spec.containers[?(@.name=="oban-scheduler")].startupProbe
 
-  - it: keeps older images Ready instead of never Ready
+  - it: checks the schema on images that do not export readiness_check/0
     template: oban-worker-deployment.yaml
     asserts:
-      # readiness_check/0 is newer than this chart's own appVersion, and an rpc
-      # to a function an image does not export raises.
+      # Every image published so far takes this arm: readiness_check/0 exists
+      # only in unreleased Pooler, and a wrapper that fell back to `:ok` made the
+      # probe answer Ready without touching the database. The query raises when
+      # the schema is absent, which is the only way an rpc can fail a probe.
       - matchRegex:
           path: spec.template.spec.containers[?(@.name=="oban-worker")].readinessProbe.exec.command[2]
-          pattern: function_exported\?\(CodexPooler\.Release, :readiness_check, 0\)
+          pattern: 'else: \(\[_ \| _\] = Ecto\.Adapters\.SQL\.query!\(CodexPooler\.Repo, ~s\(select true from schema_migrations limit 1\), \[\]\)\.rows\)"$'
+      # function_exported?/3 answers false for a module that is merely not
+      # loaded, which would take the fallback arm for the wrong reason.
+      - matchRegex:
+          path: spec.template.spec.containers[?(@.name=="oban-worker")].readinessProbe.exec.command[2]
+          pattern: ^ERL_AFLAGS= timeout 9s /app/bin/codex_pooler rpc "if Code\.ensure_loaded\?\(CodexPooler\.Release\)
 
   - it: gives the app readiness probe a budget wider than the query it makes
     template: app-deployment.yaml

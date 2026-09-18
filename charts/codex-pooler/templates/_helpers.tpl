@@ -63,9 +63,28 @@ to leave room for the suffix rather than failing every install behind a long
 `fullnameOverride`.
 */}}
 {{- define "codex-pooler.migrationJobName" -}}
+{{- $full := include "codex-pooler.fullname" . -}}
 {{- $suffix := printf "-migrate-%d" (int .Release.Revision) -}}
-{{- $prefix := include "codex-pooler.fullname" . | trunc (int (sub 63 (len $suffix))) | trimSuffix "-" -}}
-{{- printf "%s%s" $prefix $suffix -}}
+{{- $room := int (sub 63 (len $suffix)) -}}
+{{- if le (len $full) $room -}}
+{{- printf "%s%s" $full $suffix -}}
+{{- else -}}
+{{- $digest := sha256sum $full | trunc 6 -}}
+{{- printf "%s-%s%s" (trunc (int (sub $room 7)) $full | trimSuffix "-") $digest $suffix -}}
+{{- end -}}
+{{- end -}}
+
+{{/* A stable, collision-resistant name for the migration verification test Pod. */}}
+{{- define "codex-pooler.migrationTestName" -}}
+{{- $full := include "codex-pooler.fullname" . -}}
+{{- $suffix := "-test-migrations" -}}
+{{- $room := int (sub 63 (len $suffix)) -}}
+{{- if le (len $full) $room -}}
+{{- printf "%s%s" $full $suffix -}}
+{{- else -}}
+{{- $digest := sha256sum $full | trunc 6 -}}
+{{- printf "%s-%s%s" (trunc (int (sub $room 7)) $full | trimSuffix "-") $digest $suffix -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "codex-pooler.validatedUpstreamSecretKey" -}}
