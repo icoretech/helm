@@ -26,8 +26,8 @@ the last two versions each claimed a class was closed and it was not):
     test; `lint-ci.sh`, `check-chart-docs.sh`, `assert-no-chart-changed.sh`,
     `validate-rendered-topology.sh` and `apply-ct-fixtures.sh` do not. Editing
     one of them is an ordinary code change that only review catches.
-  * the behaviour of the actions behind the pinned `uses:` refs. `@v7` is a
-    moving tag; the pin is a name, not a digest.
+  * the behaviour of the actions behind the immutable `uses:` commits. The
+    source cannot move, but the runner and network it executes on still can.
   * the other workflows in the repository, beyond refusing a second workflow
     that declares a job with the required check's name. `release.yml` and
     `sync-gh-pages.yml` are not part of this gate and are not checked.
@@ -46,6 +46,7 @@ Usage: verify-ci-gate.py [workflow-path] [--self-test]
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -63,7 +64,16 @@ EXPECTED_TOP = {
     "permissions": {"contents": "read"},
 }
 EXPECTED_JOB_KEYS = {"runs-on", "timeout-minutes", "steps"}
+# `concurrency` can only cancel or queue a run, never turn a failure green, so
+# it is allowed at the top level without a pinned value.
+OPTIONAL_TOP_KEYS = {"concurrency"}
 EXPECTED_JOB = {"runs-on": "ubuntu-latest", "timeout-minutes": "30"}
+
+CHECKOUT_ACTION = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
+SETUP_HELM_ACTION = "azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310"
+SETUP_PYTHON_ACTION = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
+CHART_TESTING_ACTION = "helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f"
+KIND_ACTION = "helm/kind-action@06c1ae10762d3b9c1644e7fe69596ae519e015a2"
 
 # Keys a step may carry at all. `shell` is absent on purpose: a custom shell
 # (`shell: bash -c "exit 0" {0}`) turns every `run:` in its scope into a no-op
@@ -82,21 +92,23 @@ def for_each_changed_chart(script: str) -> list[str]:
 EXPECTED_STEPS: list[dict] = [
     {
         "name": "Checkout",
-        "uses": "actions/checkout@v7",
+        "uses": CHECKOUT_ACTION,
         # `ref:` here would check out the base commit: the runner would then
         # validate a tree without the pull request's chart changes, and both
         # halves of the change detection would honestly agree that nothing
         # changed.
         "with": {"fetch-depth": "0"},
     },
-    {"name": "Set up Helm", "uses": "azure/setup-helm@v5.0.1"},
+    # Pinned: every receipt for this gate was measured on helm 4.2.4, and
+    # `azure/setup-helm` otherwise installs whatever is latest at check time.
+    {"name": "Set up Helm", "uses": SETUP_HELM_ACTION, "with": {"version": "v4.2.4"}},
     {
         "name": None,
-        "uses": "actions/setup-python@v7.0.0",
+        "uses": SETUP_PYTHON_ACTION,
         "with": {"python-version": "3.14", "check-latest": "true"},
     },
     # `with: {version: …}` here would change which ct the pinned commands invoke.
-    {"name": "Set up chart-testing", "uses": "helm/chart-testing-action@v2.8.0"},
+    {"name": "Set up chart-testing", "uses": CHART_TESTING_ACTION},
     {"name": "Lint the CI definition", "run": [".github/scripts/lint-ci.sh"]},
     {
         "name": "Verify CI retry helper",
@@ -138,6 +150,21 @@ EXPECTED_STEPS: list[dict] = [
         "run": for_each_changed_chart(".github/scripts/check-chart-docs.sh"),
     },
     {
+        "name": "Run chart schema contracts",
+        "if": IF_CHANGED,
+        "env": CHANGED_CHARTS_ENV,
+        "run": [
+            'readarray -t charts <<< "$CHANGED_CHARTS"',
+            'for chart in "${charts[@]}"; do',
+            '[[ -n "$chart" ]] || continue',
+            'if [[ -f "$chart/scripts/test-schema.sh" ]]; then',
+            'echo "==> schema contract $chart"',
+            'bash "$chart/scripts/test-schema.sh"',
+            "fi",
+            "done",
+        ],
+    },
+    {
         "name": "Set up helm-unittest",
         "if": IF_CHANGED,
         "run": [
@@ -166,7 +193,7 @@ EXPECTED_STEPS: list[dict] = [
             'exit "$status"',
         ],
     },
-    {"name": "Create kind cluster", "if": IF_CHANGED, "uses": "helm/kind-action@v1.15.0"},
+    {"name": "Create kind cluster", "if": IF_CHANGED, "uses": KIND_ACTION},
     {
         "name": "Validate the rendered topology against the API server",
         "if": IF_CHANGED,
@@ -344,26 +371,36 @@ def other_workflows_claiming_the_check(workflow_path: Path) -> list[str]:
     directory = workflow_path.parent
     if not directory.is_dir():
         return offenders
+    # Deliberately blunt: GitHub names a check run after `jobs.<id>.name` when it
+    # is set and after the id otherwise, and both can be written at any
+    # indentation, quoted, or in flow style. An indent-and-id heuristic missed
+    # all three variants while printing an ok line, so any other workflow that
+    # so much as mentions the required check's name is reported here.
     for candidate in sorted(directory.glob("*.y*ml")):
         if candidate.resolve() == workflow_path.resolve():
             continue
-        # A line scan, not the strict parser: the other workflows in this
-        # repository use YAML this parser deliberately refuses, and all that
-        # matters here is whether they declare a job with the required name.
-        in_jobs = False
-        for line in candidate.read_text().splitlines():
-            if not line.strip() or line.lstrip().startswith("#"):
-                continue
-            indent = len(line) - len(line.lstrip(" "))
-            if indent == 0:
-                in_jobs = line.split(":")[0].strip().strip("\"'") == "jobs"
-                continue
-            if in_jobs and indent == 2:
-                job = line.split(":")[0].strip().strip("\"'")
-                if job == REQUIRED_CHECK:
-                    offenders.append(candidate.name)
-                    break
+        if REQUIRED_CHECK in candidate.read_text():
+            offenders.append(candidate.name)
     return offenders
+
+
+def chart_testing_configs(repo_root: Path) -> list[str]:
+    """chart-testing config files in the repository root.
+
+    `ct` resolves its configuration with viper, so `ct.yml`, `ct.json` and
+    `ct.toml` are honoured exactly like `ct.yaml`, and a config can exclude a
+    chart from every ct command. That defeat needs no change under `.github/`
+    at all, which is why it is checked here — in the step that always runs —
+    rather than only in the cross-check step, which cannot run in the branch
+    where the config succeeded.
+    """
+    names = []
+    for stem in ("ct", ".ct", "chart_testing"):
+        for extension in ("yaml", "yml", "json", "toml", "hcl", "ini", "properties", "env"):
+            candidate = repo_root / f"{stem}.{extension}"
+            if candidate.exists():
+                names.append(candidate.name)
+    return names
 
 
 def check(workflow_path: Path, quiet: bool = False) -> list[str]:
@@ -380,7 +417,7 @@ def check(workflow_path: Path, quiet: bool = False) -> list[str]:
 
     document = Parser(workflow_path.read_text()).parse_block(0)
 
-    extra_top = set(document) - (set(EXPECTED_TOP) | {"jobs"})
+    extra_top = set(document) - (set(EXPECTED_TOP) | OPTIONAL_TOP_KEYS | {"jobs"})
     if extra_top:
         fail(f"the workflow declares {sorted(extra_top)} at the top level (a `defaults:` or `env:` here reaches every step)")
     for key, value in EXPECTED_TOP.items():
@@ -406,9 +443,15 @@ def check(workflow_path: Path, quiet: bool = False) -> list[str]:
     if not extra_job:
         ok(f"job {REQUIRED_CHECK} has no condition, no defaults and no reusable-workflow body")
 
+    configs = chart_testing_configs(workflow_path.parent.parent.parent)
+    if configs:
+        fail(f"chart-testing configuration in the repository root: {configs}. It can exclude a chart from every ct command without touching this workflow")
+    else:
+        ok("no chart-testing configuration can redirect or exclude a chart")
+
     offenders = other_workflows_claiming_the_check(workflow_path)
     if offenders:
-        fail(f"another workflow declares a job named {REQUIRED_CHECK}, producing a second check run with the required name: {offenders}")
+        fail(f"another workflow mentions {REQUIRED_CHECK}, and a job id or display name there produces a second check run with the required name: {offenders}")
     else:
         ok(f"no other workflow produces a {REQUIRED_CHECK} check run")
 
@@ -521,8 +564,8 @@ MUTATIONS: list[tuple[str, tuple[str, str]]] = [
     (
         "a different chart-testing version behind the pinned commands",
         (
-            "      - name: Set up chart-testing\n        uses: helm/chart-testing-action@v2.8.0\n",
-            "      - name: Set up chart-testing\n        uses: helm/chart-testing-action@v2.8.0\n        with:\n          version: v3.7.1\n",
+            f"      - name: Set up chart-testing\n        uses: {CHART_TESTING_ACTION}\n",
+            f"      - name: Set up chart-testing\n        uses: {CHART_TESTING_ACTION}\n        with:\n          version: v3.7.1\n",
         ),
     ),
     (
@@ -565,6 +608,8 @@ def self_test(workflow_path: Path) -> int:
 
     source = workflow_path.read_text()
     failures = 0
+    rejected = 0
+    accepted = 0
 
     if check(workflow_path, quiet=True):
         print("FAIL - the unmutated workflow does not pass its own contract", file=sys.stderr)
@@ -582,31 +627,91 @@ def self_test(workflow_path: Path) -> int:
             mutated.write_text(source.replace(old, new, 1))
             try:
                 detected = bool(check(mutated, quiet=True))
-            except GateError:
-                detected = True
+            except GateError as error:
+                # Rejecting a mutation because the parser choked on it proves
+                # nothing about the contract, so it counts as a self-test
+                # failure rather than as a catch.
+                print(f"FAIL - parse error, not a contract failure: {description} ({error})", file=sys.stderr)
+                failures += 1
+                continue
             if detected:
+                rejected += 1
                 print(f"ok   - rejected: {description}")
             else:
                 print(f"FAIL - accepted: {description}", file=sys.stderr)
                 failures += 1
 
-        # The second-workflow case needs a directory, not a single file.
+        # These cases need a directory, not a single file.
         shadow_dir = Path(directory) / "workflows"
         shadow_dir.mkdir()
         (shadow_dir / "test.yml").write_text(source)
-        (shadow_dir / "zz-shadow.yml").write_text(
-            "name: Shadow\non: pull_request\n\njobs:\n  lint-test:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Nothing\n        run: 'true'\n"
-        )
-        if check(shadow_dir / "test.yml", quiet=True):
-            print("ok   - rejected: a second workflow producing the required check name")
-        else:
-            print("FAIL - accepted: a second workflow producing the required check name", file=sys.stderr)
-            failures += 1
+        shadows = {
+            "a second workflow whose job id is the required check": (
+                "name: Shadow\non: pull_request\n\njobs:\n  lint-test:\n    runs-on: ubuntu-latest\n"
+                "    steps:\n      - name: Nothing\n        run: 'true'\n"
+            ),
+            "a second workflow whose job display name is the required check": (
+                "name: Shadow\non: pull_request\n\njobs:\n  shadow:\n    name: lint-test\n"
+                "    runs-on: ubuntu-latest\n    steps:\n      - name: Nothing\n        run: 'true'\n"
+            ),
+            "a second workflow declaring the job id at four-space indent": (
+                "name: Shadow\non: pull_request\njobs:\n    lint-test:\n        runs-on: ubuntu-latest\n"
+                "        steps:\n          - name: Nothing\n            run: 'true'\n"
+            ),
+            "a second workflow declaring the job in flow style": (
+                "name: Shadow\non: pull_request\njobs: {lint-test: {runs-on: ubuntu-latest, "
+                "steps: [{name: Nothing, run: 'true'}]}}\n"
+            ),
+        }
+        for description, body in shadows.items():
+            (shadow_dir / "zz-shadow.yml").write_text(body)
+            if check(shadow_dir / "test.yml", quiet=True):
+                rejected += 1
+                print(f"ok   - rejected: {description}")
+            else:
+                print(f"FAIL - accepted: {description}", file=sys.stderr)
+                failures += 1
+        (shadow_dir / "zz-shadow.yml").unlink()
+
+        # Hardening the guard must accept, or it gets worked around. Action refs
+        # are already exact immutable commits; workflow-level concurrency is a
+        # safe scheduling control rather than a validation bypass.
+        hardening = {
+            "a workflow-level concurrency group": (
+                "on: pull_request\n",
+                "on: pull_request\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n",
+            ),
+        }
+        for description, (old, new) in hardening.items():
+            hardened = Path(directory) / "test.yml"
+            hardened.write_text(source.replace(old, new, 1))
+            if check(hardened, quiet=True):
+                print(f"FAIL - blocked: {description}", file=sys.stderr)
+                failures += 1
+            else:
+                accepted += 1
+                print(f"ok   - accepted: {description}")
+
+        # A chart-testing config in the repository root needs the real layout:
+        # <root>/.github/workflows/test.yml.
+        root = Path(directory) / "repo"
+        (root / ".github" / "workflows").mkdir(parents=True)
+        (root / ".github" / "workflows" / "test.yml").write_text(source)
+        for name in ("ct.yaml", "ct.yml", "ct.json", "ct.toml"):
+            config = root / name
+            config.write_text("excluded-charts: [codex-pooler]\n")
+            if check(root / ".github" / "workflows" / "test.yml", quiet=True):
+                rejected += 1
+                print(f"ok   - rejected: a repository-root {name} that can exclude a chart from every ct command")
+            else:
+                print(f"FAIL - accepted: a repository-root {name}", file=sys.stderr)
+                failures += 1
+            config.unlink()
 
     if failures:
         print(f"{failures} self-test case(s) failed", file=sys.stderr)
         return 1
-    print(f"self-test passed: {len(MUTATIONS) + 1} defeats rejected")
+    print(f"self-test passed: {rejected} defeats rejected, {accepted} hardening changes accepted")
     return 0
 
 

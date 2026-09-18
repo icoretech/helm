@@ -19,12 +19,16 @@
 # Usage: check-chart-docs.sh <chart-dir>...
 set -uo pipefail
 
+# shellcheck source=.github/scripts/pinned-tools.sh
+source "$(dirname "$0")/pinned-tools.sh"
+
 helm_docs_version="1.14.2"
-helm_docs_image="jnorwood/helm-docs:v${helm_docs_version}"
 # Deliberately not configurable: an env override of the search root makes
 # helm-docs skip the chart, exit 0, and the check pass on a stale README.
 chart_root="charts"
 status=0
+tool_dir="$(mktemp -d)"
+trap 'rm -rf "$tool_dir"' EXIT
 
 run_helm_docs() {
   local chart="$1" output_file="$2"
@@ -37,10 +41,8 @@ run_helm_docs() {
     return
   fi
 
-  docker run --rm \
-    --volume "$PWD:/helm-docs" \
-    -u "$(id -u):$(id -g)" \
-    "$helm_docs_image" \
+  install_helm_docs "$tool_dir/helm-docs" || return
+  "$tool_dir/helm-docs" \
     --chart-search-root="$chart_root" \
     --chart-to-generate="$chart" \
     --output-file "$output_file"
