@@ -1,0 +1,5 @@
+database:
+  replica:
+    url: postgres://multica:secret@replica.example.com:5432/multica?sslmode=require
+    maxConns: 12
+    minConns: 0

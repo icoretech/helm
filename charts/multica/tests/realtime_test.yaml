@@ -46,6 +46,20 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name=="REDIS_URL")].value
           value: redis://RELEASE-NAME-redis.NAMESPACE.svc:6379
 
+  - it: leaves REDIS_CLUSTER_MODE unset by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="REDIS_CLUSTER_MODE")]
+
+  - it: renders REDIS_CLUSTER_MODE when cluster mode is enabled
+    set:
+      realtime.redisUrl: redis://redis.example.com:6379/0
+      realtime.redisClusterMode: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="REDIS_CLUSTER_MODE")].value
+          value: "true"
+
   - it: rejects managed REDIS_URL overrides through extraEnv
     values:
       - values/invalid-managed-redis-extraenv.yaml
@@ -66,3 +80,33 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: "multica: realtime.redisUrl or realtime.redisUrlRef is required when redis.enabled=true with redis.auth.existingSecret or redis.auth.acl.enabled"
+
+  - it: rejects cluster mode without a Redis URL
+    set:
+      realtime.redisClusterMode: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: realtime.redisUrl or realtime.redisUrlRef is required when realtime.redisClusterMode=true"
+
+  - it: rejects cluster mode with the bundled standalone Redis
+    set:
+      redis.enabled: true
+      realtime.redisUrl: redis://redis.example.com:6379/0
+      realtime.redisClusterMode: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: realtime.redisClusterMode=true cannot be used with the bundled standalone redis dependency; provide realtime.redisUrl or disable redis.enabled"
+
+  - it: rejects the removed dedicated realtime relay Redis URL
+    set:
+      realtime.relay.redisUrl: redis://relay.example.com:6379/0
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: realtime.relay.redisUrl/redisUrlRef were removed upstream in Multica v0.5.0; the realtime relay now uses realtime.redisUrl (REDIS_URL)"
+
+  - it: rejects the removed dedicated channel lease Redis URL
+    set:
+      channelLeases.redisUrl: redis://lease.example.com:6379/0
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: channelLeases.redisUrl/redisUrlRef were removed upstream in Multica v0.5.0; channel WebSocket leases now use realtime.redisUrl (REDIS_URL)"

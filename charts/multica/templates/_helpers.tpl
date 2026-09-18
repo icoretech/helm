@@ -181,8 +181,7 @@ feature-flags.yaml
 {{- $refs := list -}}
 {{- with .Values.database.external.urlFrom.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.realtime.redisUrlRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
-{{- with .Values.realtime.relay.redisUrlRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
-{{- with .Values.channelLeases.redisUrlRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
+{{- with .Values.database.replica.urlFrom.secretKeyRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- if and .Values.redis.enabled .Values.redis.auth.enabled (not .Values.realtime.redisUrl) (not .Values.realtime.redisUrlRef.name) }}{{- $refs = append $refs (dict "name" (include "multica.redis.fullname" .) "key" "uri") }}{{- end }}
 {{- with .Values.backend.config.jwtSecretRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
 {{- with .Values.backend.config.realtimeMetricsTokenRef }}{{- if .name }}{{- $refs = append $refs (dict "name" .name "key" .key) }}{{- end }}{{- end }}
@@ -261,17 +260,40 @@ existingConfigMap:
 {{- if and .Values.realtime.redisUrlRef.name (not .Values.realtime.redisUrlRef.key) -}}
 {{- fail "multica: realtime.redisUrlRef.key is required when realtime.redisUrlRef.name is set" -}}
 {{- end -}}
-{{- if and .Values.realtime.relay.redisUrl .Values.realtime.relay.redisUrlRef.name -}}
-{{- fail "multica: realtime.relay.redisUrl and realtime.relay.redisUrlRef.name cannot both be set" -}}
+{{- $relay := default dict .Values.realtime.relay -}}
+{{- $relayRef := default dict $relay.redisUrlRef -}}
+{{- if or $relay.redisUrl $relayRef.name -}}
+{{- fail "multica: realtime.relay.redisUrl/redisUrlRef were removed upstream in Multica v0.5.0; the realtime relay now uses realtime.redisUrl (REDIS_URL)" -}}
 {{- end -}}
-{{- if and .Values.realtime.relay.redisUrlRef.name (not .Values.realtime.relay.redisUrlRef.key) -}}
-{{- fail "multica: realtime.relay.redisUrlRef.key is required when realtime.relay.redisUrlRef.name is set" -}}
+{{- $leases := default dict .Values.channelLeases -}}
+{{- $leasesRef := default dict $leases.redisUrlRef -}}
+{{- if or $leases.redisUrl $leasesRef.name -}}
+{{- fail "multica: channelLeases.redisUrl/redisUrlRef were removed upstream in Multica v0.5.0; channel WebSocket leases now use realtime.redisUrl (REDIS_URL)" -}}
 {{- end -}}
-{{- if and .Values.channelLeases.redisUrl .Values.channelLeases.redisUrlRef.name -}}
-{{- fail "multica: channelLeases.redisUrl and channelLeases.redisUrlRef.name cannot both be set" -}}
+{{- $rollups := default dict .Values.backend.usageRollups -}}
+{{- if or $rollups.dailyEnabled $rollups.dashboardEnabled -}}
+{{- fail "multica: backend.usageRollups.dailyEnabled/dashboardEnabled were removed upstream; the legacy daily and dashboard rollup tables were dropped and are no longer read" -}}
 {{- end -}}
-{{- if and .Values.channelLeases.redisUrlRef.name (not .Values.channelLeases.redisUrlRef.key) -}}
-{{- fail "multica: channelLeases.redisUrlRef.key is required when channelLeases.redisUrlRef.name is set" -}}
+{{- if and .Values.database.replica.url .Values.database.replica.urlFrom.secretKeyRef.name -}}
+{{- fail "multica: database.replica.url and database.replica.urlFrom.secretKeyRef.name cannot both be set" -}}
+{{- end -}}
+{{- if and .Values.database.replica.urlFrom.secretKeyRef.name (not .Values.database.replica.urlFrom.secretKeyRef.key) -}}
+{{- fail "multica: database.replica.urlFrom.secretKeyRef.key is required when database.replica.urlFrom.secretKeyRef.name is set" -}}
+{{- end -}}
+{{- if .Values.backend.config.maintenancePort -}}
+{{- $port := printf "%v" .Values.backend.config.maintenancePort -}}
+{{- if not (regexMatch "^[0-9]+$" $port) -}}
+{{- fail "multica: backend.config.maintenancePort must be a numeric TCP port between 1 and 65535" -}}
+{{- end -}}
+{{- if or (lt (int $port) 1) (gt (int $port) 65535) -}}
+{{- fail "multica: backend.config.maintenancePort must be between 1 and 65535" -}}
+{{- end -}}
+{{- end -}}
+{{- if and .Values.realtime.redisClusterMode .Values.redis.enabled -}}
+{{- fail "multica: realtime.redisClusterMode=true cannot be used with the bundled standalone redis dependency; provide realtime.redisUrl or disable redis.enabled" -}}
+{{- end -}}
+{{- if and .Values.realtime.redisClusterMode (not .Values.realtime.redisUrl) (not .Values.realtime.redisUrlRef.name) -}}
+{{- fail "multica: realtime.redisUrl or realtime.redisUrlRef is required when realtime.redisClusterMode=true" -}}
 {{- end -}}
 {{- if and .Values.backend.github.appSlug (not (or .Values.backend.github.webhookSecret .Values.backend.github.webhookSecretRef.name)) -}}
 {{- fail "multica: backend.github.webhookSecret or backend.github.webhookSecretRef.name is required when backend.github.appSlug is set" -}}

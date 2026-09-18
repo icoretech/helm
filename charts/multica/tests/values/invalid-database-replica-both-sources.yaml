@@ -1,0 +1,7 @@
+database:
+  replica:
+    url: postgres://multica:secret@replica.example.com:5432/multica
+    urlFrom:
+      secretKeyRef:
+        name: multica-replica
+        key: DATABASE_REPLICA_URL

@@ -10,6 +10,9 @@ tests:
       backend.config.databaseStartupTimeout: 3m
       backend.config.appUrl: https://app.example.com
       backend.config.databaseConnectTimeout: 5s
+      backend.config.databaseSearchWorkMemMB: 32
+      backend.config.maintenancePort: "6061"
+      backend.config.doNotTrack: "1"
       backend.config.cloud.url: https://cloud.example.com
       backend.config.daemonServerUrl: https://daemon.example.com
       backend.config.shutdownHoldDuration: 10s
@@ -31,6 +34,8 @@ tests:
       backend.plugins.surfaceOrigin: https://plugins.example.com
       backend.plugins.apiUrl: https://plugins.example.com/v1
       backend.plugins.dir: /app/plugins
+      realtime.redisUrl: redis://redis.example.com:6379/0
+      realtime.redisClusterMode: true
       storage.s3.usePathStyle: "true"
     asserts:
       - equal:
@@ -42,6 +47,18 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_DATABASE_CONNECT_TIMEOUT")].value
           value: 5s
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_SEARCH_WORK_MEM_MB")].value
+          value: "32"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="MAINTENANCE_PORT")].value
+          value: "6061"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DO_NOT_TRACK")].value
+          value: "1"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="REDIS_CLUSTER_MODE")].value
+          value: "true"
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name=="MULTICA_CLOUD_URL")].value
           value: https://cloud.example.com
@@ -145,3 +162,26 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: "multica: backend.vcs.secretKey or backend.vcs.secretKeyRef.name is required when backend.config.vcsIntegrationEnabled=true"
+
+  - it: rejects a non-numeric maintenance port
+    template: backend-deployment.yaml
+    set:
+      backend.config.maintenancePort: "http"
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.config.maintenancePort must be a numeric TCP port between 1 and 65535"
+
+  - it: rejects an out-of-range maintenance port
+    template: backend-deployment.yaml
+    set:
+      backend.config.maintenancePort: "70000"
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: backend.config.maintenancePort must be between 1 and 65535"
+
+  - it: renders the default search work_mem ceiling
+    template: backend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_SEARCH_WORK_MEM_MB")].value
+          value: "64"

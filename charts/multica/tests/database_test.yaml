@@ -27,6 +27,54 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_MIN_CONNS")].value
           value: "10"
 
+  - it: leaves the optional read replica unset by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_REPLICA_URL")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_REPLICA_MAX_CONNS")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_REPLICA_MIN_CONNS")]
+
+  - it: renders the optional read replica URL and pool sizing
+    values:
+      - values/valid-database-replica.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_REPLICA_URL")].value
+          value: postgres://multica:secret@replica.example.com:5432/multica?sslmode=require
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_REPLICA_MAX_CONNS")].value
+          value: "12"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_REPLICA_MIN_CONNS")].value
+          value: "0"
+
+  - it: uses the read replica secret ref when provided
+    values:
+      - values/valid-database-replica-secret.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_REPLICA_URL")].valueFrom.secretKeyRef.name
+          value: multica-replica
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="DATABASE_REPLICA_URL")].valueFrom.secretKeyRef.key
+          value: DATABASE_REPLICA_URL
+
+  - it: rejects a read replica URL and secret ref at the same time
+    values:
+      - values/invalid-database-replica-both-sources.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: database.replica.url and database.replica.urlFrom.secretKeyRef.name cannot both be set"
+
+  - it: rejects a read replica secret ref without a key
+    values:
+      - values/invalid-database-replica-secret-missing-key.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "multica: database.replica.urlFrom.secretKeyRef.key is required when database.replica.urlFrom.secretKeyRef.name is set"
+
   - it: uses external DATABASE_URL secret when provided
     values:
       - values/valid-external-secret.yaml
