@@ -83,6 +83,11 @@ spec:
             - name: PORT
               value: {{ printf "%v" .Values.backend.config.port | quote }}
             {{- $_ := set $managed "PORT" true }}
+            {{- if .Values.backend.config.maintenancePort }}
+            - name: MAINTENANCE_PORT
+              value: {{ printf "%v" .Values.backend.config.maintenancePort | quote }}
+            {{- end }}
+            {{- $_ := set $managed "MAINTENANCE_PORT" true }}
             - name: APP_ENV
               value: {{ .Values.backend.config.appEnv | quote }}
             {{- $_ := set $managed "APP_ENV" true }}
@@ -116,6 +121,27 @@ spec:
               value: {{ printf "%v" .Values.database.pool.minConns | quote }}
             {{- end }}
             {{- $_ := set $managed "DATABASE_MIN_CONNS" true }}
+            {{- if .Values.database.replica.urlFrom.secretKeyRef.name }}
+            - name: DATABASE_REPLICA_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.replica.urlFrom.secretKeyRef.name | quote }}
+                  key: {{ required "multica: database.replica.urlFrom.secretKeyRef.key is required" .Values.database.replica.urlFrom.secretKeyRef.key | quote }}
+            {{- else if .Values.database.replica.url }}
+            - name: DATABASE_REPLICA_URL
+              value: {{ .Values.database.replica.url | quote }}
+            {{- end }}
+            {{- $_ := set $managed "DATABASE_REPLICA_URL" true }}
+            {{- if .Values.database.replica.maxConns }}
+            - name: DATABASE_REPLICA_MAX_CONNS
+              value: {{ printf "%v" .Values.database.replica.maxConns | quote }}
+            {{- end }}
+            {{- $_ := set $managed "DATABASE_REPLICA_MAX_CONNS" true }}
+            {{- if ne (printf "%v" .Values.database.replica.minConns) "<nil>" }}
+            - name: DATABASE_REPLICA_MIN_CONNS
+              value: {{ printf "%v" .Values.database.replica.minConns | quote }}
+            {{- end }}
+            {{- $_ := set $managed "DATABASE_REPLICA_MIN_CONNS" true }}
             {{- if .Values.realtime.redisUrlRef.name }}
             - name: REDIS_URL
               valueFrom:
@@ -143,17 +169,11 @@ spec:
               value: "true"
             {{- end }}
             {{- $_ := set $managed "REDIS_DISABLE_CLIENT_NAME" true }}
-            {{- if .Values.realtime.relay.redisUrlRef.name }}
-            - name: REALTIME_RELAY_REDIS_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.realtime.relay.redisUrlRef.name | quote }}
-                  key: {{ required "multica: realtime.relay.redisUrlRef.key is required when realtime.relay.redisUrlRef.name is set" .Values.realtime.relay.redisUrlRef.key | quote }}
-            {{- else if .Values.realtime.relay.redisUrl }}
-            - name: REALTIME_RELAY_REDIS_URL
-              value: {{ .Values.realtime.relay.redisUrl | quote }}
+            {{- if .Values.realtime.redisClusterMode }}
+            - name: REDIS_CLUSTER_MODE
+              value: "true"
             {{- end }}
-            {{- $_ := set $managed "REALTIME_RELAY_REDIS_URL" true }}
+            {{- $_ := set $managed "REDIS_CLUSTER_MODE" true }}
             {{- if .Values.realtime.relay.mode }}
             - name: REALTIME_RELAY_MODE
               value: {{ .Values.realtime.relay.mode | quote }}
@@ -214,17 +234,6 @@ spec:
               value: {{ .Values.channelLeases.backend | quote }}
             {{- end }}
             {{- $_ := set $managed "CHANNEL_WS_LEASE_BACKEND" true }}
-            {{- if .Values.channelLeases.redisUrlRef.name }}
-            - name: CHANNEL_WS_LEASE_REDIS_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.channelLeases.redisUrlRef.name | quote }}
-                  key: {{ required "multica: channelLeases.redisUrlRef.key is required when channelLeases.redisUrlRef.name is set" .Values.channelLeases.redisUrlRef.key | quote }}
-            {{- else if .Values.channelLeases.redisUrl }}
-            - name: CHANNEL_WS_LEASE_REDIS_URL
-              value: {{ .Values.channelLeases.redisUrl | quote }}
-            {{- end }}
-            {{- $_ := set $managed "CHANNEL_WS_LEASE_REDIS_URL" true }}
             {{- if .Values.channelLeases.namespace }}
             - name: CHANNEL_WS_LEASE_NAMESPACE
               value: {{ .Values.channelLeases.namespace | quote }}
@@ -301,6 +310,11 @@ spec:
               value: {{ .Values.backend.config.databaseConnectTimeout | quote }}
             {{- end }}
             {{- $_ := set $managed "MULTICA_DATABASE_CONNECT_TIMEOUT" true }}
+            {{- if ne (printf "%v" .Values.backend.config.databaseSearchWorkMemMB) "<nil>" }}
+            - name: DATABASE_SEARCH_WORK_MEM_MB
+              value: {{ printf "%v" .Values.backend.config.databaseSearchWorkMemMB | quote }}
+            {{- end }}
+            {{- $_ := set $managed "DATABASE_SEARCH_WORK_MEM_MB" true }}
             {{- if .Values.backend.config.cloud.url }}
             - name: MULTICA_CLOUD_URL
               value: {{ .Values.backend.config.cloud.url | quote }}
@@ -344,6 +358,9 @@ spec:
             - name: DISABLE_WORKSPACE_CREATION
               value: {{ printf "%v" .Values.backend.config.disableWorkspaceCreation | quote }}
             {{- $_ := set $managed "DISABLE_WORKSPACE_CREATION" true }}
+            - name: DO_NOT_TRACK
+              value: {{ .Values.backend.config.doNotTrack | quote }}
+            {{- $_ := set $managed "DO_NOT_TRACK" true }}
             - name: COOKIE_DOMAIN
               value: {{ .Values.backend.config.cookieDomain | quote }}
             {{- $_ := set $managed "COOKIE_DOMAIN" true }}
@@ -701,16 +718,6 @@ spec:
               value: {{ .Values.backend.featureFlags.mountPath | quote }}
             {{- end }}
             {{- $_ := set $managed "MULTICA_FEATURE_FLAGS_FILE" true }}
-            {{- if .Values.backend.usageRollups.dailyEnabled }}
-            - name: USAGE_DAILY_ROLLUP_ENABLED
-              value: {{ printf "%v" .Values.backend.usageRollups.dailyEnabled | quote }}
-            {{- end }}
-            {{- $_ := set $managed "USAGE_DAILY_ROLLUP_ENABLED" true }}
-            {{- if .Values.backend.usageRollups.dashboardEnabled }}
-            - name: USAGE_DASHBOARD_ROLLUP_ENABLED
-              value: {{ printf "%v" .Values.backend.usageRollups.dashboardEnabled | quote }}
-            {{- end }}
-            {{- $_ := set $managed "USAGE_DASHBOARD_ROLLUP_ENABLED" true }}
             - name: LOCAL_UPLOAD_DIR
               value: {{ .Values.storage.local.uploadDir | quote }}
             {{- $_ := set $managed "LOCAL_UPLOAD_DIR" true }}

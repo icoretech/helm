@@ -191,6 +191,12 @@
               "minimum": 1,
               "maximum": 65535
             },
+            "maintenancePort": {
+              "type": [
+                "integer",
+                "string"
+              ]
+            },
             "frontendOrigin": {
               "type": "string"
             },
@@ -220,6 +226,14 @@
             },
             "databaseConnectTimeout": {
               "type": "string"
+            },
+            "databaseSearchWorkMemMB": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 64
             },
             "cloud": {
               "type": "object",
@@ -265,6 +279,9 @@
             },
             "disableWorkspaceCreation": {
               "type": "boolean"
+            },
+            "doNotTrack": {
+              "type": "string"
             },
             "cookieDomain": {
               "type": "string"
@@ -1088,6 +1105,38 @@
             }
           }
         },
+        "replica": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string"
+            },
+            "urlFrom": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "secretKeyRef": {
+                  "$ref": "#/definitions/secretRef"
+                }
+              }
+            },
+            "maxConns": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "minConns": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
         "internal": {
           "type": "object",
           "additionalProperties": false,
@@ -1182,6 +1231,9 @@
         },
         "redisUrlRef": {
           "$ref": "#/definitions/secretRef"
+        },
+        "redisClusterMode": {
+          "type": "boolean"
         },
         "redisDisableClientName": {
           "type": "boolean"

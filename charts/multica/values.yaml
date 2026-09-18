@@ -36,9 +36,9 @@ migrations:
 
 usageRollups:
   cronJob:
-    # -- Run rollup_task_usage_hourly() on a Kubernetes CronJob instead of requiring pg_cron in PostgreSQL.
-    enabled: true
-    # -- Cron schedule for the hourly usage rollup worker.
+    # -- Legacy compatibility path. Since Multica v0.3.5 the backend runs rollup_task_usage_hourly() in-process on every replica through its DB-backed scheduler (sys_cron_executions), so an external CronJob is redundant and disabled by default. Enable only for backend images older than v0.3.5 or when the in-process scheduler is unavailable. The SQL function holds advisory lock 4246, so both paths can coexist without double-writing.
+    enabled: false
+    # -- Cron schedule for the in-process scheduler's 5-minute plan cadence.
     schedule: "*/5 * * * *"
     # -- CronJob concurrency policy. Forbid pairs with the database advisory lock to avoid overlapping rollups.
     concurrencyPolicy: Forbid
@@ -109,6 +109,8 @@ backend:
     appEnv: production
     # -- Backend bind port.
     port: 8080
+    # -- Optional container-loopback maintenance API port, e.g. `6061`. Empty disables it. The listener always binds 127.0.0.1 and exposes `/maintenance/*` with no application authentication for the packaged `/app/maintenance` CLI (run via `kubectl exec`). Never publish it through a Service, Ingress, HTTPRoute, or host port.
+    maintenancePort: ""
     # -- Public frontend origin. Required for production links, cookies, CORS, and WebSocket origin checks.
     frontendOrigin: http://localhost:3000
     # -- User-reachable web URL used by CLI sign-in and account links. Empty defaults to frontendOrigin.
@@ -134,6 +136,8 @@ backend:
     databaseStartupTimeout: 3m
     # -- Optional database connection timeout, e.g. `5s`. Empty uses Multica's default.
     databaseConnectTimeout: 5s
+    # -- PostgreSQL `work_mem` ceiling in MB for search transactions. Set 1-64 to lower it for memory-constrained databases, or 0 to keep the database/session default. Values above 64 fall back to 64 with a warning at startup.
+    databaseSearchWorkMemMB: 64
     cloud:
       # -- Public Multica Cloud URL used for cloud-linked flows. Empty disables the cloud link.
       url: ""
@@ -164,6 +168,8 @@ backend:
     allowedEmailDomains: ""
     # -- Disable workspace creation globally. Bootstrap the shared workspace with this false, then set true so users can only join by invitation.
     disableWorkspaceCreation: false
+    # -- Disable first-party anonymous self-host telemetry. The backend sends one deployment-level snapshot per UTC day to `https://telemetry.multica.ai`; set to `"1"` or `"true"` to opt out, or leave empty for Multica's default-on behavior. Separate from backend.config.analyticsDisabled (PostHog product analytics).
+    doNotTrack: ""
     # -- Optional cookie Domain attribute. Leave empty for single-host deployments.
     cookieDomain: ""
     # -- Disable backend/frontend analytics. Defaults to true for self-host privacy.
@@ -382,12 +388,6 @@ backend:
     # -- Plugin installation directory inside the backend container.
     dir: ""
 
-  usageRollups:
-    # -- Enable runtime usage reads from the daily rollup table after external backfill/scheduler setup is complete.
-    dailyEnabled: false
-    # -- Enable dashboard usage reads from the dashboard rollup table after external backfill/scheduler setup is complete.
-    dashboardEnabled: false
-
   featureFlags:
     # -- Inline Multica feature flag rules rendered to a ConfigMap and loaded from MULTICA_FEATURE_FLAGS_FILE. Leave empty to use upstream defaults plus any FF_* env overrides.
     rules: {}
@@ -516,6 +516,18 @@ database:
     maxConns:
     # -- Optional DATABASE_MIN_CONNS env override. Leave empty to honor DATABASE_URL pool_min_conns or Multica defaults.
     minConns:
+  replica:
+    # -- Optional PostgreSQL read-replica connection URL. Multica requires every replica connection to be read-only and recycles it after 5m so a promoted node is revalidated; replica failures fall back to the primary. Empty disables replica reads. Do not also set urlFrom.
+    url: ""
+    urlFrom:
+      # -- Existing secret containing DATABASE_REPLICA_URL.
+      secretKeyRef:
+        name: ""
+        key: ""
+    # -- Optional DATABASE_REPLICA_MAX_CONNS override. Empty uses Multica's default (10).
+    maxConns:
+    # -- Optional DATABASE_REPLICA_MIN_CONNS override. Empty uses Multica's default (0).
+    minConns:
   internal:
     # -- Override internal PostgreSQL service name. Defaults to `<release>-postgres`.
     serviceName: ""
@@ -556,24 +568,19 @@ database:
     periodSeconds: 2
 
 realtime:
-  # -- Redis connection URL for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues. Leave empty for single-backend in-memory mode or when using bundled Redis.
+  # -- Redis connection URL for multi-backend realtime fanout, channel WebSocket leases, rate limits, auth-token caches, daemon task-claim cache, and runtime-local skill queues. Leave empty for single-backend in-memory mode or when using bundled Redis. Since Multica v0.5.0 every Redis-backed feature shares this one URL; the former dedicated relay/lease URLs no longer exist upstream.
   redisUrl: ""
   redisUrlRef:
     # -- Existing secret containing REDIS_URL.
     name: ""
     # -- Secret key for REDIS_URL.
     key: ""
+  # -- Set REDIS_CLUSTER_MODE=true for native Redis Cluster or ElastiCache Serverless endpoints. Cluster mode requires database 0 and rejects the legacy/dual relay modes.
+  redisClusterMode: false
   # -- Set REDIS_DISABLE_CLIENT_NAME when Redis deployments reject CLIENT SETNAME.
   redisDisableClientName: false
   relay:
-    # -- Optional dedicated Redis URL for realtime relay streams.
-    redisUrl: ""
-    redisUrlRef:
-      # -- Existing secret containing REALTIME_RELAY_REDIS_URL.
-      name: ""
-      # -- Secret key for REALTIME_RELAY_REDIS_URL.
-      key: ""
-    # -- Relay mode, e.g. `stream`.
+    # -- Relay mode, e.g. `stream`. Cluster deployments support sharded mode only; other modes are rejected when realtime.redisClusterMode=true.
     mode: ""
     # -- Number of relay shards.
     shards:
@@ -597,15 +604,8 @@ realtime:
     maintenanceInterval: ""
 
 channelLeases:
-  # -- Lease backend, e.g. `postgres` or `redis`.
+  # -- Lease backend, e.g. `postgres` or `redis`. Redis mode uses realtime.redisUrl (REDIS_URL); the former dedicated CHANNEL_WS_LEASE_REDIS_URL no longer exists upstream.
   backend: ""
-  # -- Redis URL for channel WebSocket leases.
-  redisUrl: ""
-  redisUrlRef:
-    # -- Existing secret containing CHANNEL_WS_LEASE_REDIS_URL.
-    name: ""
-    # -- Secret key for CHANNEL_WS_LEASE_REDIS_URL.
-    key: ""
   # -- Redis key namespace for channel leases.
   namespace: ""
   # -- Lease TTL.

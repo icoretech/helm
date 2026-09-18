@@ -7,10 +7,13 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - Separate backend and frontend Deployments using upstream GHCR images
 - Optional bundled PostgreSQL for evaluation and chart-testing
 - External PostgreSQL mode for production deployments
-- Optional bundled Redis for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues
+- Optional PostgreSQL read replica with independent pool sizing for opted-in reads
+- Optional bundled Redis for multi-backend realtime fanout, channel leases, rate limits, auth-token caches, daemon task-claim cache, and runtime-local skill queues, in standalone or cluster mode
 - Local upload PVC support and S3-compatible storage configuration
 - Secret references for JWT, email, Google OAuth, metrics, database URL, GitHub App, Lark, Slack, DingTalk, Telegram, WeCom, Composio, VCS, plugins, LLM, and S3 credentials
 - Runtime URL configuration for current multica-web images, graceful shutdown, invitation limits, and realtime relay/channel lease tuning
+- Optional container-loopback maintenance API for operator-driven, resumable backfills
+- Self-host telemetry opt-out and PostHog analytics switches
 - Optional ConfigMap-backed feature flag rules
 - Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
 - Optional PrometheusRule alerts for Multica business sampler metrics
@@ -117,9 +120,15 @@ When using S3-compatible storage without `storage.s3.cloudfrontDomain`, Multica 
 
 The backend startup probe gives cold installs time to wait for PostgreSQL and run migrations before liveness starts. Readiness uses `/readyz`, which checks PostgreSQL connectivity and the latest server migration. Liveness stays on `/health`, which only confirms the process is alive.
 
-Backend pod annotations include a checksum of referenced Kubernetes Secret data so out-of-band rotations of `jwtSecretRef`, database URL, email, OAuth, Redis, GitHub, Lark, and S3 secrets roll the Deployment on the next `helm upgrade`. `helm template` and dry-run renders cannot read live Secrets, so they emit a stable placeholder checksum.
+Backend pod annotations include a checksum of referenced Kubernetes Secret data so out-of-band rotations of `jwtSecretRef`, database or read-replica URL, email, OAuth, Redis, GitHub, Lark, and S3 secrets roll the Deployment on the next `helm upgrade`. `helm template` and dry-run renders cannot read live Secrets, so they emit a stable placeholder checksum.
 
-Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you explicitly want `DATABASE_MAX_CONNS` / `DATABASE_MIN_CONNS` env vars to override Multica's own defaults and any `pool_max_conns` / `pool_min_conns` query parameters already embedded in `DATABASE_URL`.
+Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you explicitly want `DATABASE_MAX_CONNS` / `DATABASE_MIN_CONNS` env vars to override Multica's own defaults and any `pool_max_conns` / `pool_min_conns` query parameters already embedded in `DATABASE_URL`. `backend.config.databaseSearchWorkMemMB` (default `64`) sets the transaction-local PostgreSQL `work_mem` ceiling for search queries; set `0` to keep the database/session default, or `1`-`64` to lower it on memory-constrained databases.
+
+Set `database.replica.url` (or `database.replica.urlFrom.secretKeyRef`) to enable the optional PostgreSQL read replica. Every replica connection is forced read-only and recycled after 5 minutes, replica failures fall back to the primary, and `database.replica.maxConns` / `database.replica.minConns` size its pool independently of the primary (Multica defaults are `10` / `0`).
+
+Set `backend.config.maintenancePort` to expose Multica's container-loopback maintenance API. The listener binds `127.0.0.1` only and has no application authentication; run the packaged `/app/maintenance` client through `kubectl exec` to drive resumable backfills such as the issue-status category migration. Never publish this port through a Service, Ingress, HTTPRoute, or host port.
+
+The chart disables PostHog product analytics by default via `backend.config.analyticsDisabled`. Multica also sends one first-party anonymous self-host telemetry snapshot per UTC day; set `backend.config.doNotTrack` to `"1"` or `"true"` to opt out of telemetry collection and delivery.
 
 Set `backend.config.metricsAddr` to enable Multica's Prometheus metrics listener. If your cluster has the Prometheus Operator CRD installed, `monitoring.prometheusRule.enabled=true` adds alert rules for business sampler query failures and high query latency; it is disabled by default so minimal clusters without the CRD still render and install.
 
@@ -180,17 +189,26 @@ backend:
         default: true
 ```
 
-Usage rollup flags are read-path switches only. Set `backend.usageRollups.dailyEnabled` or `backend.usageRollups.dashboardEnabled` only after the external scheduler and historical backfill are in place.
-
-For upgrades, `migrations.preUpgradeJob.enabled` runs the backend image as a Helm `pre-upgrade` hook before the Deployment rolls. It first runs `./migrate up`; if Multica refuses to drop legacy daily rollups because `task_usage_hourly` has not been seeded yet, the hook runs `./backfill_task_usage_hourly` and retries `./migrate up`. This matches the upstream `v0.3.5` self-host upgrade order while keeping the regular backend entrypoint unchanged.
-
-By default, `usageRollups.cronJob.enabled` creates a Kubernetes CronJob that calls `rollup_task_usage_hourly()` every five minutes. Each job waits for the migrated rollup function before calling it, so fresh installs do not record failed jobs while the backend is still applying migrations. This keeps the ongoing scheduler in Kubernetes instead of requiring the PostgreSQL `pg_cron` extension. If your database already runs the upstream `pg_cron` entry, disable the chart CronJob to avoid duplicate work:
+Multica runs `rollup_task_usage_hourly()` in-process on every backend replica through its DB-backed scheduler (`sys_cron_executions`), so a fresh install needs no external rollup scheduler. `usageRollups.cronJob.enabled` therefore defaults to `false`; it remains only as a compatibility path for backend images older than `v0.3.5` or when the in-process scheduler is unavailable. The SQL function holds advisory lock `4246`, so the CronJob and the in-process scheduler can coexist without double-writing if you enable both:
 
 ```yaml
 usageRollups:
   cronJob:
-    enabled: false
+    enabled: true
 ```
+
+Redis-backed features — realtime fanout, channel WebSocket leases, rate limits, and token caches — share the single `realtime.redisUrl` (`REDIS_URL`) connection. For native Redis Cluster or ElastiCache Serverless endpoints, set `realtime.redisClusterMode=true` with a database-0 URL; cluster mode rejects the legacy and dual relay modes, so pair it with `realtime.relay.mode=stream` when you tune the relay.
+
+For upgrades, `migrations.preUpgradeJob.enabled` runs the backend image as a Helm `pre-upgrade` hook before the Deployment rolls. It first runs `./migrate up`; if Multica refuses to drop legacy daily rollups because `task_usage_hourly` has not been seeded yet, the hook runs `./backfill_task_usage_hourly` and retries `./migrate up`. This matches the upstream `v0.3.5` self-host upgrade order while keeping the regular backend entrypoint unchanged.
+
+### Upgrading to chart 0.5.0
+
+Chart `0.5.0` tracks Multica `v0.5.0`. Upstream consolidated every Redis feature onto `REDIS_URL`, removed the dedicated `REALTIME_RELAY_REDIS_URL` and `CHANNEL_WS_LEASE_REDIS_URL` variables, and dropped the legacy daily/dashboard rollup read-path flags. The chart fails loudly instead of silently ignoring the removed keys:
+
+- Replace `realtime.relay.redisUrl` / `realtime.relay.redisUrlRef` with `realtime.redisUrl` / `realtime.redisUrlRef`.
+- Replace `channelLeases.redisUrl` / `channelLeases.redisUrlRef` with `realtime.redisUrl` / `realtime.redisUrlRef`.
+- Remove `backend.usageRollups.dailyEnabled` and `backend.usageRollups.dashboardEnabled`; the legacy tables were dropped upstream.
+- Delete any `usageRollups.cronJob` override you no longer need; the default flipped to `false` because the backend schedules the rollup itself.
 
 ## Agent Execution Model
 

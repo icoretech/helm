@@ -7,10 +7,13 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - Separate backend and frontend Deployments using upstream GHCR images
 - Optional bundled PostgreSQL for evaluation and chart-testing
 - External PostgreSQL mode for production deployments
-- Optional bundled Redis for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues
+- Optional PostgreSQL read replica with independent pool sizing for opted-in reads
+- Optional bundled Redis for multi-backend realtime fanout, channel leases, rate limits, auth-token caches, daemon task-claim cache, and runtime-local skill queues, in standalone or cluster mode
 - Local upload PVC support and S3-compatible storage configuration
 - Secret references for JWT, email, Google OAuth, metrics, database URL, GitHub App, Lark, Slack, DingTalk, Telegram, WeCom, Composio, VCS, plugins, LLM, and S3 credentials
 - Runtime URL configuration for current multica-web images, graceful shutdown, invitation limits, and realtime relay/channel lease tuning
+- Optional container-loopback maintenance API for operator-driven, resumable backfills
+- Self-host telemetry opt-out and PostHog analytics switches
 - Optional ConfigMap-backed feature flag rules
 - Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
 - Optional PrometheusRule alerts for Multica business sampler metrics
@@ -117,9 +120,15 @@ When using S3-compatible storage without `storage.s3.cloudfrontDomain`, Multica 
 
 The backend startup probe gives cold installs time to wait for PostgreSQL and run migrations before liveness starts. Readiness uses `/readyz`, which checks PostgreSQL connectivity and the latest server migration. Liveness stays on `/health`, which only confirms the process is alive.
 
-Backend pod annotations include a checksum of referenced Kubernetes Secret data so out-of-band rotations of `jwtSecretRef`, database URL, email, OAuth, Redis, GitHub, Lark, and S3 secrets roll the Deployment on the next `helm upgrade`. `helm template` and dry-run renders cannot read live Secrets, so they emit a stable placeholder checksum.
+Backend pod annotations include a checksum of referenced Kubernetes Secret data so out-of-band rotations of `jwtSecretRef`, database or read-replica URL, email, OAuth, Redis, GitHub, Lark, and S3 secrets roll the Deployment on the next `helm upgrade`. `helm template` and dry-run renders cannot read live Secrets, so they emit a stable placeholder checksum.
 
-Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you explicitly want `DATABASE_MAX_CONNS` / `DATABASE_MIN_CONNS` env vars to override Multica's own defaults and any `pool_max_conns` / `pool_min_conns` query parameters already embedded in `DATABASE_URL`.
+Leave `database.pool.maxConns` and `database.pool.minConns` empty unless you explicitly want `DATABASE_MAX_CONNS` / `DATABASE_MIN_CONNS` env vars to override Multica's own defaults and any `pool_max_conns` / `pool_min_conns` query parameters already embedded in `DATABASE_URL`. `backend.config.databaseSearchWorkMemMB` (default `64`) sets the transaction-local PostgreSQL `work_mem` ceiling for search queries; set `0` to keep the database/session default, or `1`-`64` to lower it on memory-constrained databases.
+
+Set `database.replica.url` (or `database.replica.urlFrom.secretKeyRef`) to enable the optional PostgreSQL read replica. Every replica connection is forced read-only and recycled after 5 minutes, replica failures fall back to the primary, and `database.replica.maxConns` / `database.replica.minConns` size its pool independently of the primary (Multica defaults are `10` / `0`).
+
+Set `backend.config.maintenancePort` to expose Multica's container-loopback maintenance API. The listener binds `127.0.0.1` only and has no application authentication; run the packaged `/app/maintenance` client through `kubectl exec` to drive resumable backfills such as the issue-status category migration. Never publish this port through a Service, Ingress, HTTPRoute, or host port.
+
+The chart disables PostHog product analytics by default via `backend.config.analyticsDisabled`. Multica also sends one first-party anonymous self-host telemetry snapshot per UTC day; set `backend.config.doNotTrack` to `"1"` or `"true"` to opt out of telemetry collection and delivery.
 
 Set `backend.config.metricsAddr` to enable Multica's Prometheus metrics listener. If your cluster has the Prometheus Operator CRD installed, `monitoring.prometheusRule.enabled=true` adds alert rules for business sampler query failures and high query latency; it is disabled by default so minimal clusters without the CRD still render and install.
 
@@ -180,17 +189,26 @@ backend:
         default: true
 ```
 
-Usage rollup flags are read-path switches only. Set `backend.usageRollups.dailyEnabled` or `backend.usageRollups.dashboardEnabled` only after the external scheduler and historical backfill are in place.
-
-For upgrades, `migrations.preUpgradeJob.enabled` runs the backend image as a Helm `pre-upgrade` hook before the Deployment rolls. It first runs `./migrate up`; if Multica refuses to drop legacy daily rollups because `task_usage_hourly` has not been seeded yet, the hook runs `./backfill_task_usage_hourly` and retries `./migrate up`. This matches the upstream `v0.3.5` self-host upgrade order while keeping the regular backend entrypoint unchanged.
-
-By default, `usageRollups.cronJob.enabled` creates a Kubernetes CronJob that calls `rollup_task_usage_hourly()` every five minutes. Each job waits for the migrated rollup function before calling it, so fresh installs do not record failed jobs while the backend is still applying migrations. This keeps the ongoing scheduler in Kubernetes instead of requiring the PostgreSQL `pg_cron` extension. If your database already runs the upstream `pg_cron` entry, disable the chart CronJob to avoid duplicate work:
+Multica runs `rollup_task_usage_hourly()` in-process on every backend replica through its DB-backed scheduler (`sys_cron_executions`), so a fresh install needs no external rollup scheduler. `usageRollups.cronJob.enabled` therefore defaults to `false`; it remains only as a compatibility path for backend images older than `v0.3.5` or when the in-process scheduler is unavailable. The SQL function holds advisory lock `4246`, so the CronJob and the in-process scheduler can coexist without double-writing if you enable both:
 
 ```yaml
 usageRollups:
   cronJob:
-    enabled: false
+    enabled: true
 ```
+
+Redis-backed features — realtime fanout, channel WebSocket leases, rate limits, and token caches — share the single `realtime.redisUrl` (`REDIS_URL`) connection. For native Redis Cluster or ElastiCache Serverless endpoints, set `realtime.redisClusterMode=true` with a database-0 URL; cluster mode rejects the legacy and dual relay modes, so pair it with `realtime.relay.mode=stream` when you tune the relay.
+
+For upgrades, `migrations.preUpgradeJob.enabled` runs the backend image as a Helm `pre-upgrade` hook before the Deployment rolls. It first runs `./migrate up`; if Multica refuses to drop legacy daily rollups because `task_usage_hourly` has not been seeded yet, the hook runs `./backfill_task_usage_hourly` and retries `./migrate up`. This matches the upstream `v0.3.5` self-host upgrade order while keeping the regular backend entrypoint unchanged.
+
+### Upgrading to chart 0.5.0
+
+Chart `0.5.0` tracks Multica `v0.5.0`. Upstream consolidated every Redis feature onto `REDIS_URL`, removed the dedicated `REALTIME_RELAY_REDIS_URL` and `CHANNEL_WS_LEASE_REDIS_URL` variables, and dropped the legacy daily/dashboard rollup read-path flags. The chart fails loudly instead of silently ignoring the removed keys:
+
+- Replace `realtime.relay.redisUrl` / `realtime.relay.redisUrlRef` with `realtime.redisUrl` / `realtime.redisUrlRef`.
+- Replace `channelLeases.redisUrl` / `channelLeases.redisUrlRef` with `realtime.redisUrl` / `realtime.redisUrlRef`.
+- Remove `backend.usageRollups.dailyEnabled` and `backend.usageRollups.dashboardEnabled`; the legacy tables were dropped upstream.
+- Delete any `usageRollups.cronJob` override you no longer need; the default flipped to `false` because the backend schedules the rollup itself.
 
 ## Agent Execution Model
 
@@ -231,13 +249,16 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.config.corsAllowedOrigins | string | `""` | Additional CORS origins, comma-separated. |
 | backend.config.daemonServerUrl | string | `""` | URL used by the backend to reach the daemon control API. Empty keeps the server default. |
 | backend.config.databaseConnectTimeout | string | `"5s"` | Optional database connection timeout, e.g. `5s`. Empty uses Multica's default. |
+| backend.config.databaseSearchWorkMemMB | int | `64` | PostgreSQL `work_mem` ceiling in MB for search transactions. Set 1-64 to lower it for memory-constrained databases, or 0 to keep the database/session default. Values above 64 fall back to 64 with a warning at startup. |
 | backend.config.databaseStartupTimeout | string | `"3m"` | Optional database startup timeout, e.g. `3m`. Empty uses Multica's default. |
 | backend.config.devVerificationCode | string | `""` | Fixed local test verification code. Keep empty in production. |
 | backend.config.disableWorkspaceCreation | bool | `false` | Disable workspace creation globally. Bootstrap the shared workspace with this false, then set true so users can only join by invitation. |
+| backend.config.doNotTrack | string | `""` | Disable first-party anonymous self-host telemetry. The backend sends one deployment-level snapshot per UTC day to `https://telemetry.multica.ai`; set to `"1"` or `"true"` to opt out, or leave empty for Multica's default-on behavior. Separate from backend.config.analyticsDisabled (PostHog product analytics). |
 | backend.config.frontendOrigin | string | `"http://localhost:3000"` | Public frontend origin. Required for production links, cookies, CORS, and WebSocket origin checks. |
 | backend.config.jwtSecret | string | `"change-me-in-production"` | JWT signing secret. Replace in production or use jwtSecretRef. |
 | backend.config.jwtSecretRef.key | string | `""` | Secret key for JWT_SECRET. |
 | backend.config.jwtSecretRef.name | string | `""` | Existing secret containing JWT_SECRET. |
+| backend.config.maintenancePort | string | `""` | Optional container-loopback maintenance API port, e.g. `6061`. Empty disables it. The listener always binds 127.0.0.1 and exposes `/maintenance/*` with no application authentication for the packaged `/app/maintenance` CLI (run via `kubectl exec`). Never publish it through a Service, Ingress, HTTPRoute, or host port. |
 | backend.config.metricsAddr | string | `""` | Prometheus metrics listener, e.g. `127.0.0.1:9090`. Empty disables it. |
 | backend.config.port | int | `8080` | Backend bind port. |
 | backend.config.posthogApiKey | string | `""` | PostHog API key when analytics are enabled. |
@@ -341,8 +362,6 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.telegram.secretKeyRef.key | string | `""` | Secret key for MULTICA_TELEGRAM_SECRET_KEY. |
 | backend.telegram.secretKeyRef.name | string | `""` | Existing secret containing MULTICA_TELEGRAM_SECRET_KEY. |
 | backend.tolerations | list | `[]` | Backend tolerations. |
-| backend.usageRollups.dailyEnabled | bool | `false` | Enable runtime usage reads from the daily rollup table after external backfill/scheduler setup is complete. |
-| backend.usageRollups.dashboardEnabled | bool | `false` | Enable dashboard usage reads from the dashboard rollup table after external backfill/scheduler setup is complete. |
 | backend.vcs.secretKey | string | `""` | Base64-encoded 32-byte key used to encrypt self-hosted VCS integration secrets. Prefer secretKeyRef in production. |
 | backend.vcs.secretKeyRef.key | string | `""` | Secret key for MULTICA_VCS_SECRET_KEY. |
 | backend.vcs.secretKeyRef.name | string | `""` | Existing secret containing MULTICA_VCS_SECRET_KEY. |
@@ -353,14 +372,11 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | backend.wecom.secretKeyRef.key | string | `""` | Secret key for MULTICA_WECOM_SECRET_KEY. |
 | backend.wecom.secretKeyRef.name | string | `""` | Existing secret containing MULTICA_WECOM_SECRET_KEY. |
 | backend.wecom.trace | bool | `false` | Enable verbose WeCom tracing. Keep false outside debugging. |
-| channelLeases.backend | string | `""` | Lease backend, e.g. `postgres` or `redis`. |
+| channelLeases.backend | string | `""` | Lease backend, e.g. `postgres` or `redis`. Redis mode uses realtime.redisUrl (REDIS_URL); the former dedicated CHANNEL_WS_LEASE_REDIS_URL no longer exists upstream. |
 | channelLeases.errorRetryInterval | string | `""` | Retry interval after lease backend errors. |
 | channelLeases.expirySafetyMargin | string | `""` | Safety margin before lease expiry. |
 | channelLeases.namespace | string | `""` | Redis key namespace for channel leases. |
 | channelLeases.pollInterval | string | `""` | Lease polling interval. |
-| channelLeases.redisUrl | string | `""` | Redis URL for channel WebSocket leases. |
-| channelLeases.redisUrlRef.key | string | `""` | Secret key for CHANNEL_WS_LEASE_REDIS_URL. |
-| channelLeases.redisUrlRef.name | string | `""` | Existing secret containing CHANNEL_WS_LEASE_REDIS_URL. |
 | channelLeases.renewInterval | string | `""` | Lease renewal interval. |
 | channelLeases.ttl | string | `""` | Lease TTL. |
 | database.external.enabled | bool | `false` | Enable external PostgreSQL mode. When enabled, set postgres.enabled=false. |
@@ -376,6 +392,10 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | database.internal.serviceName | string | `""` | Override internal PostgreSQL service name. Defaults to `<release>-postgres`. |
 | database.pool.maxConns | string | `nil` | Optional DATABASE_MAX_CONNS env override. Leave empty to honor DATABASE_URL pool_max_conns or Multica defaults. |
 | database.pool.minConns | string | `nil` | Optional DATABASE_MIN_CONNS env override. Leave empty to honor DATABASE_URL pool_min_conns or Multica defaults. |
+| database.replica.maxConns | string | `nil` | Optional DATABASE_REPLICA_MAX_CONNS override. Empty uses Multica's default (10). |
+| database.replica.minConns | string | `nil` | Optional DATABASE_REPLICA_MIN_CONNS override. Empty uses Multica's default (0). |
+| database.replica.url | string | `""` | Optional PostgreSQL read-replica connection URL. Multica requires every replica connection to be read-only and recycles it after 5m so a promoted node is revalidated; replica failures fall back to the primary. Empty disables replica reads. Do not also set urlFrom. |
+| database.replica.urlFrom.secretKeyRef | object | `{"key":"","name":""}` | Existing secret containing DATABASE_REPLICA_URL. |
 | database.waitForReady.enabled | bool | `true` | Wait for PostgreSQL TCP readiness before starting the backend. |
 | database.waitForReady.image | string | `"busybox:1.38"` | Init container image used for DB readiness checks. |
 | database.waitForReady.imagePullPolicy | string | `"IfNotPresent"` | Init container image pull policy. |
@@ -482,15 +502,13 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | readinessProbe.frontend.periodSeconds | int | `10` |  |
 | readinessProbe.frontend.successThreshold | int | `1` |  |
 | readinessProbe.frontend.timeoutSeconds | int | `3` |  |
+| realtime.redisClusterMode | bool | `false` | Set REDIS_CLUSTER_MODE=true for native Redis Cluster or ElastiCache Serverless endpoints. Cluster mode requires database 0 and rejects the legacy/dual relay modes. |
 | realtime.redisDisableClientName | bool | `false` | Set REDIS_DISABLE_CLIENT_NAME when Redis deployments reject CLIENT SETNAME. |
-| realtime.redisUrl | string | `""` | Redis connection URL for multi-backend realtime fanout, auth-token caches, daemon task-claim cache, and runtime-local skill queues. Leave empty for single-backend in-memory mode or when using bundled Redis. |
+| realtime.redisUrl | string | `""` | Redis connection URL for multi-backend realtime fanout, channel WebSocket leases, rate limits, auth-token caches, daemon task-claim cache, and runtime-local skill queues. Leave empty for single-backend in-memory mode or when using bundled Redis. Since Multica v0.5.0 every Redis-backed feature shares this one URL; the former dedicated relay/lease URLs no longer exist upstream. |
 | realtime.redisUrlRef.key | string | `""` | Secret key for REDIS_URL. |
 | realtime.redisUrlRef.name | string | `""` | Existing secret containing REDIS_URL. |
 | realtime.relay.maintenanceInterval | string | `""` | Relay maintenance interval. |
-| realtime.relay.mode | string | `""` | Relay mode, e.g. `stream`. |
-| realtime.relay.redisUrl | string | `""` | Optional dedicated Redis URL for realtime relay streams. |
-| realtime.relay.redisUrlRef.key | string | `""` | Secret key for REALTIME_RELAY_REDIS_URL. |
-| realtime.relay.redisUrlRef.name | string | `""` | Existing secret containing REALTIME_RELAY_REDIS_URL. |
+| realtime.relay.mode | string | `""` | Relay mode, e.g. `stream`. Cluster deployments support sharded mode only; other modes are rejected when realtime.redisClusterMode=true. |
 | realtime.relay.replayGrace | string | `""` | Replay grace duration. |
 | realtime.relay.shards | string | `nil` | Number of relay shards. |
 | realtime.relay.streamMaxLen | string | `nil` | Maximum stream length. |
@@ -546,13 +564,13 @@ Daemon-only environment variables don't belong in this server-layer chart. Keep 
 | tests.image.tag | string | `"1.38"` | Test image tag. |
 | usageRollups.cronJob.backoffLimit | int | `1` | Job backoff limit. |
 | usageRollups.cronJob.concurrencyPolicy | string | `"Forbid"` | CronJob concurrency policy. Forbid pairs with the database advisory lock to avoid overlapping rollups. |
-| usageRollups.cronJob.enabled | bool | `true` | Run rollup_task_usage_hourly() on a Kubernetes CronJob instead of requiring pg_cron in PostgreSQL. |
+| usageRollups.cronJob.enabled | bool | `false` | Legacy compatibility path. Since Multica v0.3.5 the backend runs rollup_task_usage_hourly() in-process on every replica through its DB-backed scheduler (sys_cron_executions), so an external CronJob is redundant and disabled by default. Enable only for backend images older than v0.3.5 or when the in-process scheduler is unavailable. The SQL function holds advisory lock 4246, so both paths can coexist without double-writing. |
 | usageRollups.cronJob.failedJobsHistoryLimit | int | `3` | Failed Job history limit. |
 | usageRollups.cronJob.image.pullPolicy | string | `"IfNotPresent"` | PostgreSQL client image pull policy. |
 | usageRollups.cronJob.image.repository | string | `"postgres"` | PostgreSQL client image repository used to call the rollup SQL function. |
 | usageRollups.cronJob.image.tag | string | `"18-alpine"` | PostgreSQL client image tag. |
 | usageRollups.cronJob.podAnnotations | object | `{}` | Pod annotations for the rollup CronJob. |
 | usageRollups.cronJob.resources | object | `{}` | Rollup CronJob resources. |
-| usageRollups.cronJob.schedule | string | `"*/5 * * * *"` | Cron schedule for the hourly usage rollup worker. |
+| usageRollups.cronJob.schedule | string | `"*/5 * * * *"` | Cron schedule for the in-process scheduler's 5-minute plan cadence. |
 | usageRollups.cronJob.startingDeadlineSeconds | int | `300` | Seconds after a missed schedule when the job may still start. Set null to omit. |
 | usageRollups.cronJob.successfulJobsHistoryLimit | int | `3` | Successful Job history limit. |
