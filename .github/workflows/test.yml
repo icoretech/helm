@@ -1,6 +1,9 @@
 name: Lint and Test Charts
 
-on: pull_request
+on:
+  pull_request:
+  push:
+    branches: main
 
 permissions:
   contents: read
@@ -39,8 +42,13 @@ jobs:
 
       - name: Run chart-testing (list-changed)
         id: list-changed
+        env:
+          TARGET_REF: ${{ github.event_name == 'push' && 'validation-base' || github.event.repository.default_branch }}
         run: |
-          changed=$(ct list-changed --target-branch ${{ github.event.repository.default_branch }})
+          if [[ "${{ github.event_name }}" == 'push' ]]; then
+            git update-ref "refs/remotes/origin/$TARGET_REF" "${{ github.event.before }}"
+          fi
+          changed=$(ct list-changed --target-branch "$TARGET_REF")
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
@@ -52,14 +60,18 @@ jobs:
 
       - name: Verify chart change detection
         if: steps.list-changed.outputs.changed != 'true'
+        env:
+          TARGET_REF: ${{ github.event_name == 'push' && 'validation-base' || github.event.repository.default_branch }}
         run: |
-          .github/scripts/assert-no-chart-changed.sh ${{ github.event.repository.default_branch }}
+          .github/scripts/assert-no-chart-changed.sh "$TARGET_REF"
 
       - name: Run chart-testing (lint)
         if: steps.list-changed.outputs.changed == 'true'
+        env:
+          TARGET_REF: ${{ github.event_name == 'push' && 'validation-base' || github.event.repository.default_branch }}
         run: |
           .github/scripts/ct-retry.sh ct lint \
-            --target-branch ${{ github.event.repository.default_branch }}
+            --target-branch "$TARGET_REF"
 
       - name: Check chart documentation is regenerated
         if: steps.list-changed.outputs.changed == 'true'
@@ -132,7 +144,9 @@ jobs:
 
       - name: Run chart-testing (install)
         if: steps.list-changed.outputs.changed == 'true'
+        env:
+          TARGET_REF: ${{ github.event_name == 'push' && 'validation-base' || github.event.repository.default_branch }}
         run: |
           .github/scripts/ct-retry.sh ct install \
-            --target-branch ${{ github.event.repository.default_branch }} \
+            --target-branch "$TARGET_REF" \
             --helm-extra-args '--timeout 600s'

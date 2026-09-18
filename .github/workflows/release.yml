@@ -1,12 +1,17 @@
 name: Release Charts
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - Lint and Test Charts
+    types:
+      - completed
     branches:
       - main
 
 jobs:
   release:
+    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'
     permissions:
       contents: write
       packages: write
@@ -16,11 +21,18 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Configure Git
         run: |
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Attest the validated workflow contract
+        run: |
+          .github/scripts/verify-ci-gate.py
+          .github/scripts/verify-ci-gate.py --self-test
+          .github/scripts/check-workflow-action-pins.py
 
       - name: Install Helm
         id: install
@@ -70,8 +82,30 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -Eq '^charts/[^/]+/Chart.yaml$'; then
-            echo "Chart.yaml changed in this push, but signing is not configured. Aborting release." >&2
+          pending=0
+          for chart in charts/*/Chart.yaml; do
+            name="$(awk '$1 == "name:" {print $2; exit}' "$chart")"
+            version="$(awk '$1 == "version:" {gsub(/\"/, "", $2); print $2; exit}' "$chart")"
+            if ! git rev-parse --verify --quiet "refs/tags/${name}-${version}" >/dev/null; then
+              echo "Unreleased chart: ${name}-${version}" >&2
+              pending=1
+            fi
+          done
+          if [[ "$pending" -ne 0 ]]; then
+            echo "Unreleased chart versions exist, but signing is not configured. Aborting release." >&2
+            exit 1
+          fi
+
+      - name: Verify validated commit is still current main
+        shell: bash
+        env:
+          VALIDATED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          current_sha="$(git rev-parse origin/main)"
+          if [[ "$VALIDATED_SHA" != "$current_sha" ]]; then
+            echo "Validated commit $VALIDATED_SHA is stale; current main is $current_sha. Refusing release." >&2
             exit 1
           fi
 

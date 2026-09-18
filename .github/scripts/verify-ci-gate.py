@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Assert that the pull-request workflow still gates.
+"""Assert that the pull-request and main-push validation workflow still gates.
 
 `ct-retry-test.sh` proves the retry helper propagates a failure. That is only
-half of "chart-testing failures fail the pull request": the other half is that
-the workflow still *runs* chart-testing, and that nothing in the file quietly
-turns the result into a pass.
+half of "chart-testing failures fail validation": the other half is that the
+workflow still *runs* chart-testing on pull requests and main pushes, and that
+nothing in the file quietly turns the result into a pass.
 
 Two earlier versions of this guard read parts of the file — two step bodies, a
 grep for one key, a list of forbidden environment names — and each time the gate
@@ -36,10 +36,11 @@ the last two versions each claimed a class was closed and it was not):
     resolves two check runs with the same name.
   * the runner image, the network, and the registries the pinned tools are
     pulled from.
-  * its own deletion. A pull request that removes the step that runs this file
-    also removes the run that would report it; nothing inside a workflow
-    survives that. Branch protection and review on `.github/**` are the only
-    answers, and they are outside this file.
+  * its own deletion. A change that removes the step that runs this file also
+    removes the run that would report it; nothing inside a workflow survives
+    that. Release publication now requires a successful validation workflow,
+    but branch protection and review remain the external control for changes to
+    both workflows together.
 
 Usage: verify-ci-gate.py [workflow-path] [--self-test]
 """
@@ -53,14 +54,15 @@ from pathlib import Path
 WORKFLOW = ".github/workflows/test.yml"
 REQUIRED_CHECK = "lint-test"
 
-DEFAULT_BRANCH = "${{ github.event.repository.default_branch }}"
+TARGET_REF = "${{ github.event_name == 'push' && 'validation-base' || github.event.repository.default_branch }}"
+TARGET_REF_ENV = {"TARGET_REF": TARGET_REF}
 IF_CHANGED = "steps.list-changed.outputs.changed == 'true'"
 IF_NOT_CHANGED = "steps.list-changed.outputs.changed != 'true'"
 CHANGED_CHARTS_ENV = {"CHANGED_CHARTS": "${{ steps.list-changed.outputs.charts }}"}
 
 EXPECTED_TOP = {
     "name": "Lint and Test Charts",
-    "on": "pull_request",
+    "on": {"pull_request": {}, "push": {"branches": "main"}},
     "permissions": {"contents": "read"},
 }
 EXPECTED_JOB_KEYS = {"runs-on", "timeout-minutes", "steps"}
@@ -121,8 +123,12 @@ EXPECTED_STEPS: list[dict] = [
     {
         "name": "Run chart-testing (list-changed)",
         "id": "list-changed",
+        "env": TARGET_REF_ENV,
         "run": [
-            f"changed=$(ct list-changed --target-branch {DEFAULT_BRANCH})",
+            "if [[ \"${{ github.event_name }}\" == 'push' ]]; then",
+            'git update-ref "refs/remotes/origin/$TARGET_REF" "${{ github.event.before }}"',
+            "fi",
+            'changed=$(ct list-changed --target-branch "$TARGET_REF")',
             'if [[ -n "$changed" ]]; then',
             'echo "changed=true" >> "$GITHUB_OUTPUT"',
             "fi",
@@ -136,12 +142,14 @@ EXPECTED_STEPS: list[dict] = [
     {
         "name": "Verify chart change detection",
         "if": IF_NOT_CHANGED,
-        "run": [f".github/scripts/assert-no-chart-changed.sh {DEFAULT_BRANCH}"],
+        "env": TARGET_REF_ENV,
+        "run": ['.github/scripts/assert-no-chart-changed.sh "$TARGET_REF"'],
     },
     {
         "name": "Run chart-testing (lint)",
         "if": IF_CHANGED,
-        "run": [f".github/scripts/ct-retry.sh ct lint --target-branch {DEFAULT_BRANCH}"],
+        "env": TARGET_REF_ENV,
+        "run": ['.github/scripts/ct-retry.sh ct lint --target-branch "$TARGET_REF"'],
     },
     {
         "name": "Check chart documentation is regenerated",
@@ -209,8 +217,9 @@ EXPECTED_STEPS: list[dict] = [
     {
         "name": "Run chart-testing (install)",
         "if": IF_CHANGED,
+        "env": TARGET_REF_ENV,
         "run": [
-            f".github/scripts/ct-retry.sh ct install --target-branch {DEFAULT_BRANCH}"
+            '.github/scripts/ct-retry.sh ct install --target-branch "$TARGET_REF"'
             " --helm-extra-args '--timeout 600s'"
         ],
     },
@@ -424,7 +433,7 @@ def check(workflow_path: Path, quiet: bool = False) -> list[str]:
         if document.get(key) != value:
             fail(f"the workflow's {key} is {document.get(key)!r}, expected {value!r}")
     if not failures:
-        ok("the workflow runs on every pull request, read-only, with no defaults or env")
+        ok("the workflow runs on pull requests and main pushes, read-only, with no defaults or env")
 
     jobs = document.get("jobs")
     if not isinstance(jobs, dict) or list(jobs) != [REQUIRED_CHECK]:
@@ -514,7 +523,10 @@ MUTATIONS: list[tuple[str, tuple[str, str]]] = [
     ),
     (
         "a workflow-level custom shell, which makes every run a no-op",
-        ("on: pull_request\n", 'on: pull_request\n\ndefaults:\n  run:\n    shell: bash -c "exit 0" {0}\n'),
+        (
+            "permissions:\n  contents: read\n",
+            'defaults:\n  run:\n    shell: bash -c "exit 0" {0}\n\npermissions:\n  contents: read\n',
+        ),
     ),
     (
         "a step-level custom shell",
@@ -535,13 +547,16 @@ MUTATIONS: list[tuple[str, tuple[str, str]]] = [
     (
         "CT_EXCLUDED_CHARTS in a step env, which turns ct off without touching its command",
         (
-            "      - name: Run chart-testing (lint)\n        if:",
-            "      - name: Run chart-testing (lint)\n        env:\n          CT_EXCLUDED_CHARTS: codex-pooler\n        if:",
+            "      - name: Run chart-testing (lint)\n        if: steps.list-changed.outputs.changed == 'true'\n        env:\n          TARGET_REF:",
+            "      - name: Run chart-testing (lint)\n        if: steps.list-changed.outputs.changed == 'true'\n        env:\n          CT_EXCLUDED_CHARTS: codex-pooler\n          TARGET_REF:",
         ),
     ),
     (
         "a workflow-level env override of a script's own knobs",
-        ("on: pull_request\n", "on: pull_request\n\nenv:\n  CHART_SEARCH_ROOT: /tmp\n"),
+        (
+            "permissions:\n  contents: read\n",
+            "env:\n  CHART_SEARCH_ROOT: /tmp\n\npermissions:\n  contents: read\n",
+        ),
     ),
     (
         "an inserted step that shadows ct on PATH",
@@ -582,9 +597,13 @@ MUTATIONS: list[tuple[str, tuple[str, str]]] = [
     (
         "an or-true after the helper",
         (
-            "          .github/scripts/ct-retry.sh ct lint \\\n            --target-branch ${{ github.event.repository.default_branch }}",
-            "          .github/scripts/ct-retry.sh ct lint \\\n            --target-branch ${{ github.event.repository.default_branch }} || true",
+            "          .github/scripts/ct-retry.sh ct lint \\\n            --target-branch \"$TARGET_REF\"",
+            "          .github/scripts/ct-retry.sh ct lint \\\n            --target-branch \"$TARGET_REF\" || true",
         ),
+    ),
+    (
+        "the main-push validation trigger deleted",
+        ("  push:\n    branches: main\n", ""),
     ),
     (
         "the change-detection cross-check inverted so it never runs",
@@ -678,8 +697,8 @@ def self_test(workflow_path: Path) -> int:
         # safe scheduling control rather than a validation bypass.
         hardening = {
             "a workflow-level concurrency group": (
-                "on: pull_request\n",
-                "on: pull_request\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n",
+                "permissions:\n  contents: read\n",
+                "concurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n\npermissions:\n  contents: read\n",
             ),
         }
         for description, (old, new) in hardening.items():
