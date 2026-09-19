@@ -37,7 +37,7 @@ spec:
         # repo lifetime instead of racing the Job or starting a new BEAM per
         # check. A pending migration after nine minutes raises and fails the hook
         # before the workflow's ten-minute Helm timeout.
-        - '/app/bin/codex_pooler eval "{:ok, _, _} = Ecto.Migrator.with_repo(CodexPooler.Repo, fn repo -> deadline = System.monotonic_time(:millisecond) + 540_000; await = fn await -> case Enum.filter(Ecto.Migrator.migrations(repo), fn {status, _, _} -> status == :down end) do [] -> :ok; pending when System.monotonic_time(:millisecond) < deadline -> Process.sleep(1_000); await.(await); pending -> raise \"pending migrations after timeout: #{inspect(Enum.map(pending, fn {_, version, _} -> version end))}\" end end; await.(await) end)"'
+        - '/app/bin/codex_pooler eval "{:ok, _, _} = Ecto.Migrator.with_repo(CodexPooler.Repo, fn repo -> deadline = System.monotonic_time(:millisecond) + 540_000; await = fn await -> case Enum.filter(Ecto.Migrator.migrations(repo), fn {status, _, _} -> status == :down end) do [] -> :ok; pending -> if System.monotonic_time(:millisecond) < deadline do Process.sleep(1_000); await.(await) else raise \"pending migrations after timeout: #{inspect(Enum.map(pending, fn {_, version, _} -> version end))}\" end end end; await.(await) end)"'
       env:
         - name: OBAN_MODE
           value: web
