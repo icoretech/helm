@@ -46,7 +46,7 @@ jobs:
           ghp="$(mktemp -d)"
           trap 'rm -rf "$ghp"' EXIT
           remote_url="$(git remote get-url origin)"
-          auth_header="$(git config --local --get http.https://github.com/.extraheader || true)"
+          auth_header="$(git config --get http.https://github.com/.extraheader || true)"
           git clone --shared --no-checkout . "$ghp"
           git -C "$ghp" remote set-url origin "$remote_url"
           git -C "$ghp" config user.name "$GITHUB_ACTOR"
