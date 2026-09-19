@@ -122,6 +122,9 @@ tests:
       - matchRegex:
           path: spec.containers[?(@.name=="test-migrations")].args[0]
           pattern: 'System\.monotonic_time\(:millisecond\) \+ 540_000'
+      - matchRegex:
+          path: spec.containers[?(@.name=="test-migrations")].args[0]
+          pattern: 'pending -> if System\.monotonic_time\(:millisecond\) < deadline do'
       - equal:
           path: spec.activeDeadlineSeconds
           value: 570

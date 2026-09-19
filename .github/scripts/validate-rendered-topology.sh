@@ -13,16 +13,34 @@
 # manifests go to `kubectl apply --dry-run=server`, which validates them against
 # the real API server — apiVersions, unknown or mistyped fields, required
 # fields, name and port-name syntax, label values — without creating anything
-# and without needing a pod to start. It resolves no reference between objects:
-# a Service pointing at a port no container exposes is valid to it, which is why
-# those live in the chart's unit tests.
+# and without needing a pod to start. The API server resolves some admission
+# references even during a server dry-run: a standalone Pod's service account
+# must already exist. Each chart therefore gets a disposable namespace and its
+# rendered ServiceAccount prerequisite is applied before the full dry-run. A
+# Service pointing at a port no container exposes is still valid to the API
+# server, which is why those relationships live in the chart's unit tests.
 #
 # Usage: validate-rendered-topology.sh <chart-dir>...
 set -uo pipefail
 
 values_file="tests/server-dry-run-values.yaml"
-namespace="${TOPOLOGY_DRY_RUN_NAMESPACE:-default}"
 status=0
+rendered_files=()
+owned_namespaces=()
+
+cleanup() {
+  local rendered namespace
+  for rendered in "${rendered_files[@]}"; do
+    rm -f "$rendered"
+  done
+  for namespace in "${owned_namespaces[@]}"; do
+    kubectl delete namespace "$namespace" --ignore-not-found --wait=false >/dev/null 2>&1 || true
+  done
+}
+
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 for chart in "$@"; do
   [[ -n "$chart" ]] || continue
@@ -32,15 +50,21 @@ for chart in "$@"; do
     continue
   fi
 
+  if [[ -n "${TOPOLOGY_DRY_RUN_NAMESPACE:-}" ]]; then
+    namespace="$TOPOLOGY_DRY_RUN_NAMESPACE"
+  else
+    chart_name="$(basename "$chart" | tr -cs 'a-z0-9-' '-')"
+    namespace="topology-${chart_name}-${GITHUB_RUN_ID:-$$}"
+    namespace="${namespace:0:63}"
+    kubectl create namespace "$namespace" >/dev/null
+    owned_namespaces+=("$namespace")
+  fi
+
   echo "==> rendering ${chart} with ${values_file}"
   rendered="$(mktemp)"
+  rendered_files+=("$rendered")
   # The render contains the chart's Secret in cleartext; do not leave it behind
-  # if the run is interrupted between here and the cleanup below.
-  # `exit` on a signal as well: cleaning up and then carrying on would validate
-  # a file that no longer exists and report it as a chart failure.
-  trap 'rm -f "$rendered"' EXIT
-  trap 'rm -f "$rendered"; exit 130' INT
-  trap 'rm -f "$rendered"; exit 143' TERM
+  # if the run is interrupted between here and the EXIT cleanup.
   if ! helm template topology "$chart" \
     --namespace "$namespace" \
     --values "${chart}/${values_file}" >"$rendered"; then
@@ -48,6 +72,20 @@ for chart in "$@"; do
     status=1
     rm -f "$rendered"
     continue
+  fi
+
+  if [[ -f "${chart}/templates/serviceaccount.yaml" ]]; then
+    echo "==> creating ${chart} ServiceAccount prerequisite in ${namespace}"
+    if ! helm template topology "$chart" \
+      --namespace "$namespace" \
+      --values "${chart}/${values_file}" \
+      --show-only templates/serviceaccount.yaml |
+      kubectl apply --namespace "$namespace" -f -; then
+      echo "::error::failed to create the rendered ServiceAccount prerequisite for ${chart}"
+      status=1
+      rm -f "$rendered"
+      continue
+    fi
   fi
 
   echo "==> validating ${chart} against the API server"
@@ -58,4 +96,6 @@ for chart in "$@"; do
   rm -f "$rendered"
 done
 
+cleanup
+trap - EXIT
 exit "$status"
