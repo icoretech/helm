@@ -21,7 +21,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.8.7 \
+  --version 0.8.9 \
   --values values.production.yaml
 ```
 
@@ -30,7 +30,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.8.7 \
+  --version 0.8.9 \
   --values values.production.yaml
 ```
 
@@ -60,7 +60,18 @@ Do not put upstream access tokens, API keys, cookies, `auth.json`, SMTP password
 - `app` serves HTTP with `OBAN_MODE=web` and `PHX_SERVER=true`
 - `oban.worker` runs background jobs with `OBAN_MODE=worker`
 - `oban.scheduler` runs scheduled jobs with `OBAN_MODE=scheduler`
-- `migrations` runs release migrations and imports the vendored pricing feed before app rollout
+- `migrations` runs release migrations and imports the vendored pricing feed
+
+The migration Job is part of the release, not a Helm hook, so it is visible in `helm get manifest` and removed by `helm uninstall`. Helm creates the Secret before the Job, and each release revision renders its own Job because a Job's pod template is immutable.
+
+Ordering is enforced by readiness rather than by a hook phase, and what that is worth depends on the image:
+
+- the worker and scheduler readiness probes ask the release about the database. On an image that exports `CodexPooler.Release.readiness_check/0` they verify that every migration the image carries is applied. Published images do not export it, so the fallback only requires one applied `schema_migrations` row: it proves migration history has started, not that every migration is finished.
+- the app's readiness is `/readyz`, which reports database connectivity on images up to `0.7.8` and the applied schema on newer ones. On those older images an app pod can become Ready while the migration is still running.
+
+`helm test` waits up to nine minutes for every migration to become applied and fails if any remain pending, on any image — run it after an install or upgrade if you want a single answer. `helm --wait` does not wait for Jobs unless you also pass `--wait-for-jobs` (`spec.install.waitForJobs` and `spec.upgrade.waitForJobs` in a Flux `HelmRelease`); set it if you want a failed migration to fail the release rather than leave a Deployment that never becomes ready.
+
+`helm rollback` renders the target revision's Job again, so it re-runs the migration with the rolled-back image. `Ecto.Migrator` applies only pending migrations and never reverses one, so that is a no-op when the schema is already ahead of the image.
 
 Keep `app.replicaCount` at `1` unless app clustering is intentionally configured and verified. When `app.replicaCount` is `>= 2`, the chart requires app clustering and automatically enables websocket owner forwarding on app pods.
 
@@ -155,10 +166,14 @@ metadata:
   namespace: codex-pooler
 spec:
   interval: 5m
+  install:
+    waitForJobs: true
+  upgrade:
+    waitForJobs: true
   chart:
     spec:
       chart: codex-pooler
-      version: "0.8.7"
+      version: "0.8.9"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -249,6 +264,8 @@ spec:
 | ingress.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
 | ingress.tls | list | `[]` |  |
+| migrations.activeDeadlineSeconds | int | `900` | Wall-clock budget for the migration Job. Bounds a Job that can never start (a missing Secret key, an unreachable database), which would otherwise hang helm install until the client timeout. |
+| migrations.backoffLimit | int | `3` | Job retries before the migration is treated as failed. A migration that keeps failing must fail the release rather than retry indefinitely. |
 | migrations.enabled | bool | `true` |  |
 | migrations.resources.limits.cpu | string | `"250m"` |  |
 | migrations.resources.limits.memory | string | `"384Mi"` |  |
