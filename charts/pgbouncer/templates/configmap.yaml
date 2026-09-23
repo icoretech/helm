@@ -19,11 +19,11 @@ data:
     listen_port = 5432
     auth_file = /etc/userlist/userlist.txt
     admin_users = {{ .Values.config.adminUser }}
-    server_reset_query = SELECT pg_advisory_unlock_all()
-    server_reset_query_always = 1
 {{- if .Values.config.authUser }}
     auth_user = {{ .Values.config.authUser }}
 {{- end }}
 {{- range $key, $val := .Values.config.pgbouncer }}
+{{- if ne $val nil }}
     {{ $key }} = {{ $val }}
+{{- end }}
 {{- end }}
