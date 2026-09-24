@@ -103,7 +103,7 @@ EXPECTED_STEPS: list[dict] = [
     },
     # Renovate updates this exact pin with the workflows; an omitted version
     # would make `azure/setup-helm` install whatever is latest at check time.
-    {"name": "Set up Helm", "uses": SETUP_HELM_ACTION, "with": {"version": "v4.2.4"}},
+    {"name": "Set up Helm", "uses": SETUP_HELM_ACTION, "with": {"version": "v4.3.0"}},
     {
         "name": None,
         "uses": SETUP_PYTHON_ACTION,
