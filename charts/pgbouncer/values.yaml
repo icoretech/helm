@@ -38,7 +38,7 @@ image:
   # -- Container image repository
   repository: ghcr.io/icoretech/pgbouncer-docker
   # -- Container image tag
-  tag: 1.25.2
+  tag: 1.26.0
   # -- Container image pull policy: Always, IfNotPresent, or Never
   pullPolicy: IfNotPresent
 
