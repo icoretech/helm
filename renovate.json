@@ -9,6 +9,14 @@
   "customManagers": [
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^\\.github\\/scripts\\/verify-ci-gate\\.py$/"],
+      "matchStrings": ["SETUP_HELM_ACTION, \"with\": \\{\"version\": \"(?<currentValue>v\\d+\\.\\d+\\.\\d+)\""],
+      "depNameTemplate": "helm",
+      "packageNameTemplate": "helm/helm",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^charts\\/airbroke\\/Chart\\.yaml$/"],
       "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "ghcr.io/icoretech/airbroke",
@@ -69,6 +77,13 @@
       "customType": "regex",
       "managerFilePatterns": ["/^charts\\/pgbouncer\\/Chart\\.yaml$/"],
       "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
+      "depNameTemplate": "ghcr.io/icoretech/pgbouncer-docker",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/pgbouncer\\/README\\.md$/"],
+      "matchStrings": ["\\| image\\.tag \\| string \\| `\"(?<currentValue>[^\"]+)\"` \\|"],
       "depNameTemplate": "ghcr.io/icoretech/pgbouncer-docker",
       "datasourceTemplate": "docker"
     },
@@ -135,6 +150,13 @@
     }
   ],
   "packageRules": [
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["helm/helm"],
+      "additionalBranchPrefix": "workflows-",
+      "automerge": true,
+      "platformAutomerge": true
+    },
     {
       "matchManagers": ["custom.regex", "helm-values", "helmv3"],
       "matchFileNames": ["charts/**"],
