@@ -48,7 +48,9 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | config.databases | object | `{}` | Mapping of database names to connection parameters. E.g.: mydb = host=postgresql port=5432 |
 | config.existingAdminSecret | string | `""` | If set, skip creating a new secret for admin credentials, and reference this existing Secret name instead. |
 | config.existingUserlistSecret | string | `""` | Reference to an existing Secret that contains a userlist.txt file, with entries for other users/passwords. |
-| config.pgbouncer | object | `{"ignore_startup_parameters":"extra_float_digits"}` | Additional PgBouncer parameters (e.g. auth_type, pool_mode). |
+| config.pgbouncer | object | `{"ignore_startup_parameters":"extra_float_digits","server_reset_query":"SELECT pg_advisory_unlock_all()","server_reset_query_always":1}` | PgBouncer parameters (e.g. auth_type, pool_mode). Null entries in this map are skipped; empty strings and zero are rendered as configured. |
+| config.pgbouncer.server_reset_query | string | `"SELECT pg_advisory_unlock_all()"` | Query run when releasing a server connection. Set to null to use the PgBouncer default, or an empty string to disable the query. |
+| config.pgbouncer.server_reset_query_always | int | `1` | Run the reset query in all pooling modes. Set to 0 to restrict it to session pooling, or null to use the PgBouncer default. |
 | config.userlist | object | `{}` | if existingUserlistSecret isn't used. |
 | config.users | object | `{}` | Mapping of usernames to connection parameters. E.g.: someUser = pool_mode=session |
 | extraContainers | list | `[]` | Extra containers to run within the PgBouncer pod. |
@@ -113,6 +115,28 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | tolerations | list | `[]` | See Kubernetes docs on taints and tolerations. |
 | topologySpreadConstraints | list | `[]` | See Kubernetes docs on topology spread constraints. |
 | updateStrategy | object | `{}` | The update strategy to apply to the Deployment (e.g. Recreate or RollingUpdate). |
+
+### Server reset settings
+
+The chart preserves its existing defaults: `server_reset_query = SELECT pg_advisory_unlock_all()` and `server_reset_query_always = 1`. Override either setting through `config.pgbouncer`:
+
+```yaml
+config:
+  pgbouncer:
+    server_reset_query: DISCARD ALL
+    server_reset_query_always: 0
+```
+
+Entries set to `null` (or `~`) in `config.pgbouncer` are skipped during rendering. For example, this omits both reset settings from `pgbouncer.ini` and uses PgBouncer's own defaults:
+
+```yaml
+config:
+  pgbouncer:
+    server_reset_query: null
+    server_reset_query_always: null
+```
+
+PgBouncer defaults to `DISCARD ALL` and `0`, respectively. An empty string is different from `null`: `server_reset_query: ""` explicitly disables the reset query. Numeric zero is also preserved. See the [PgBouncer configuration reference](https://www.pgbouncer.org/config.html#server_reset_query).
 
 ## Example using Flux
 
