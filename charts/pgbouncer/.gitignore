@@ -1,5 +1,6 @@
 tests/*
 !tests/
 !tests/service_nodeport_test.yaml
+!tests/configmap_test.yaml
 scripts/
 .DS_Store

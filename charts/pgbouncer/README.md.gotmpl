@@ -29,6 +29,28 @@ The following table lists the configurable parameters of the PgBouncer chart and
 
 {{ template "chart.valuesSection" . }}
 
+### Server reset settings
+
+The chart preserves its existing defaults: `server_reset_query = SELECT pg_advisory_unlock_all()` and `server_reset_query_always = 1`. Override either setting through `config.pgbouncer`:
+
+```yaml
+config:
+  pgbouncer:
+    server_reset_query: DISCARD ALL
+    server_reset_query_always: 0
+```
+
+Entries set to `null` (or `~`) in `config.pgbouncer` are skipped during rendering. For example, this omits both reset settings from `pgbouncer.ini` and uses PgBouncer's own defaults:
+
+```yaml
+config:
+  pgbouncer:
+    server_reset_query: null
+    server_reset_query_always: null
+```
+
+PgBouncer defaults to `DISCARD ALL` and `0`, respectively. An empty string is different from `null`: `server_reset_query: ""` explicitly disables the reset query. Numeric zero is also preserved. See the [PgBouncer configuration reference](https://www.pgbouncer.org/config.html#server_reset_query).
+
 ## Example using Flux
 
 ```yaml

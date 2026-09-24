@@ -1,0 +1,99 @@
+suite: pgbouncer configuration
+templates:
+  - configmap.yaml
+values:
+  - ../ci/install-values.yaml
+tests:
+  - it: preserves the existing reset defaults
+    asserts:
+      - matchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_reset_query = SELECT pg_advisory_unlock_all\(\)$'
+      - matchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_reset_query_always = 1$'
+
+  - it: overrides both reset settings without duplicate defaults
+    set:
+      config.pgbouncer.server_reset_query: DISCARD ALL
+      config.pgbouncer.server_reset_query_always: 0
+    asserts:
+      - matchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_reset_query = DISCARD ALL$'
+      - matchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_reset_query_always = 0$'
+      - notMatchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: 'SELECT pg_advisory_unlock_all|server_reset_query_always = 1'
+
+  - it: omits null reset settings so pgbouncer uses its own defaults
+    set:
+      config.pgbouncer.server_reset_query: null
+      config.pgbouncer.server_reset_query_always: null
+    asserts:
+      - notMatchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_reset_query(_always)? ='
+
+  - it: preserves an empty reset query and zero instead of treating them as null
+    set:
+      config.pgbouncer.server_reset_query: ""
+      config.pgbouncer.server_reset_query_always: 0
+    asserts:
+      - matchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_reset_query = *$'
+      - matchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_reset_query_always = 0$'
+      - notMatchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: 'SELECT pg_advisory_unlock_all|server_reset_query_always = 1'
+
+  - it: omits additional null options and null defaults
+    set:
+      config.pgbouncer.ignore_startup_parameters: null
+      config.pgbouncer.server_check_query: null
+    asserts:
+      - notMatchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^(ignore_startup_parameters|server_check_query) ='
+      - matchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_reset_query_always = 1$'
+
+  - it: preserves false and numeric zero for additional settings
+    set:
+      config.pgbouncer.log_connections: false
+      config.pgbouncer.server_lifetime: 0
+    asserts:
+      - matchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^log_connections = false$'
+      - matchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_lifetime = 0$'
+
+  - it: removes the reset query without changing the reset mode
+    set:
+      config.pgbouncer.server_reset_query: null
+    asserts:
+      - notMatchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_reset_query ='
+      - matchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_reset_query_always = 1$'
+
+  - it: removes the reset mode without changing the reset query
+    set:
+      config.pgbouncer.server_reset_query_always: null
+    asserts:
+      - notMatchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_reset_query_always ='
+      - matchRegex:
+          path: data["pgbouncer.ini"]
+          pattern: '(?m)^server_reset_query = SELECT pg_advisory_unlock_all\(\)$'
