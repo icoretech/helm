@@ -91,6 +91,18 @@ tests:
       - equal:
           path: spec.activeDeadlineSeconds
           value: 900
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="migrations")].env[?(@.name=="MIGRATION_ADVISORY_LOCK_WAIT_SECONDS")].value
+          value: "600"
+
+  - it: leaves execution time inside a shortened migration Job deadline
+    template: migration-job.yaml
+    set:
+      migrations.activeDeadlineSeconds: 180
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="migrations")].env[?(@.name=="MIGRATION_ADVISORY_LOCK_WAIT_SECONDS")].value
+          value: "120"
 
   - it: keeps two long release names on two different Jobs
     template: migration-job.yaml

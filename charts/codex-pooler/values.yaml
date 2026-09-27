@@ -139,7 +139,7 @@ migrations:
   ttlSecondsAfterFinished: 300
   # -- Job retries before the migration is treated as failed. A migration that keeps failing must fail the release rather than retry indefinitely.
   backoffLimit: 3
-  # -- Wall-clock budget for the migration Job. Bounds a Job that can never start (a missing Secret key, an unreachable database), which would otherwise hang helm install until the client timeout.
+  # -- Wall-clock budget for the migration Job (minimum 61s), including startup and all migration work. Releases supporting MIGRATION_ADVISORY_LOCK_WAIT_SECONDS receive a contention limit of min(600, deadline minus 60) seconds; older images ignore that setting.
   activeDeadlineSeconds: 900
   resources:
     requests:

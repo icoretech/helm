@@ -48,6 +48,12 @@ spec:
           env:
             - name: OBAN_MODE
               value: web
+            # Keep lock contention inside the Job's total budget while leaving
+            # one minute for execution. Long migrations can still exhaust the
+            # Job deadline; this is a bounded contention allowance, not a promise
+            # that every possible migration duration fits.
+            - name: MIGRATION_ADVISORY_LOCK_WAIT_SECONDS
+              value: {{ min 600 (sub (int .Values.migrations.activeDeadlineSeconds) 60) | quote }}
             {{- include "codex-pooler.env" . | nindent 12 }}
           resources:
             {{- toYaml .Values.migrations.resources | nindent 12 }}
