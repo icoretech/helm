@@ -5729,6 +5729,42 @@ entries:
         url: https://icoretech.github.io/helm/pgp-public-key.asc
     apiVersion: v2
     appVersion: 0.9.7
+    created: "2026-09-28T08:47:39.560062496Z"
+    description: Self-hosted gateway for sharing Codex account capacity across trusted
+      agents and tools
+    digest: 98367382cf46975cbb6acb0186a6bd556637ec92a5c0c6f2ac8389da51554c4c
+    home: https://github.com/icoretech/codex-pooler
+    icon: https://icoretech.github.io/helm/charts/codex-pooler/logo.png
+    keywords:
+    - codex
+    - openai
+    - gateway
+    - pooler
+    - ai
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: codex-pooler
+    sources:
+    - https://github.com/icoretech/codex-pooler
+    - https://github.com/icoretech/helm/tree/main/charts/codex-pooler
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/codex-pooler-0.9.5/codex-pooler-0.9.5.tgz
+    version: 0.9.5
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/images: |
+        - name: codex-pooler
+          image: ghcr.io/icoretech/codex-pooler:0.9.7
+      artifacthub.io/license: Elastic-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 0.9.7
     created: "2026-09-27T03:05:50.019495573Z"
     description: Self-hosted gateway for sharing Codex account capacity across trusted
       agents and tools
@@ -11351,6 +11387,51 @@ entries:
     - https://github.com/icoretech/helm/releases/download/metamcp-0.1.0/metamcp-0.1.0.tgz
     version: 0.1.0
   multica:
+  - annotations:
+      artifacthub.io/images: |
+        - name: multica-backend
+          image: ghcr.io/multica-ai/multica-backend:v0.6.0
+        - name: multica-web
+          image: ghcr.io/multica-ai/multica-web:v0.6.0
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v0.6.0
+    created: "2026-09-28T08:47:39.846960694Z"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.19.3
+    - condition: redis.enabled
+      name: redis
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.27.4
+    description: Multica managed agents platform for Kubernetes
+    digest: 91d271219eb8bb89472bcf31addbade2cced4377e3e4159f200de2e89625ec75
+    home: https://github.com/multica-ai/multica
+    icon: https://raw.githubusercontent.com/multica-ai/multica/main/docs/assets/logo-light.svg
+    keywords:
+    - multica
+    - agents
+    - codex
+    - claude-code
+    - ai
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: multica
+    sources:
+    - https://github.com/multica-ai/multica
+    - https://github.com/icoretech/helm/tree/main/charts/multica
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/multica-0.6.0/multica-0.6.0.tgz
+    version: 0.6.0
   - annotations:
       artifacthub.io/images: |
         - name: multica-backend
@@ -23053,4 +23134,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-09-27T03:05:50.021639373Z"
+generated: "2026-09-28T08:47:39.84952061Z"
