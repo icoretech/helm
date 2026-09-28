@@ -5,7 +5,9 @@ title: codex-pooler
 
 # Codex Pooler Helm Chart
 
-Deploy [Codex Pooler](https://github.com/icoretech/codex-pooler), a self-hosted gateway for sharing Codex account capacity across trusted agents and tools, on Kubernetes.
+Deploy [Codex Pooler](https://www.codex-pooler.com), a self-hosted gateway for sharing Codex account capacity across trusted agents and tools, on Kubernetes.
+
+[Website](https://www.codex-pooler.com) · [Docs](https://www.codex-pooler.com/docs/) · [Helm guide](https://www.codex-pooler.com/docs/deployment/helm/) · [GitHub](https://github.com/icoretech/codex-pooler) · [X](https://x.com/icoretech_inc) · [Reddit](https://reddit.com/r/CodexPooler)
 
 ## Prerequisites
 
@@ -21,7 +23,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.10.0 \
+  --version 0.10.1 \
   --values values.production.yaml
 ```
 
@@ -30,7 +32,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.10.0 \
+  --version 0.10.1 \
   --values values.production.yaml
 ```
 
@@ -173,7 +175,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.10.0"
+      version: "0.10.1"
       sourceRef:
         kind: HelmRepository
         name: icoretech
