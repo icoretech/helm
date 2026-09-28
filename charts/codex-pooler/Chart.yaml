@@ -2,7 +2,7 @@ apiVersion: v2
 name: codex-pooler
 description: Self-hosted gateway for sharing Codex account capacity across trusted agents and tools
 type: application
-version: 0.10.0
+version: 0.10.1
 appVersion: "0.10.3"
 kubeVersion: ">= 1.24.0-0"
 icon: https://icoretech.github.io/helm/charts/codex-pooler/logo.png
@@ -16,7 +16,7 @@ maintainers:
   - name: masterkain
     email: claudio@icorete.ch
     url: https://github.com/masterkain
-home: https://github.com/icoretech/codex-pooler
+home: https://www.codex-pooler.com
 sources:
   - https://github.com/icoretech/codex-pooler
   - https://github.com/icoretech/helm/tree/main/charts/codex-pooler
@@ -29,3 +29,12 @@ annotations:
     - name: codex-pooler
       image: ghcr.io/icoretech/codex-pooler:0.10.3
   artifacthub.io/category: ai-machine-learning
+  artifacthub.io/links: |
+    - name: Website
+      url: https://www.codex-pooler.com
+    - name: Documentation
+      url: https://www.codex-pooler.com/docs/
+    - name: X
+      url: https://x.com/icoretech_inc
+    - name: Reddit
+      url: https://reddit.com/r/CodexPooler
