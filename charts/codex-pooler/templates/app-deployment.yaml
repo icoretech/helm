@@ -70,6 +70,12 @@ spec:
             {{- include "codex-pooler.clusteringEnv" (dict "root" . "role" "app") | nindent 12 }}
             {{- include "codex-pooler.appLocalRpcEnv" . | nindent 12 }}
             {{- include "codex-pooler.websocketOwnerForwardingEnv" . | nindent 12 }}
+            - name: CODEX_POOLER_POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: CODEX_POOLER_INSTANCE_SLOT_ID
+              value: "$(CODEX_POOLER_POD_UID)/app"
             {{- include "codex-pooler.env" . | nindent 12 }}
           readinessProbe:
             httpGet:

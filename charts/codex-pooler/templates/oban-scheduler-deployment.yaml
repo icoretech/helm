@@ -55,6 +55,12 @@ spec:
             - name: OBAN_MODE
               value: scheduler
             {{- include "codex-pooler.clusteringEnv" (dict "root" . "role" "scheduler") | nindent 12 }}
+            - name: CODEX_POOLER_POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: CODEX_POOLER_INSTANCE_SLOT_ID
+              value: "$(CODEX_POOLER_POD_UID)/oban-scheduler"
             {{- include "codex-pooler.env" . | nindent 12 }}
           # `rollout status` on these Deployments used to mean nothing: with no
           # probe at all, a worker reported Ready against a database with no

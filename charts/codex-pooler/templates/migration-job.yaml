@@ -54,6 +54,12 @@ spec:
             # that every possible migration duration fits.
             - name: MIGRATION_ADVISORY_LOCK_WAIT_SECONDS
               value: {{ min 600 (sub (int .Values.migrations.activeDeadlineSeconds) 60) | quote }}
+            - name: CODEX_POOLER_POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: CODEX_POOLER_INSTANCE_SLOT_ID
+              value: "$(CODEX_POOLER_POD_UID)/migrations"
             {{- include "codex-pooler.env" . | nindent 12 }}
           resources:
             {{- toYaml .Values.migrations.resources | nindent 12 }}

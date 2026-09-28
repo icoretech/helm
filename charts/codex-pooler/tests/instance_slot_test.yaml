@@ -1,0 +1,143 @@
+suite: exclusive instance slot contract
+templates:
+  - app-deployment.yaml
+  - oban-worker-deployment.yaml
+  - oban-scheduler-deployment.yaml
+  - migration-job.yaml
+tests:
+  - it: identifies app by pod UID and container with clustering true
+    template: app-deployment.yaml
+    set:
+      clustering.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_INSTANCE_SLOT_ID
+            value: "$(CODEX_POOLER_POD_UID)/app"
+  - it: identifies app by pod UID and container with clustering false
+    template: app-deployment.yaml
+    set:
+      clustering.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_INSTANCE_SLOT_ID
+            value: "$(CODEX_POOLER_POD_UID)/app"
+  - it: identifies oban-worker by pod UID and container with clustering true
+    template: oban-worker-deployment.yaml
+    set:
+      clustering.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_INSTANCE_SLOT_ID
+            value: "$(CODEX_POOLER_POD_UID)/oban-worker"
+  - it: identifies oban-worker by pod UID and container with clustering false
+    template: oban-worker-deployment.yaml
+    set:
+      clustering.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_INSTANCE_SLOT_ID
+            value: "$(CODEX_POOLER_POD_UID)/oban-worker"
+  - it: identifies oban-scheduler by pod UID and container with clustering true
+    template: oban-scheduler-deployment.yaml
+    set:
+      clustering.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_INSTANCE_SLOT_ID
+            value: "$(CODEX_POOLER_POD_UID)/oban-scheduler"
+  - it: identifies oban-scheduler by pod UID and container with clustering false
+    template: oban-scheduler-deployment.yaml
+    set:
+      clustering.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_INSTANCE_SLOT_ID
+            value: "$(CODEX_POOLER_POD_UID)/oban-scheduler"
+  - it: identifies migrations by pod UID and container with clustering true
+    template: migration-job.yaml
+    set:
+      clustering.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_INSTANCE_SLOT_ID
+            value: "$(CODEX_POOLER_POD_UID)/migrations"
+  - it: identifies migrations by pod UID and container with clustering false
+    template: migration-job.yaml
+    set:
+      clustering.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CODEX_POOLER_INSTANCE_SLOT_ID
+            value: "$(CODEX_POOLER_POD_UID)/migrations"
