@@ -18,7 +18,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.10.1 \
+  --version 0.10.2 \
   --values values.production.yaml
 ```
 
@@ -27,7 +27,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.10.1 \
+  --version 0.10.2 \
   --values values.production.yaml
 ```
 
@@ -170,7 +170,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.10.1"
+      version: "0.10.2"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -199,7 +199,7 @@ spec:
 | app.affinity | object | `{}` |  |
 | app.drainMarkerPath | string | `"/tmp/codex-pooler-draining"` |  |
 | app.enabled | bool | `true` |  |
-| app.lifecycle.preStop.drainTimeoutSeconds | int | `85` | Maximum seconds to wait for the websocket rollout drain RPC before continuing pod shutdown. The drain returns as soon as in-flight turns finish, so the budget is only consumed while a long turn is actually running; the default is sized so the effective wait (about 10 seconds under the budget) covers p99 in-flight turn durations instead of cutting at p95. |
+| app.lifecycle.preStop.drainTimeoutSeconds | int | `85` | Maximum seconds to wait for the websocket rollout drain RPC before continuing pod shutdown. The drain returns as soon as in-flight turns finish, so the budget is only consumed while a long turn is actually running. Turns get about drainTimeoutSeconds minus 10.7 seconds; at 10 or less every drain cuts them at once. The default is sized so that window covers p99 in-flight turn durations instead of cutting at p95. |
 | app.lifecycle.preStop.enabled | bool | `true` |  |
 | app.lifecycle.preStop.sleepSeconds | int | `10` | Seconds to keep the pod unready after the drain marker/RPC before Kubernetes sends SIGTERM. |
 | app.minReadySeconds | int | `120` | Seconds a newly ready app pod must stay ready before the rollout continues. Spacing the per-pod websocket drains keeps reconnecting clients from re-uploading their sessions all at once after a deploy; set 0 to disable the pause. |

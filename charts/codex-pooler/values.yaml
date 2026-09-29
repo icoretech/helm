@@ -103,7 +103,7 @@ app:
   lifecycle:
     preStop:
       enabled: true
-      # -- Maximum seconds to wait for the websocket rollout drain RPC before continuing pod shutdown. The drain returns as soon as in-flight turns finish, so the budget is only consumed while a long turn is actually running; the default is sized so the effective wait (about 10 seconds under the budget) covers p99 in-flight turn durations instead of cutting at p95.
+      # -- Maximum seconds to wait for the websocket rollout drain RPC before continuing pod shutdown. The drain returns as soon as in-flight turns finish, so the budget is only consumed while a long turn is actually running. Turns get about drainTimeoutSeconds minus 10.7 seconds; at 10 or less every drain cuts them at once. The default is sized so that window covers p99 in-flight turn durations instead of cutting at p95.
       drainTimeoutSeconds: 85
       # -- Seconds to keep the pod unready after the drain marker/RPC before Kubernetes sends SIGTERM.
       sleepSeconds: 10
