@@ -11632,6 +11632,51 @@ entries:
   - annotations:
       artifacthub.io/images: |
         - name: multica-backend
+          image: ghcr.io/multica-ai/multica-backend:v0.6.1
+        - name: multica-web
+          image: ghcr.io/multica-ai/multica-web:v0.6.1
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v0.6.1
+    created: "2026-10-01T18:35:39.590739858Z"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.19.3
+    - condition: redis.enabled
+      name: redis
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.27.4
+    description: Multica managed agents platform for Kubernetes
+    digest: f3bbc2c9ef1ad5c207bfa3f399b129d5863a6885df7a9141ca71ee739f9ff131
+    home: https://github.com/multica-ai/multica
+    icon: https://raw.githubusercontent.com/multica-ai/multica/main/docs/assets/logo-light.svg
+    keywords:
+    - multica
+    - agents
+    - codex
+    - claude-code
+    - ai
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: multica
+    sources:
+    - https://github.com/multica-ai/multica
+    - https://github.com/icoretech/helm/tree/main/charts/multica
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/multica-0.6.1/multica-0.6.1.tgz
+    version: 0.6.1
+  - annotations:
+      artifacthub.io/images: |
+        - name: multica-backend
           image: ghcr.io/multica-ai/multica-backend:v0.6.0
         - name: multica-web
           image: ghcr.io/multica-ai/multica-web:v0.6.0
@@ -18735,6 +18780,44 @@ entries:
   - annotations:
       artifacthub.io/images: |
         - name: tolgee
+          image: tolgee/tolgee:v3.224.11
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v3.224.11
+    created: "2026-10-01T18:35:39.886373801Z"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.17.2
+    description: Tolgee Platform Helm chart for Kubernetes
+    digest: 933cb525e2c32e0751bc21f395ef8429bd9ea91abfd7d7924750c19d94441194
+    home: https://tolgee.io
+    icon: https://icoretech.github.io/helm/charts/tolgee/logo.svg
+    keywords:
+    - tolgee
+    - localization
+    - i18n
+    - l10n
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: tolgee
+    sources:
+    - https://github.com/tolgee/tolgee-platform
+    - https://github.com/icoretech/helm/tree/main/charts/tolgee
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/tolgee-0.49.9/tolgee-0.49.9.tgz
+    version: 0.49.9
+  - annotations:
+      artifacthub.io/images: |
+        - name: tolgee
           image: tolgee/tolgee:v3.224.10
       artifacthub.io/license: Apache-2.0
       artifacthub.io/signKey: |
@@ -23452,4 +23535,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-01T08:56:30.395188792Z"
+generated: "2026-10-01T18:35:39.887432155Z"
