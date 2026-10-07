@@ -1,0 +1,39 @@
+name: Wake Renovate for Codex Pooler
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Request a Renovate run even when the chart is current
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: wake-renovate
+  cancel-in-progress: false
+
+jobs:
+  wake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          sparse-checkout: |
+            .github/scripts
+            charts/codex-pooler/Chart.yaml
+          sparse-checkout-cone-mode: false
+
+      - name: Request a Renovate run when a newer image exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE: ${{ inputs.force }}
+        run: .github/scripts/wake-renovate.sh
