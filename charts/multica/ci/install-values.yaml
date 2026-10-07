@@ -5,9 +5,6 @@ backend:
     frontendOrigin: http://multica.localhost
   email:
     resendFromEmail: noreply@example.com
-frontend:
-  backendServiceAlias:
-    enabled: true
 postgres:
   persistence:
     enabled: false

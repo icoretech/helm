@@ -18,9 +18,6 @@ tests:
       - equal:
           path: spec.rules[0].http.paths[0].path
           value: /health
-      - equal:
-          path: spec.rules[0].http.paths[5].backend.service.port.number
-          value: 80
 
   - it: renders Gateway API HTTPRoute when enabled
     template: gatewayapi-httproute.yaml
@@ -50,3 +47,46 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: "multica: httpRoute.parentRefs is required when httpRoute.enabled=true"
+
+  - it: keeps frontend OAuth callbacks more specific than backend auth routes in Ingress
+    template: ingress.yaml
+    values:
+      - values/valid-ingress.yaml
+    set:
+      fullnameOverride: multica
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths[?(@.path=="/auth")].backend.service.name
+          value: multica-backend
+      - equal:
+          path: spec.rules[0].http.paths[?(@.path=="/auth/callback")].backend.service.name
+          value: multica
+      - equal:
+          path: spec.rules[0].http.paths[?(@.path=="/auth/callback")].pathType
+          value: Prefix
+      - equal:
+          path: spec.rules[0].http.paths[?(@.path=="/auth/hg-sso/callback")].backend.service.name
+          value: multica
+
+  - it: keeps frontend OAuth callback prefixes ahead of the frontend catch-all in HTTPRoute
+    template: gatewayapi-httproute.yaml
+    values:
+      - values/valid-httproute.yaml
+    set:
+      fullnameOverride: multica
+    asserts:
+      - contains:
+          path: spec.rules[1].matches
+          content:
+            path:
+              type: PathPrefix
+              value: /auth/callback
+      - contains:
+          path: spec.rules[1].matches
+          content:
+            path:
+              type: PathPrefix
+              value: /auth/hg-sso/callback
+      - equal:
+          path: spec.rules[1].backendRefs[0].name
+          value: multica

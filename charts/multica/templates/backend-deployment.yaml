@@ -21,6 +21,9 @@ spec:
       annotations:
         checksum/secret-refs: {{ include "multica.backendSecretChecksumInput" . | sha256sum }}
         checksum/feature-flags: {{ include "multica.featureFlagsChecksumInput" . | sha256sum }}
+        {{- if .Values.backend.extraCACerts.configMap }}
+        checksum/extra-ca-certs: {{ include "multica.extraCACertsChecksumInput" . | sha256sum }}
+        {{- end }}
         {{- with .Values.backend.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -687,6 +690,9 @@ spec:
               value: {{ printf "%v" .Values.backend.llm.maxRetries | quote }}
             {{- end }}
             {{- $_ := set $managed "MULTICA_LLM_MAX_RETRIES" true }}
+            - name: MULTICA_LLM_DISABLE_THINKING
+              value: {{ .Values.backend.llm.disableThinking | quote }}
+            {{- $_ := set $managed "MULTICA_LLM_DISABLE_THINKING" true }}
             {{- if .Values.backend.plugins.secretKeyRef.name }}
             - name: MULTICA_PLUGIN_SECRET_KEY
               valueFrom:
@@ -786,6 +792,11 @@ spec:
               value: {{ .Values.storage.s3.cloudfrontPrivateKeySecret | quote }}
             {{- end }}
             {{- $_ := set $managed "CLOUDFRONT_PRIVATE_KEY_SECRET" true }}
+            {{- if .Values.backend.extraCACerts.configMap }}
+            - name: SSL_CERT_DIR
+              value: /etc/ssl/certs:/etc/multica/ca-certs
+            {{- $_ := set $managed "SSL_CERT_DIR" true }}
+            {{- end }}
             {{- range $index, $env := .Values.backend.extraEnv }}
             {{- $name := default "" $env.name }}
             {{- if hasKey $managed $name }}
@@ -822,11 +833,16 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.backend.resources | nindent 12 }}
-          {{- if or .Values.storage.local.persistence.enabled .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name .Values.backend.volumeMounts }}
+          {{- if or .Values.storage.local.persistence.enabled .Values.backend.extraCACerts.configMap .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name .Values.backend.volumeMounts }}
           volumeMounts:
             {{- if .Values.storage.local.persistence.enabled }}
             - name: uploads
               mountPath: {{ .Values.storage.local.uploadDir | quote }}
+            {{- end }}
+            {{- if .Values.backend.extraCACerts.configMap }}
+            - name: extra-ca-certs
+              mountPath: /etc/multica/ca-certs
+              readOnly: true
             {{- end }}
             {{- if or .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name }}
             - name: feature-flags
@@ -838,12 +854,17 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- end }}
-      {{- if or .Values.storage.local.persistence.enabled .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name .Values.backend.volumes }}
+      {{- if or .Values.storage.local.persistence.enabled .Values.backend.extraCACerts.configMap .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name .Values.backend.volumes }}
       volumes:
         {{- if .Values.storage.local.persistence.enabled }}
         - name: uploads
           persistentVolumeClaim:
             claimName: {{ include "multica.uploadsClaimName" . }}
+        {{- end }}
+        {{- if .Values.backend.extraCACerts.configMap }}
+        - name: extra-ca-certs
+          configMap:
+            name: {{ .Values.backend.extraCACerts.configMap | quote }}
         {{- end }}
         {{- if or .Values.backend.featureFlags.rules .Values.backend.featureFlags.existingConfigMap.name }}
         - name: feature-flags

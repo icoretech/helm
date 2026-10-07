@@ -137,6 +137,15 @@
         "image": {
           "$ref": "#/definitions/image"
         },
+        "extraCACerts": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "configMap": {
+              "type": "string"
+            }
+          }
+        },
         "podAnnotations": {
           "type": "object"
         },
@@ -966,6 +975,9 @@
               ],
               "minimum": 0,
               "maximum": 5
+            },
+            "disableThinking": {
+              "type": "boolean"
             }
           }
         },
@@ -1017,22 +1029,6 @@
         },
         "service": {
           "$ref": "#/definitions/publicService"
-        },
-        "backendServiceAlias": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "enabled": {
-              "type": "boolean"
-            },
-            "name": {
-              "type": "string",
-              "minLength": 1
-            },
-            "annotations": {
-              "type": "object"
-            }
-          }
         },
         "extraEnv": {
           "$ref": "#/definitions/envList"
@@ -1249,7 +1245,8 @@
               "$ref": "#/definitions/secretRef"
             },
             "mode": {
-              "type": "string"
+              "type": "string",
+              "enum": ["", "sharded", "legacy", "dual"]
             },
             "shards": {
               "type": [

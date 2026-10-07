@@ -74,6 +74,10 @@ backend:
     # -- Backend image tag override. Defaults to chart appVersion.
     tag: ""
 
+  extraCACerts:
+    # -- Existing ConfigMap in the release namespace whose keys contain PEM CA certificate files. Mounted read-only for outbound HTTPS and PostgreSQL TLS; system public CAs remain trusted. Rotate the ConfigMap, then run helm upgrade to restart the backend with the new trust roots.
+    configMap: ""
+
   # -- Pod annotations for backend pods.
   podAnnotations: {}
   # -- Pod labels for backend pods.
@@ -370,8 +374,10 @@ backend:
     baseUrl: ""
     # -- Default server-side LLM model.
     defaultModel: ""
-    # -- Maximum server-side LLM retries.
+    # -- Maximum server-side LLM retries (0-5). Empty uses the upstream default; 0 disables retries.
     maxRetries:
+    # -- Send chat_template_kwargs.enable_thinking=false with server-side LLM requests. Enable only for compatible gateways (e.g. vLLM/sglang); standard OpenAI endpoints can reject this field. Does not configure daemon/agent reasoning.
+    disableThinking: false
 
   plugins:
     # -- Base64-encoded 32-byte key used to sign plugin sessions. Prefer secretKeyRef in production.
@@ -466,14 +472,6 @@ frontend:
     loadBalancerSourceRanges: []
     # -- External traffic policy.
     externalTrafficPolicy:
-
-  backendServiceAlias:
-    # -- Create a Service named `backend` for legacy multica-web images that still use baked-in Next.js rewrites. Current images can use frontend.config.remoteApiUrl instead.
-    enabled: true
-    # -- Compatibility Service name.
-    name: backend
-    # -- Compatibility Service annotations.
-    annotations: {}
 
   config:
     # -- Runtime API URL consumed by current multica-web images.
@@ -580,7 +578,7 @@ realtime:
   # -- Set REDIS_DISABLE_CLIENT_NAME when Redis deployments reject CLIENT SETNAME.
   redisDisableClientName: false
   relay:
-    # -- Relay mode, e.g. `stream`. Cluster deployments support sharded mode only; other modes are rejected when realtime.redisClusterMode=true.
+    # -- Relay mode: sharded (upstream default), legacy, or dual. Redis Cluster supports only sharded; leave empty to use the upstream default.
     mode: ""
     # -- Number of relay shards.
     shards:
@@ -651,7 +649,7 @@ storage:
     region: us-west-2
     # -- S3-compatible endpoint URL, e.g. MinIO/R2/Wasabi.
     endpointUrl: ""
-    # -- Whether to use S3 path-style addressing (`true` or `false`). Empty uses the SDK default.
+    # -- Whether to use S3 path-style addressing (`true` or `false`). Empty defaults to true with endpointUrl, false otherwise.
     usePathStyle: ""
     # -- AWS access key ID.
     accessKeyId: ""

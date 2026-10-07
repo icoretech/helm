@@ -1,0 +1,27 @@
+suite: backend configuration conflicts
+templates:
+  - backend-deployment.yaml
+tests:
+  - it: rejects duplicate thinking controls that could silently undo the configured LLM request shape
+    set:
+      backend.llm.disableThinking: true
+      backend.extraEnv:
+        - name: MULTICA_LLM_DISABLE_THINKING
+          value: "false"
+    asserts:
+      - failedTemplate: {}
+
+  - it: rejects a custom certificate directory that would discard managed private and public trust roots
+    set:
+      backend.extraCACerts.configMap: multica-private-ca
+      backend.extraEnv:
+        - name: SSL_CERT_DIR
+          value: /other-certs
+    asserts:
+      - failedTemplate: {}
+
+  - it: rejects a malformed thinking toggle before the backend startup parser fails
+    set:
+      backend.llm.disableThinking: "ture"
+    asserts:
+      - failedTemplate: {}

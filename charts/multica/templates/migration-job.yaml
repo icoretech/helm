@@ -69,6 +69,22 @@ spec:
             - name: DATABASE_URL
               value: {{ include "multica.databaseUrl" . | trim | quote }}
             {{- end }}
+            {{- if .Values.backend.extraCACerts.configMap }}
+            - name: SSL_CERT_DIR
+              value: /etc/ssl/certs:/etc/multica/ca-certs
+            {{- end }}
+          {{- if .Values.backend.extraCACerts.configMap }}
+          volumeMounts:
+            - name: extra-ca-certs
+              mountPath: /etc/multica/ca-certs
+              readOnly: true
+          {{- end }}
           resources:
             {{- toYaml .Values.migrations.preUpgradeJob.resources | nindent 12 }}
+      {{- if .Values.backend.extraCACerts.configMap }}
+      volumes:
+        - name: extra-ca-certs
+          configMap:
+            name: {{ .Values.backend.extraCACerts.configMap | quote }}
+      {{- end }}
 {{- end }}

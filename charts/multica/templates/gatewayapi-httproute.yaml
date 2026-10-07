@@ -24,6 +24,16 @@ spec:
       backendRefs:
         - name: {{ include "multica.backendServiceName" . }}
           port: {{ .Values.backend.service.port }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /auth/callback
+        - path:
+            type: PathPrefix
+            value: /auth/hg-sso/callback
+      backendRefs:
+        - name: {{ include "multica.frontendServiceName" . }}
+          port: {{ .Values.frontend.service.port }}
     {{- end }}
     - matches:
         {{- toYaml .Values.httpRoute.matches | nindent 8 }}

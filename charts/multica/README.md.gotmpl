@@ -13,23 +13,19 @@ Deploy [Multica](https://github.com/multica-ai/multica), the open-source managed
 - Secret references for JWT, email, Google OAuth, metrics, database URL, GitHub App, Lark, Slack, DingTalk, Telegram, WeCom, Composio, VCS, plugins, LLM, and S3 credentials
 - Runtime URL configuration for current multica-web images, graceful shutdown, invitation limits, and realtime relay/channel lease tuning
 - Optional container-loopback maintenance API for operator-driven, resumable backfills
+- Private CA trust for backend HTTPS and PostgreSQL TLS, including the pre-upgrade migration Job
+- Opt-in server-side LLM thinking disable for compatible gateways
 - Self-host telemetry opt-out and PostHog analytics switches
 - Optional ConfigMap-backed feature flag rules
-- Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup
+- Ingress and Gateway API HTTPRoute support with backend path routing for CLI self-host setup and frontend OAuth callback exceptions
 - Optional PrometheusRule alerts for Multica business sampler metrics
 - Helm unit tests and install-safe CI values
 
 ## Important Runtime Note
 
-Current upstream `multica-web` images resolve their API and documentation URLs from runtime environment variables. The chart sets `REMOTE_API_URL` to the release backend Service by default and exposes `frontend.config.*` for explicit URLs. It also keeps a compatibility Service named `backend` enabled by default for legacy images; because that Service name is intentionally unprefixed, run only one Multica release per namespace unless you disable the alias.
+Current upstream `multica-web` images resolve their API and documentation URLs from runtime environment variables. The chart sets `REMOTE_API_URL` to the release-qualified backend Service and exposes `frontend.config.*` for explicit URLs. No unprefixed `backend` compatibility Service is created; multiple releases can share a namespace without that name collision.
 
-If you build a custom frontend image and do not need the legacy alias, disable it:
-
-```yaml
-frontend:
-  backendServiceAlias:
-    enabled: false
-```
+Leave `frontend.config.publicApiUrl` and `frontend.config.publicWsUrl` empty for same-origin browser requests. For split origins, set the browser-reachable API origin (not a URL ending in `/api`) and WebSocket URL, configure backend CORS/origins, and use the narrowest trusted `backend.config.cookieDomain` covering both hosts so the frontend can read the CSRF cookie. `frontend.config.docsUrl` controls the runtime documentation proxy. Other upstream `NEXT_PUBLIC_*` switches, such as app version and cloud-runtime UI enablement, are build-time only and cannot be changed through pod environment variables.
 
 ## Prerequisites
 
@@ -114,7 +110,7 @@ redis:
     size: 8Gi
 ```
 
-When using the chart-managed Ingress or HTTPRoute, backend-owned paths such as `/health`, `/api`, `/auth`, `/uploads`, and `/ws` are routed directly to the backend Service by default. This is required by `multica setup self-host`, which probes `<server-url>/health`. If you manage Traefik `IngressRoute`, nginx snippets, or another external router outside the chart, mirror the same path split.
+When using the chart-managed Ingress or HTTPRoute, backend-owned paths such as `/health`, `/api`, `/auth`, `/uploads`, and `/ws` are routed directly to the backend Service by default. The more-specific `/auth/callback` prefix stays on the frontend because Google OAuth returns to a web page, not a backend endpoint; `/auth/hg-sso/callback` is also reserved for the frontend by upstream's runtime proxy (the stable v0.6.1 image does not provide that page). The `/health` route supports `multica setup self-host`. If you manage Traefik `IngressRoute`, nginx snippets, or another external router outside the chart, mirror the same split and callback exceptions.
 
 When using S3-compatible storage without `storage.s3.cloudfrontDomain`, Multica stores reader-facing URLs using the configured bucket endpoint. Configure the bucket with public `s3:GetObject` access for uploaded objects, set `storage.s3.cloudfrontDomain` with CloudFront signing support, or use `storage.attachments.downloadMode=proxy` when browsers and CLI clients cannot reach a private S3-compatible endpoint directly.
 
@@ -139,6 +135,28 @@ Set `backend.config.disableWorkspaceCreation=true` after bootstrapping the share
 Set `backend.config.authTokenTtl` only when you need to override Multica's default auth token lifetime. Behind a reverse proxy, configure `backend.rateLimits.auth.trustedProxies` for the public auth limiter and `backend.config.trustedProxies` for the autopilot webhook limiter so upstream rate limits see real client IPs instead of only the proxy address.
 
 Email delivery can use Resend or an SMTP relay. SMTP is enabled when `backend.email.smtp.host` is set, and upstream Multica checks `SMTP_HOST` before Resend, so SMTP takes priority when both are configured. Port `465` is supported for implicit TLS; set `backend.email.smtp.tls=implicit` for non-standard SMTPS ports. For strict relays such as Google Workspace, set `backend.email.smtp.ehloName` to the FQDN the relay accepts. For production SMTP auth, prefer `backend.email.smtp.passwordRef` instead of inline `backend.email.smtp.password`.
+
+### Private CA certificates
+
+For internal HTTPS services such as Gitea, Forgejo, GitLab, or an LLM gateway, create a ConfigMap in the release namespace whose keys are PEM certificate filenames and reference it:
+
+```bash
+kubectl -n multica create configmap multica-private-ca --from-file=internal-ca.crt
+```
+
+```yaml
+backend:
+  extraCACerts:
+    configMap: multica-private-ca
+```
+
+The chart mounts the certificates read-only at `/etc/multica/ca-certs` and sets `SSL_CERT_DIR=/etc/ssl/certs:/etc/multica/ca-certs`, retaining public system CAs and TLS verification. The pre-upgrade migration Job gets the same trust roots, including for a PostgreSQL connection using `sslmode=verify-full`. To rotate trust roots, update the ConfigMap and run `helm upgrade`: its live data checksum rolls the backend because Go loads roots at process startup. Offline templates and client-side dry runs use a stable placeholder checksum. Do not override `SSL_CERT_DIR` through `backend.extraEnv` while this feature is enabled.
+
+### Server-side LLM gateways
+
+`backend.llm` configures the backend's assist calls (chat titles and follow-up suggestions), not daemon/agent model reasoning. Set `baseUrl` and, if required, `apiKeyRef` for an OpenAI-compatible gateway; `maxRetries` accepts `0`-`5`, with `0` disabling retries and an empty value preserving Multica's default.
+
+For gateways that support it, `backend.llm.disableThinking=true` sends `chat_template_kwargs: {"enable_thinking": false}` on every assist request. Leave it `false` for standard OpenAI endpoints, which can reject this non-standard field.
 
 GitHub App integration needs the app slug and webhook secret. Optionally set `backend.github.appId` with `backend.github.appPrivateKeyRef` so Multica can enrich the connected account name immediately after install. Store secrets in an existing Kubernetes Secret:
 
@@ -197,9 +215,22 @@ usageRollups:
     enabled: true
 ```
 
-Redis-backed features — realtime fanout, channel WebSocket leases, rate limits, and token caches — share the single `realtime.redisUrl` (`REDIS_URL`) connection. For native Redis Cluster or ElastiCache Serverless endpoints, set `realtime.redisClusterMode=true` with a database-0 URL; cluster mode rejects the legacy and dual relay modes, so pair it with `realtime.relay.mode=stream` when you tune the relay.
+Redis-backed features — realtime fanout, channel WebSocket leases, rate limits, and token caches — share the single `realtime.redisUrl` (`REDIS_URL`) connection. For native Redis Cluster or ElastiCache Serverless endpoints, set `realtime.redisClusterMode=true` with a database-0 URL; cluster mode permits only `realtime.relay.mode=sharded` (or an empty value for the upstream default). Standalone Redis also supports `legacy` and `dual`. `stream` is not a supported mode.
 
 For upgrades, `migrations.preUpgradeJob.enabled` runs the backend image as a Helm `pre-upgrade` hook before the Deployment rolls. It first runs `./migrate up`; if Multica refuses to drop legacy daily rollups because `task_usage_hourly` has not been seeded yet, the hook runs `./backfill_task_usage_hourly` and retries `./migrate up`. This matches the upstream `v0.3.5` self-host upgrade order while keeping the regular backend entrypoint unchanged.
+
+### Upgrading to chart 0.6.2
+
+Chart `0.6.2` completes the deployment configuration for stable Multica `v0.6.1`; backend/frontend image versions stay unchanged.
+
+- Adds `backend.extraCACerts.configMap` and `backend.llm.disableThinking`.
+- Routes frontend OAuth callback prefixes correctly instead of forwarding them to backend 404 responses.
+- Removes the legacy unprefixed `backend` Service and `frontend.backendServiceAlias` values. Delete those overrides and use current upstream web images, which read `frontend.config.remoteApiUrl` at runtime; obsolete images with baked-in rewrites are no longer supported.
+- Restricts relay modes to the actual upstream contract. Replace `realtime.relay.mode=stream` with `sharded`; Redis Cluster rejects `legacy` and `dual` before deployment.
+
+Use `helm upgrade --reset-values -f <updated-values.yaml>` after removing obsolete overrides. Do not use `--reuse-values`: it can retain the removed alias keys and omit newly introduced defaults.
+
+If you previously set `MULTICA_LLM_DISABLE_THINKING` through `backend.extraEnv`, move it to `backend.llm.disableThinking` to avoid the managed-env collision guard.
 
 ### Upgrading to chart 0.5.0
 

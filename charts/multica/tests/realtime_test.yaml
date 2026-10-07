@@ -110,3 +110,25 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: "multica: channelLeases.redisUrl/redisUrlRef were removed upstream in Multica v0.5.0; channel WebSocket leases now use realtime.redisUrl (REDIS_URL)"
+
+  - it: rejects legacy relay mode with Redis Cluster before the backend fails to start
+    set:
+      realtime.redisUrl: redis://redis.example.com:6379/0
+      realtime.redisClusterMode: true
+      realtime.relay.mode: legacy
+    asserts:
+      - failedTemplate: {}
+
+  - it: rejects dual relay mode with Redis Cluster before the backend fails to start
+    set:
+      realtime.redisUrl: redis://redis.example.com:6379/0
+      realtime.redisClusterMode: true
+      realtime.relay.mode: dual
+    asserts:
+      - failedTemplate: {}
+
+  - it: rejects an unsupported relay mode instead of silently using the upstream fallback
+    set:
+      realtime.relay.mode: stream
+    asserts:
+      - failedTemplate: {}

@@ -237,6 +237,17 @@ existingConfigMap:
     {{- end }}
 {{- end }}
 
+{{- define "multica.extraCACertsChecksumInput" -}}
+name: {{ .Values.backend.extraCACerts.configMap | quote }}
+data:
+  {{- $cm := lookup "v1" "ConfigMap" .Release.Namespace .Values.backend.extraCACerts.configMap }}
+  {{- if $cm }}
+  {{- toYaml $cm.data | nindent 2 }}
+  {{- else }}
+  {}
+  {{- end }}
+{{- end }}
+
 {{/* Validate cross-field chart contracts. */}}
 {{- define "multica.validate" -}}
 {{- if and .Values.postgres.enabled .Values.database.external.enabled -}}
@@ -294,6 +305,9 @@ existingConfigMap:
 {{- end -}}
 {{- if and .Values.realtime.redisClusterMode (not .Values.realtime.redisUrl) (not .Values.realtime.redisUrlRef.name) -}}
 {{- fail "multica: realtime.redisUrl or realtime.redisUrlRef is required when realtime.redisClusterMode=true" -}}
+{{- end -}}
+{{- if and .Values.realtime.redisClusterMode .Values.realtime.relay.mode (ne .Values.realtime.relay.mode "sharded") -}}
+{{- fail "multica: realtime.redisClusterMode=true requires realtime.relay.mode=sharded or an empty mode to use the upstream default" -}}
 {{- end -}}
 {{- if and .Values.backend.github.appSlug (not (or .Values.backend.github.webhookSecret .Values.backend.github.webhookSecretRef.name)) -}}
 {{- fail "multica: backend.github.webhookSecret or backend.github.webhookSecretRef.name is required when backend.github.appSlug is set" -}}

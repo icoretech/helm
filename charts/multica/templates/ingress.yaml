@@ -33,6 +33,15 @@ spec:
                 port:
                   number: {{ $.Values.backend.service.port }}
           {{- end }}
+          {{- range list "/auth/callback" "/auth/hg-sso/callback" }}
+          - path: {{ . }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "multica.frontendServiceName" $ }}
+                port:
+                  number: {{ $.Values.frontend.service.port }}
+          {{- end }}
           {{- end }}
           {{- range .paths }}
           - path: {{ .path }}
