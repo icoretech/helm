@@ -132,7 +132,7 @@ Use the built-in `*Ref` fields when you want chart-managed env wiring without st
 
 ## OAuth 2.1 and Reverse Proxies
 
-Tolgee 3.220.0 introduced an OAuth 2.1 authorization server for the browser extension, CLI, and MCP. Set `tolgee.backEndUrl` to the public backend origin behind a reverse proxy. OAuth uses this URL as its issuer, falling back to `tolgee.frontEndUrl`; registering an OAuth client requires one of these URLs. Use an origin such as `https://tolgee.example.com`, without a path, query, or fragment. Do not set `server.forward-headers-strategy`; Tolgee uses the explicit backend URL instead.
+Tolgee's OAuth 2.1 authorization server supports the browser extension, CLI, and MCP. Set `tolgee.backEndUrl` to the public backend origin behind a reverse proxy. OAuth uses this URL as its issuer, falling back to `tolgee.frontEndUrl`; registering an OAuth client requires one of these URLs. Use an origin such as `https://tolgee.example.com`, without a path, query, or fragment. Do not set `server.forward-headers-strategy`; Tolgee uses the explicit backend URL instead.
 
 Empty redirect URI lists leave the corresponding clients unregistered. Register only the exact URIs needed by your clients; prefer the loopback IP literal `127.0.0.1` for CLI callbacks.
 
@@ -155,7 +155,7 @@ Ingress or gateway routing must forward `/oauth2/*`, `/.well-known/*`, and `/mcp
 
 ## Azure Blob Storage
 
-Tolgee 3.221.0 added Azure Blob Storage for application files. Create the Azure container before starting Tolgee and provide the storage account connection string through an existing Kubernetes Secret. Azure and S3 file storage cannot be enabled together.
+Use Azure Blob Storage for application files by creating the Azure container before starting Tolgee and providing the storage account connection string through an existing Kubernetes Secret. Azure and S3 file storage cannot be enabled together.
 
 ```yaml
 persistence:
@@ -175,7 +175,7 @@ tolgee:
 
 ## Async Pools and Rate Limits
 
-Tolgee 3.219.5 added explicit sizing for streaming and background thread pools. Leave `tolgee.async` fields unset to derive concurrency from the database pool: streaming uses one-third and background one-sixth of the connection pool, with a minimum of two threads each. Streaming responses hold a database connection for their entire duration, so leave capacity for ordinary requests and batch jobs.
+Leave `tolgee.async` fields unset to derive streaming and background concurrency from the database pool: streaming uses one-third and background one-sixth of the connection pool, with a minimum of two threads each. Streaming responses hold a database connection for their entire duration, so leave capacity for ordinary requests and batch jobs.
 
 This chart disables the application's embedded PostgreSQL autostart. Configure the external datasource pool through `spring.datasource.hikari.maximum-pool-size`, including when using the chart's separate bundled PostgreSQL dependency.
 
@@ -194,7 +194,7 @@ tolgee:
     maxConcurrentPerBucket: 50
 ```
 
-Zero or negative `maxThreads` selects automatic sizing. A negative streaming `queueCapacity` selects automatic capacity; zero allows no queueing. Zero `keepAliveSeconds` disables idle thread expiry. The per-bucket concurrency cap applies per node; zero disables that cap. New chart fields default to `null` so upstream defaults remain effective.
+Zero or negative `maxThreads` selects automatic sizing. A negative streaming `queueCapacity` selects automatic capacity; zero allows no queueing. Zero `keepAliveSeconds` disables idle thread expiry. The per-bucket concurrency cap applies per node; zero disables that cap. Fields default to `null` so upstream defaults remain effective.
 
 ## Multiple Replicas
 
@@ -222,12 +222,6 @@ tolgee:
 ```
 
 Combine this fragment with S3 or Azure configuration, or use a shared filesystem PVC with `ReadWriteMany` access. Disabling persistence without shared object storage leaves each replica with its own ephemeral files.
-
-## Release Compatibility
-
-The configuration above was checked against Tolgee 3.226.3. The application image is tracked automatically. Upstream now uses Spring Boot 4 and Java 25; the application port, `/data` mount, and `/actuator/health` endpoint remain compatible with this chart.
-
-The deprecated embedded PostgreSQL server is already disabled by this chart. The optional CloudPirates PostgreSQL dependency is a separate service and is unaffected by that deprecation. Remove `tolgee.cache.clean-on-startup` from custom configuration if present; upstream replaced that setting with automatic cache fingerprinting. The upstream slim Dockerfile is for local builds and its image tag is not published.
 
 ## Per-Organization SSO Internal URLs
 
