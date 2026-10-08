@@ -54,8 +54,47 @@ config:
 image:
   browser: firefox
   # repository: ghcr.io/browserless/firefox # optional explicit override
-  # tag: v2.54.1                           # optional override
+  # tag: v2.57.0                 # optional override
 ```
+
+## Strict Token Authentication
+
+Set `config.strictTokenUse=true` to require the configured token on HTTP and WebSocket routes that normally opt out of authentication, including direct page connections. Static files remain public so debugger and DevTools assets can load. Leaving this field unset preserves upstream's default (`false`).
+
+```yaml
+config:
+  token: null
+  tokenSecretRef:
+    name: browserless-auth
+    key: token
+  strictTokenUse: true
+```
+
+The default readiness probe and Helm test already use the authenticated `/pressure` endpoint and work with strict mode. Custom probes, management clients, and direct page WebSocket clients must also supply a valid token. Strict mode requires a token at application startup; the chart's existing token validation remains in effect.
+
+## Session Scratch Storage
+
+Each browser session gets an owned directory under `config.scratchDir`, passed to the browser as `TMPDIR` and removed when the session ends. Unset `config.scratchDir` uses `browserless-scratch-dirs` under the container's temporary directory.
+
+Use a writable, pod-local `emptyDir` for a dedicated scratch mount. Size it for your session concurrency and workload; this example limits it to 1 GiB and grants the published image's group (999) write access. Keep scratch separate from reusable browser profiles in `config.dataDir`, and use short paths to stay within Chromium's Unix socket path-length limit.
+
+```yaml
+config:
+  scratchDir: /scratch/browserless
+podSecurityContext:
+  fsGroup: 999
+volumes:
+  - name: browser-scratch
+    emptyDir:
+      sizeLimit: 1Gi
+volumeMounts:
+  - name: browser-scratch
+    mountPath: /scratch
+```
+
+## Multiple Replicas
+
+Active browsers and session/reconnect identifiers live inside the replica that created them. An established WebSocket stays on its replica, but reconnect and session-management requests must reach that same replica through affinity or explicit routing. A shared volume does not share running browser processes. Account for active sessions before scaling down or rolling out pods, and keep scratch storage local to each pod.
 
 ## Flux Example
 
@@ -106,7 +145,7 @@ spec:
 | autoscaling.minReplicas | int | `1` | Minimum replicas. |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` | Target CPU utilization percentage. |
 | autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Target memory utilization percentage. |
-| config | object | `{"allowFileProtocol":null,"allowGet":null,"concurrent":4,"corsAllowMethods":null,"corsAllowOrigin":null,"corsMaxAge":null,"cpuEmaAlpha":null,"cpuOverloadHysteresis":null,"cpuSampleIntervalMs":null,"dataDir":null,"debug":"-*","downloadDir":null,"enableCors":null,"errorAlertUrl":null,"external":null,"host":"0.0.0.0","machineStatsSource":null,"maxCpuPercent":null,"maxMemoryPercent":null,"metricsJsonPath":null,"port":3000,"queued":10,"timeout":600000,"token":"change-me","tokenSecretRef":null}` | Browserless configuration mapped to environment variables. |
+| config | object | `{"allowFileProtocol":null,"allowGet":null,"concurrent":4,"corsAllowMethods":null,"corsAllowOrigin":null,"corsMaxAge":null,"cpuEmaAlpha":null,"cpuOverloadHysteresis":null,"cpuSampleIntervalMs":null,"dataDir":null,"debug":"-*","downloadDir":null,"enableCors":null,"errorAlertUrl":null,"external":null,"host":"0.0.0.0","machineStatsSource":null,"maxCpuPercent":null,"maxMemoryPercent":null,"metricsJsonPath":null,"port":3000,"queued":10,"scratchDir":null,"strictTokenUse":null,"timeout":600000,"token":"change-me","tokenSecretRef":null}` | Browserless configuration mapped to environment variables. |
 | config.allowFileProtocol | string | `nil` | Allow file:// protocol. |
 | config.allowGet | string | `nil` | Allow GET requests. |
 | config.concurrent | int | `4` | Max concurrent sessions. |
@@ -129,6 +168,8 @@ spec:
 | config.metricsJsonPath | string | `nil` | Metrics JSON path. |
 | config.port | int | `3000` | Bind port. |
 | config.queued | int | `10` | Max queued sessions. |
+| config.scratchDir | string | `nil` | Root for Browserless-owned per-session temporary files. Null uses the upstream temporary directory; keep this separate from reusable browser profiles. |
+| config.strictTokenUse | bool | `nil` | Require TOKEN on all routes, including routes that normally opt out of authentication. Static files remain public. Null preserves the upstream default (false). |
 | config.timeout | int | `600000` | Max session timeout in milliseconds. |
 | config.token | string | `"change-me"` | Change this in production. |
 | config.tokenSecretRef | string | `nil` | key: token |
