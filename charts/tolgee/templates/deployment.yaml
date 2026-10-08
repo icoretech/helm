@@ -155,6 +155,102 @@ spec:
             {{- $_ := set $envSeen "TOLGEE_FRONT_END_URL" true }}
             {{- end }}
 
+            {{- with .Values.tolgee.backEndUrl }}
+            - name: TOLGEE_BACK_END_URL
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_BACK_END_URL" true }}
+            {{- end }}
+
+            {{- with .Values.tolgee.oauth2.browserExtensionRedirectUris }}
+            - name: TOLGEE_OAUTH2_BROWSER_EXTENSION_REDIRECT_URIS
+              value: {{ join "," . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_OAUTH2_BROWSER_EXTENSION_REDIRECT_URIS" true }}
+            {{- end }}
+
+            {{- with .Values.tolgee.oauth2.cliRedirectUris }}
+            - name: TOLGEE_OAUTH2_CLI_REDIRECT_URIS
+              value: {{ join "," . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_OAUTH2_CLI_REDIRECT_URIS" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.oauth2.accessTokenValidityMinutes nil }}
+            - name: TOLGEE_OAUTH2_ACCESS_TOKEN_VALIDITY_MINUTES
+              value: {{ printf "%v" .Values.tolgee.oauth2.accessTokenValidityMinutes | quote }}
+            {{- $_ := set $envSeen "TOLGEE_OAUTH2_ACCESS_TOKEN_VALIDITY_MINUTES" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.oauth2.refreshTokenValidityDays nil }}
+            - name: TOLGEE_OAUTH2_REFRESH_TOKEN_VALIDITY_DAYS
+              value: {{ printf "%v" .Values.tolgee.oauth2.refreshTokenValidityDays | quote }}
+            {{- $_ := set $envSeen "TOLGEE_OAUTH2_REFRESH_TOKEN_VALIDITY_DAYS" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.oauth2.authorizationCodeValiditySeconds nil }}
+            - name: TOLGEE_OAUTH2_AUTHORIZATION_CODE_VALIDITY_SECONDS
+              value: {{ printf "%v" .Values.tolgee.oauth2.authorizationCodeValiditySeconds | quote }}
+            {{- $_ := set $envSeen "TOLGEE_OAUTH2_AUTHORIZATION_CODE_VALIDITY_SECONDS" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.oauth2.consentValiditySeconds nil }}
+            - name: TOLGEE_OAUTH2_CONSENT_VALIDITY_SECONDS
+              value: {{ printf "%v" .Values.tolgee.oauth2.consentValiditySeconds | quote }}
+            {{- $_ := set $envSeen "TOLGEE_OAUTH2_CONSENT_VALIDITY_SECONDS" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.oauth2.grantRetentionDays nil }}
+            - name: TOLGEE_OAUTH2_GRANT_RETENTION_DAYS
+              value: {{ printf "%v" .Values.tolgee.oauth2.grantRetentionDays | quote }}
+            {{- $_ := set $envSeen "TOLGEE_OAUTH2_GRANT_RETENTION_DAYS" true }}
+            {{- end }}
+
+            {{- with .Values.tolgee.oauth2.grantCleanupCron }}
+            - name: TOLGEE_OAUTH2_GRANT_CLEANUP_CRON
+              value: {{ . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_OAUTH2_GRANT_CLEANUP_CRON" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.async.streaming.maxThreads nil }}
+            - name: TOLGEE_ASYNC_STREAMING_MAX_THREADS
+              value: {{ printf "%v" .Values.tolgee.async.streaming.maxThreads | quote }}
+            {{- $_ := set $envSeen "TOLGEE_ASYNC_STREAMING_MAX_THREADS" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.async.streaming.queueCapacity nil }}
+            - name: TOLGEE_ASYNC_STREAMING_QUEUE_CAPACITY
+              value: {{ printf "%v" .Values.tolgee.async.streaming.queueCapacity | quote }}
+            {{- $_ := set $envSeen "TOLGEE_ASYNC_STREAMING_QUEUE_CAPACITY" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.async.streaming.keepAliveSeconds nil }}
+            - name: TOLGEE_ASYNC_STREAMING_KEEP_ALIVE_SECONDS
+              value: {{ printf "%v" .Values.tolgee.async.streaming.keepAliveSeconds | quote }}
+            {{- $_ := set $envSeen "TOLGEE_ASYNC_STREAMING_KEEP_ALIVE_SECONDS" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.async.background.maxThreads nil }}
+            - name: TOLGEE_ASYNC_BACKGROUND_MAX_THREADS
+              value: {{ printf "%v" .Values.tolgee.async.background.maxThreads | quote }}
+            {{- $_ := set $envSeen "TOLGEE_ASYNC_BACKGROUND_MAX_THREADS" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.async.background.keepAliveSeconds nil }}
+            - name: TOLGEE_ASYNC_BACKGROUND_KEEP_ALIVE_SECONDS
+              value: {{ printf "%v" .Values.tolgee.async.background.keepAliveSeconds | quote }}
+            {{- $_ := set $envSeen "TOLGEE_ASYNC_BACKGROUND_KEEP_ALIVE_SECONDS" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.rateLimits.lockWaitMs nil }}
+            - name: TOLGEE_RATE_LIMITS_LOCK_WAIT_MS
+              value: {{ printf "%v" .Values.tolgee.rateLimits.lockWaitMs | quote }}
+            {{- $_ := set $envSeen "TOLGEE_RATE_LIMITS_LOCK_WAIT_MS" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.rateLimits.maxConcurrentPerBucket nil }}
+            - name: TOLGEE_RATE_LIMITS_MAX_CONCURRENT_PER_BUCKET
+              value: {{ printf "%v" .Values.tolgee.rateLimits.maxConcurrentPerBucket | quote }}
+            {{- $_ := set $envSeen "TOLGEE_RATE_LIMITS_MAX_CONCURRENT_PER_BUCKET" true }}
+            {{- end }}
+
             {{- if ne .Values.tolgee.authentication.enabled nil }}
             - name: TOLGEE_AUTHENTICATION_ENABLED
               value: {{ printf "%v" .Values.tolgee.authentication.enabled | quote }}
@@ -297,6 +393,25 @@ spec:
             - name: TOLGEE_SMTP_FROM
               value: {{ . | quote }}
             {{- $_ := set $envSeen "TOLGEE_SMTP_FROM" true }}
+            {{- end }}
+
+            {{- if .Values.tolgee.fileStorage.azure.enabled }}
+            - name: TOLGEE_FILE_STORAGE_AZURE_ENABLED
+              value: "true"
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_AZURE_ENABLED" true }}
+            - name: TOLGEE_FILE_STORAGE_AZURE_CONTAINER_NAME
+              value: {{ .Values.tolgee.fileStorage.azure.containerName | quote }}
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_AZURE_CONTAINER_NAME" true }}
+            - name: TOLGEE_FILE_STORAGE_AZURE_CONNECTION_STRING
+              {{- if and .Values.tolgee.fileStorage.azure.connectionStringRef.name .Values.tolgee.fileStorage.azure.connectionStringRef.key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.tolgee.fileStorage.azure.connectionStringRef.name | quote }}
+                  key: {{ .Values.tolgee.fileStorage.azure.connectionStringRef.key | quote }}
+              {{- else }}
+              value: {{ .Values.tolgee.fileStorage.azure.connectionString | quote }}
+              {{- end }}
+            {{- $_ := set $envSeen "TOLGEE_FILE_STORAGE_AZURE_CONNECTION_STRING" true }}
             {{- end }}
 
             {{- if .Values.tolgee.fileStorage.s3.enabled }}

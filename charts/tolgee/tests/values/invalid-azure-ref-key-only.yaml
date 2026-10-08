@@ -1,0 +1,5 @@
+tolgee:
+  fileStorage:
+    azure:
+      connectionStringRef:
+        key: connection-string

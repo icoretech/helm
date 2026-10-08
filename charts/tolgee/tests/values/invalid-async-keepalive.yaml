@@ -1,0 +1,4 @@
+tolgee:
+  async:
+    streaming:
+      keepAliveSeconds: -1

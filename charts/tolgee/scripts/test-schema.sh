@@ -14,7 +14,10 @@ for f in \
   tests/values/valid-external-secret.yaml \
   tests/values/valid-external-valuefrom.yaml \
   tests/values/valid-metrics-servicemonitor.yaml \
-  tests/values/valid-s3-secretrefs.yaml
+  tests/values/valid-s3-secretrefs.yaml \
+  tests/values/valid-azure-inline.yaml \
+  tests/values/valid-azure-secretref.yaml \
+  tests/values/valid-released-config.yaml
   do
   echo "  - $f"
   helm lint . -f "$f" >/dev/null
@@ -48,7 +51,18 @@ for f in \
   tests/values/invalid-jwt-secretref-missing-key.yaml \
   tests/values/invalid-metrics-servicemonitor-without-metrics.yaml \
   tests/values/invalid-nodeport.yaml \
-  tests/values/invalid-unknown-top-level.yaml
+  tests/values/invalid-unknown-top-level.yaml \
+  tests/values/invalid-azure-s3.yaml \
+  tests/values/invalid-azure-container.yaml \
+  tests/values/invalid-azure-connection.yaml \
+  tests/values/invalid-azure-partial-ref.yaml \
+  tests/values/invalid-azure-ref-key-only.yaml \
+  tests/values/invalid-oauth-redirect.yaml \
+  tests/values/invalid-oauth-lifetime.yaml \
+  tests/values/invalid-oauth-retention.yaml \
+  tests/values/invalid-async-keepalive.yaml \
+  tests/values/invalid-async-type.yaml \
+  tests/values/invalid-rate-limits.yaml
   do
   expect_invalid "$f"
 done

@@ -1,0 +1,8 @@
+tolgee:
+  fileStorage:
+    azure:
+      enabled: true
+      containerName: sample-files
+      connectionString: nonsecret-test-connection-string
+      connectionStringRef:
+        name: sample-storage

@@ -1,0 +1,3 @@
+tolgee:
+  oauth2:
+    grantRetentionDays: -1

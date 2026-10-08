@@ -10,6 +10,7 @@ Deploy [Tolgee Platform](https://tolgee.io/) on Kubernetes with optional bundled
 - Configurable persistence for Tolgee filesystem data (`/data` by default)
 - Ingress and Gateway API `HTTPRoute` support
 - Generic Tolgee/Spring property pass-through via dot-notation maps (`tolgee.config`, `tolgee.secretConfig`)
+- OAuth 2.1 client registration, Azure Blob Storage, async pool sizing, and rate-limit concurrency controls
 
 ## Prerequisites
 
@@ -127,6 +128,106 @@ Use the built-in `*Ref` fields when you want chart-managed env wiring without st
 - `tolgee.smtp.passwordRef`
 - `tolgee.fileStorage.s3.accessKeyRef`
 - `tolgee.fileStorage.s3.secretKeyRef`
+- `tolgee.fileStorage.azure.connectionStringRef`
+
+## OAuth 2.1 and Reverse Proxies
+
+Tolgee 3.220.0 introduced an OAuth 2.1 authorization server for the browser extension, CLI, and MCP. Set `tolgee.backEndUrl` to the public backend origin behind a reverse proxy. OAuth uses this URL as its issuer, falling back to `tolgee.frontEndUrl`; registering an OAuth client requires one of these URLs. Use an origin such as `https://tolgee.example.com`, without a path, query, or fragment. Do not set `server.forward-headers-strategy`; Tolgee uses the explicit backend URL instead.
+
+Empty redirect URI lists leave the corresponding clients unregistered. Register only the exact URIs needed by your clients; prefer the loopback IP literal `127.0.0.1` for CLI callbacks.
+
+```yaml
+tolgee:
+  frontEndUrl: https://tolgee.example.com
+  backEndUrl: https://tolgee.example.com
+  authentication:
+    enabled: true
+  oauth2:
+    cliRedirectUris:
+      - http://127.0.0.1:9876/callback
+    accessTokenValidityMinutes: 30
+    refreshTokenValidityDays: 30
+```
+
+The browser extension uses `tolgee.oauth2.browserExtensionRedirectUris`. Token and consent lifetimes, grant retention, and grant cleanup scheduling can also be configured under `tolgee.oauth2`; unset fields preserve upstream defaults.
+
+Ingress or gateway routing must forward `/oauth2/*`, `/.well-known/*`, and `/mcp/*` to Tolgee when using these clients, in addition to the UI and `/v2/*` APIs. A single `/` prefix route covers these paths. Ensure any external authentication proxy permits OAuth discovery and token requests to reach Tolgee's own authentication layer.
+
+## Azure Blob Storage
+
+Tolgee 3.221.0 added Azure Blob Storage for application files. Create the Azure container before starting Tolgee and provide the storage account connection string through an existing Kubernetes Secret. Azure and S3 file storage cannot be enabled together.
+
+```yaml
+persistence:
+  enabled: false
+
+tolgee:
+  fileStorage:
+    azure:
+      enabled: true
+      containerName: tolgee-files
+      connectionStringRef:
+        name: tolgee-storage
+        key: connection-string
+```
+
+`connectionStringRef` takes precedence over the inline `connectionString`. Disabling local persistence is appropriate when all application files use object storage; PostgreSQL persistence remains independent.
+
+## Async Pools and Rate Limits
+
+Tolgee 3.219.5 added explicit sizing for streaming and background thread pools. Leave `tolgee.async` fields unset to derive concurrency from the database pool: streaming uses one-third and background one-sixth of the connection pool, with a minimum of two threads each. Streaming responses hold a database connection for their entire duration, so leave capacity for ordinary requests and batch jobs.
+
+This chart disables the application's embedded PostgreSQL autostart. Configure the external datasource pool through `spring.datasource.hikari.maximum-pool-size`, including when using the chart's separate bundled PostgreSQL dependency.
+
+```yaml
+tolgee:
+  config:
+    spring.datasource.hikari.maximum-pool-size: 30
+  async:
+    streaming:
+      maxThreads: 6
+      queueCapacity: 50
+    background:
+      maxThreads: 4
+  rateLimits:
+    lockWaitMs: 500
+    maxConcurrentPerBucket: 50
+```
+
+Zero or negative `maxThreads` selects automatic sizing. A negative streaming `queueCapacity` selects automatic capacity; zero allows no queueing. Zero `keepAliveSeconds` disables idle thread expiry. The per-bucket concurrency cap applies per node; zero disables that cap. New chart fields default to `null` so upstream defaults remain effective.
+
+## Multiple Replicas
+
+Use shared PostgreSQL, shared Redis, and shared file storage before increasing `replicaCount` or enabling autoscaling. Redis must be enabled for both cache/rate-limit consistency and websocket event distribution; configuring a Redis hostname alone does not enable it. The same Redis client also supports MCP session recovery across replicas.
+
+```yaml
+replicaCount: 2
+persistence:
+  enabled: false
+tolgee:
+  cache:
+    enabled: true
+    useRedis: true
+  websocket:
+    useRedis: true
+  config:
+    spring.data.redis.host: redis.example.com
+    spring.data.redis.port: 6379
+  extraEnv:
+    - name: SPRING_DATA_REDIS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: tolgee-redis
+          key: password
+```
+
+Combine this fragment with S3 or Azure configuration, or use a shared filesystem PVC with `ReadWriteMany` access. Disabling persistence without shared object storage leaves each replica with its own ephemeral files.
+
+## Release Compatibility
+
+The configuration above was checked against Tolgee 3.226.3. The application image is tracked automatically. Upstream now uses Spring Boot 4 and Java 25; the application port, `/data` mount, and `/actuator/health` endpoint remain compatible with this chart.
+
+The deprecated embedded PostgreSQL server is already disabled by this chart. The optional CloudPirates PostgreSQL dependency is a separate service and is unaffected by that deprecation. Remove `tolgee.cache.clean-on-startup` from custom configuration if present; upstream replaced that setting with automatic cache fingerprinting. The upstream slim Dockerfile is for local builds and its image tag is not published.
 
 ## Per-Organization SSO Internal URLs
 
@@ -324,6 +425,11 @@ spec:
 | serviceAccount.create | bool | `true` | Create a service account. |
 | serviceAccount.name | string | `""` | Service account name. |
 | tolerations | list | `[]` | Tolerations. |
+| tolgee.async.background.keepAliveSeconds | int | `nil` | Idle background thread lifetime in seconds. Zero keeps core threads alive; null preserves the application default. |
+| tolgee.async.background.maxThreads | int | `nil` | Maximum background threads. Null preserves the application default; zero or negative derives from the database pool. |
+| tolgee.async.streaming.keepAliveSeconds | int | `nil` | Idle streaming thread lifetime in seconds. Zero keeps core threads alive; null preserves the application default. |
+| tolgee.async.streaming.maxThreads | int | `nil` | Maximum streaming threads. Null preserves the application default; zero or negative derives from the database pool. Keep below the database connection pool size. |
+| tolgee.async.streaming.queueCapacity | int | `nil` | Streaming queue capacity. Zero disables queuing; negative derives capacity; null preserves the application default. |
 | tolgee.authentication.allowedEmailDomains | list | `[]` | tolgee.authentication.allowed-email-domains |
 | tolgee.authentication.blockDisposableEmails | string | `nil` | tolgee.authentication.block-disposable-emails |
 | tolgee.authentication.blockEmailAliases | string | `nil` | tolgee.authentication.block-email-aliases |
@@ -342,11 +448,17 @@ spec:
 | tolgee.authentication.registrationsAllowed | string | `nil` | tolgee.authentication.registrations-allowed |
 | tolgee.authentication.ssoOrganizations.allowLocalAddresses | string | `nil` | tolgee.authentication.sso-organizations.allow-local-addresses. Enables internal/private SSO provider URLs; keep null/false unless the IdP is deliberately reachable only on a trusted internal network. |
 | tolgee.authentication.userCanCreateOrganizations | string | `nil` | tolgee.authentication.user-can-create-organizations |
+| tolgee.backEndUrl | string | `""` | Public backend URL used for OAuth issuer and endpoint discovery. Empty preserves Tolgee's URL resolution. |
 | tolgee.cache.enabled | string | `nil` | tolgee.cache.enabled |
 | tolgee.cache.useRedis | string | `nil` | tolgee.cache.use-redis |
 | tolgee.config | object | `{}` | Example: tolgee.authentication.google.client-id |
 | tolgee.envFrom | list | `[]` | Additional envFrom refs. |
 | tolgee.extraEnv | list | `[]` | Additional env vars. |
+| tolgee.fileStorage.azure.connectionString | string | `""` | Azure Storage connection string. Prefer connectionStringRef for credentials. |
+| tolgee.fileStorage.azure.connectionStringRef.key | string | `""` | Secret key for the Azure connection string. |
+| tolgee.fileStorage.azure.connectionStringRef.name | string | `""` | Existing secret containing the Azure connection string; takes priority over the inline value. |
+| tolgee.fileStorage.azure.containerName | string | `""` | Existing Azure Blob Storage container name. |
+| tolgee.fileStorage.azure.enabled | bool | `false` | Enable Azure Blob Storage. Cannot be enabled together with S3. |
 | tolgee.fileStorage.fsDataPath | string | `"/data"` | tolgee.file-storage.fs-data-path |
 | tolgee.fileStorage.s3.accessKey | string | `""` | tolgee.file-storage.s3.access-key |
 | tolgee.fileStorage.s3.accessKeyRef.key | string | `""` | Secret key for S3 access key. |
@@ -360,6 +472,16 @@ spec:
 | tolgee.fileStorage.s3.secretKeyRef.name | string | `""` | Existing secret containing tolgee.file-storage.s3.secret-key. |
 | tolgee.fileStorage.s3.signingRegion | string | `""` | tolgee.file-storage.s3.signing-region |
 | tolgee.frontEndUrl | string | `""` | Public frontend URL (recommended for secure link generation). |
+| tolgee.oauth2.accessTokenValidityMinutes | int | `nil` | OAuth access token lifetime in minutes. Null preserves the application default. |
+| tolgee.oauth2.authorizationCodeValiditySeconds | int | `nil` | Authorization code lifetime in seconds. Null preserves the application default. |
+| tolgee.oauth2.browserExtensionRedirectUris | list | `[]` | Exact browser extension redirect URIs. Empty leaves this OAuth client unregistered. |
+| tolgee.oauth2.cliRedirectUris | list | `[]` | CLI loopback redirect URIs. Configure only when CLI OAuth login is needed; prefer a loopback IP literal. |
+| tolgee.oauth2.consentValiditySeconds | int | `nil` | Pending consent lifetime in seconds. Null preserves the application default. |
+| tolgee.oauth2.grantCleanupCron | string | `""` | Grant cleanup schedule in Spring six-field cron format. Empty preserves the application default. |
+| tolgee.oauth2.grantRetentionDays | int | `nil` | Retention of spent grants after credential expiry in days. Null preserves the application default. |
+| tolgee.oauth2.refreshTokenValidityDays | int | `nil` | OAuth refresh token lifetime in days, restarted on refresh. Null preserves the application default. |
+| tolgee.rateLimits.lockWaitMs | int | `nil` | Maximum wait for a rate-limit bucket lock in milliseconds. Null preserves the application default. |
+| tolgee.rateLimits.maxConcurrentPerBucket | int | `nil` | Concurrent requests per rate-limit bucket per node. Zero disables the cap; null preserves the application default. |
 | tolgee.secretConfig | object | `{}` | Additional secret Tolgee/Spring properties in dot notation. |
 | tolgee.smtp.auth | string | `nil` | tolgee.smtp.auth |
 | tolgee.smtp.from | string | `""` | tolgee.smtp.from |

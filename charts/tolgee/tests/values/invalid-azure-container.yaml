@@ -1,0 +1,5 @@
+tolgee:
+  fileStorage:
+    azure:
+      enabled: true
+      connectionString: nonsecret-test-value

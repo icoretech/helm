@@ -294,6 +294,137 @@
       "additionalProperties": false,
       "properties": {
         "frontEndUrl": { "type": "string" },
+        "backEndUrl": {
+          "type": "string"
+        },
+        "oauth2": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "browserExtensionRedirectUris": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "cliRedirectUris": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "accessTokenValidityMinutes": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "refreshTokenValidityDays": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "authorizationCodeValiditySeconds": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "consentValiditySeconds": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "grantRetentionDays": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "grantCleanupCron": {
+              "type": "string"
+            }
+          }
+        },
+        "async": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "streaming": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "maxThreads": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "queueCapacity": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "keepAliveSeconds": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                }
+              }
+            },
+            "background": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "maxThreads": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "keepAliveSeconds": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "rateLimits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "lockWaitMs": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "maxConcurrentPerBucket": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
         "authentication": {
           "type": "object",
           "additionalProperties": false,
@@ -364,6 +495,131 @@
           "additionalProperties": false,
           "properties": {
             "fsDataPath": { "type": "string" },
+            "azure": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "containerName": {
+                  "type": "string"
+                },
+                "connectionString": {
+                  "type": "string"
+                },
+                "connectionStringRef": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    }
+                  },
+                  "anyOf": [
+                    {
+                      "properties": {
+                        "name": {
+                          "const": ""
+                        },
+                        "key": {
+                          "const": ""
+                        }
+                      }
+                    },
+                    {
+                      "required": [
+                        "name",
+                        "key"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "pattern": "\\S"
+                        },
+                        "key": {
+                          "type": "string",
+                          "minLength": 1,
+                          "pattern": "\\S"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "enabled"
+              ],
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "enabled": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "enabled"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "containerName"
+                    ],
+                    "properties": {
+                      "containerName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "\\S"
+                      }
+                    },
+                    "anyOf": [
+                      {
+                        "required": [
+                          "connectionString"
+                        ],
+                        "properties": {
+                          "connectionString": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      },
+                      {
+                        "required": [
+                          "connectionStringRef"
+                        ],
+                        "properties": {
+                          "connectionStringRef": {
+                            "required": [
+                              "name",
+                              "key"
+                            ],
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "pattern": "\\S"
+                              },
+                              "key": {
+                                "type": "string",
+                                "minLength": 1,
+                                "pattern": "\\S"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
             "s3": {
               "type": "object",
               "additionalProperties": false,
@@ -395,7 +651,14 @@
               "required": ["enabled"]
             }
           },
-          "required": ["fsDataPath", "s3"]
+          "required": ["fsDataPath", "s3"],
+          "not": {
+            "required": ["s3", "azure"],
+            "properties": {
+              "s3": { "properties": { "enabled": { "const": true } }, "required": ["enabled"] },
+              "azure": { "properties": { "enabled": { "const": true } }, "required": ["enabled"] }
+            }
+          }
         },
         "telemetry": {
           "type": "object",

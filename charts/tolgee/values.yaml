@@ -307,6 +307,47 @@ tolgee:
   # -- Public frontend URL (recommended for secure link generation).
   frontEndUrl: ""
 
+  # -- Public backend URL used for OAuth issuer and endpoint discovery. Empty preserves Tolgee's URL resolution.
+  backEndUrl: ""
+
+  oauth2:
+    # -- Exact browser extension redirect URIs. Empty leaves this OAuth client unregistered.
+    browserExtensionRedirectUris: []
+    # -- CLI loopback redirect URIs. Configure only when CLI OAuth login is needed; prefer a loopback IP literal.
+    cliRedirectUris: []
+    # -- (int) OAuth access token lifetime in minutes. Null preserves the application default.
+    accessTokenValidityMinutes: null
+    # -- (int) OAuth refresh token lifetime in days, restarted on refresh. Null preserves the application default.
+    refreshTokenValidityDays: null
+    # -- (int) Authorization code lifetime in seconds. Null preserves the application default.
+    authorizationCodeValiditySeconds: null
+    # -- (int) Pending consent lifetime in seconds. Null preserves the application default.
+    consentValiditySeconds: null
+    # -- (int) Retention of spent grants after credential expiry in days. Null preserves the application default.
+    grantRetentionDays: null
+    # -- Grant cleanup schedule in Spring six-field cron format. Empty preserves the application default.
+    grantCleanupCron: ""
+
+  async:
+    streaming:
+      # -- (int) Maximum streaming threads. Null preserves the application default; zero or negative derives from the database pool. Keep below the database connection pool size.
+      maxThreads: null
+      # -- (int) Streaming queue capacity. Zero disables queuing; negative derives capacity; null preserves the application default.
+      queueCapacity: null
+      # -- (int) Idle streaming thread lifetime in seconds. Zero keeps core threads alive; null preserves the application default.
+      keepAliveSeconds: null
+    background:
+      # -- (int) Maximum background threads. Null preserves the application default; zero or negative derives from the database pool.
+      maxThreads: null
+      # -- (int) Idle background thread lifetime in seconds. Zero keeps core threads alive; null preserves the application default.
+      keepAliveSeconds: null
+
+  rateLimits:
+    # -- (int) Maximum wait for a rate-limit bucket lock in milliseconds. Null preserves the application default.
+    lockWaitMs: null
+    # -- (int) Concurrent requests per rate-limit bucket per node. Zero disables the cap; null preserves the application default.
+    maxConcurrentPerBucket: null
+
   authentication:
     # -- tolgee.authentication.enabled
     enabled: null
@@ -403,6 +444,19 @@ tolgee:
   fileStorage:
     # -- tolgee.file-storage.fs-data-path
     fsDataPath: /data
+
+    azure:
+      # -- Enable Azure Blob Storage. Cannot be enabled together with S3.
+      enabled: false
+      # -- Existing Azure Blob Storage container name.
+      containerName: ""
+      # -- Azure Storage connection string. Prefer connectionStringRef for credentials.
+      connectionString: ""
+      connectionStringRef:
+        # -- Existing secret containing the Azure connection string; takes priority over the inline value.
+        name: ""
+        # -- Secret key for the Azure connection string.
+        key: ""
 
     s3:
       # -- tolgee.file-storage.s3.enabled

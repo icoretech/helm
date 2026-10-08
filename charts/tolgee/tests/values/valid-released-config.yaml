@@ -1,0 +1,19 @@
+tolgee:
+  backEndUrl: https://api.example.com
+  oauth2:
+    browserExtensionRedirectUris:
+    - https://extension.example.com/callback
+    cliRedirectUris:
+    - http://127.0.0.1:9876/callback
+    grantRetentionDays: 0
+  async:
+    streaming:
+      maxThreads: -2
+      queueCapacity: -2
+      keepAliveSeconds: 0
+    background:
+      maxThreads: 0
+      keepAliveSeconds: 0
+  rateLimits:
+    lockWaitMs: 0
+    maxConcurrentPerBucket: 0

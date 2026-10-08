@@ -1,0 +1,51 @@
+suite: azure file storage
+templates:
+- deployment.yaml
+tests:
+- it: renders inline Azure storage only when enabled
+  values:
+  - values/valid-azure-inline.yaml
+  asserts:
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_ENABLED")].value
+      value: 'true'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_CONTAINER_NAME")].value
+      value: sample-files
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_CONNECTION_STRING")].value
+      value: nonsecret-test-connection-string
+- it: gives the connection secret ref priority and suppresses duplicate env entries
+  values:
+  - values/valid-azure-secretref.yaml
+  set:
+    tolgee.config:
+      tolgee.file-storage.azure.connection-string: ignored-config
+    tolgee.secretConfig:
+      tolgee.file-storage.azure.connection-string: ignored-secret-config
+    tolgee.extraEnv:
+    - name: TOLGEE_FILE_STORAGE_AZURE_CONNECTION_STRING
+      value: ignored-extra-env
+  asserts:
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_CONNECTION_STRING")].valueFrom.secretKeyRef
+      value:
+        name: sample-storage
+        key: connection-string
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_CONNECTION_STRING")].value
+  - lengthEqual:
+      path: spec.template.spec.containers[0].env
+      count: 10
+- it: does not emit disabled Azure configuration
+  values:
+  - values/valid-azure-secretref.yaml
+  set:
+    tolgee.fileStorage.azure.enabled: false
+  asserts:
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_ENABLED")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_CONTAINER_NAME")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_CONNECTION_STRING")]

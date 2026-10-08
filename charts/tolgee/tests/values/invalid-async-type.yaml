@@ -1,0 +1,4 @@
+tolgee:
+  async:
+    background:
+      maxThreads: 1.5

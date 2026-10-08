@@ -1,0 +1,271 @@
+suite: released application configuration
+templates:
+- deployment.yaml
+tests:
+- it: leaves new application defaults untouched
+  asserts:
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_BACK_END_URL")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_BROWSER_EXTENSION_REDIRECT_URIS")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CLI_REDIRECT_URIS")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_ACCESS_TOKEN_VALIDITY_MINUTES")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_REFRESH_TOKEN_VALIDITY_DAYS")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_AUTHORIZATION_CODE_VALIDITY_SECONDS")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CONSENT_VALIDITY_SECONDS")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_GRANT_RETENTION_DAYS")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_GRANT_CLEANUP_CRON")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_STREAMING_MAX_THREADS")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_STREAMING_QUEUE_CAPACITY")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_STREAMING_KEEP_ALIVE_SECONDS")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_BACKGROUND_MAX_THREADS")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_BACKGROUND_KEEP_ALIVE_SECONDS")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_RATE_LIMITS_LOCK_WAIT_MS")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_RATE_LIMITS_MAX_CONCURRENT_PER_BUCKET")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_ENABLED")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_CONTAINER_NAME")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_CONNECTION_STRING")]
+- it: maps OAuth URLs, comma-separated redirects, lifetimes, and zero-valued pool and rate controls
+  set:
+    tolgee.backEndUrl: https://api.example.com
+    tolgee.oauth2.browserExtensionRedirectUris:
+    - https://extension.example.com/callback
+    - https://other.example.com/callback
+    tolgee.oauth2.cliRedirectUris:
+    - http://127.0.0.1:9876/callback
+    - http://127.0.0.1:9877/callback
+    tolgee.oauth2.accessTokenValidityMinutes: 15
+    tolgee.oauth2.refreshTokenValidityDays: 20
+    tolgee.oauth2.authorizationCodeValiditySeconds: 120
+    tolgee.oauth2.consentValiditySeconds: 600
+    tolgee.oauth2.grantRetentionDays: 0
+    tolgee.oauth2.grantCleanupCron: 0 30 2 * * *
+    tolgee.async.streaming.maxThreads: 0
+    tolgee.async.streaming.queueCapacity: 0
+    tolgee.async.streaming.keepAliveSeconds: 0
+    tolgee.async.background.maxThreads: -2
+    tolgee.async.background.keepAliveSeconds: 0
+    tolgee.rateLimits.lockWaitMs: 0
+    tolgee.rateLimits.maxConcurrentPerBucket: 0
+  asserts:
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_BACK_END_URL")].value
+      value: https://api.example.com
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_BROWSER_EXTENSION_REDIRECT_URIS")].value
+      value: https://extension.example.com/callback,https://other.example.com/callback
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CLI_REDIRECT_URIS")].value
+      value: http://127.0.0.1:9876/callback,http://127.0.0.1:9877/callback
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_ACCESS_TOKEN_VALIDITY_MINUTES")].value
+      value: '15'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_REFRESH_TOKEN_VALIDITY_DAYS")].value
+      value: '20'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_AUTHORIZATION_CODE_VALIDITY_SECONDS")].value
+      value: '120'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CONSENT_VALIDITY_SECONDS")].value
+      value: '600'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_GRANT_RETENTION_DAYS")].value
+      value: '0'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_GRANT_CLEANUP_CRON")].value
+      value: 0 30 2 * * *
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_STREAMING_MAX_THREADS")].value
+      value: '0'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_STREAMING_QUEUE_CAPACITY")].value
+      value: '0'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_STREAMING_KEEP_ALIVE_SECONDS")].value
+      value: '0'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_BACKGROUND_MAX_THREADS")].value
+      value: '-2'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_BACKGROUND_KEEP_ALIVE_SECONDS")].value
+      value: '0'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_RATE_LIMITS_LOCK_WAIT_MS")].value
+      value: '0'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_RATE_LIMITS_MAX_CONCURRENT_PER_BUCKET")].value
+      value: '0'
+- it: preserves negative automatic pool and queue sizing sentinels
+  set:
+    tolgee.async.streaming.maxThreads: -3
+    tolgee.async.streaming.queueCapacity: -2
+    tolgee.async.background.maxThreads: 0
+  asserts:
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_STREAMING_MAX_THREADS")].value
+      value: '-3'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_STREAMING_QUEUE_CAPACITY")].value
+      value: '-2'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_BACKGROUND_MAX_THREADS")].value
+      value: '0'
+- it: deduplicates typed options against generic properties and extra env
+  set:
+    tolgee.backEndUrl: https://api.example.com
+    tolgee.oauth2.browserExtensionRedirectUris:
+    - https://extension.example.com/callback
+    - https://other.example.com/callback
+    tolgee.oauth2.cliRedirectUris:
+    - http://127.0.0.1:9876/callback
+    - http://127.0.0.1:9877/callback
+    tolgee.oauth2.accessTokenValidityMinutes: 15
+    tolgee.oauth2.refreshTokenValidityDays: 20
+    tolgee.oauth2.authorizationCodeValiditySeconds: 120
+    tolgee.oauth2.consentValiditySeconds: 600
+    tolgee.oauth2.grantRetentionDays: 0
+    tolgee.oauth2.grantCleanupCron: 0 30 2 * * *
+    tolgee.async.streaming.maxThreads: 0
+    tolgee.async.streaming.queueCapacity: 0
+    tolgee.async.streaming.keepAliveSeconds: 0
+    tolgee.async.background.maxThreads: -2
+    tolgee.async.background.keepAliveSeconds: 0
+    tolgee.rateLimits.lockWaitMs: 0
+    tolgee.rateLimits.maxConcurrentPerBucket: 0
+    tolgee.config:
+      tolgee.back-end-url: ignored-config
+      tolgee.oauth2.browser-extension-redirect-uris: ignored-config
+      tolgee.oauth2.cli-redirect-uris: ignored-config
+      tolgee.oauth2.access-token-validity-minutes: ignored-config
+      tolgee.oauth2.refresh-token-validity-days: ignored-config
+      tolgee.oauth2.authorization-code-validity-seconds: ignored-config
+      tolgee.oauth2.consent-validity-seconds: ignored-config
+      tolgee.oauth2.grant-retention-days: ignored-config
+      tolgee.oauth2.grant-cleanup-cron: ignored-config
+      tolgee.async.streaming.max-threads: ignored-config
+      tolgee.async.streaming.queue-capacity: ignored-config
+      tolgee.async.streaming.keep-alive-seconds: ignored-config
+      tolgee.async.background.max-threads: ignored-config
+      tolgee.async.background.keep-alive-seconds: ignored-config
+      tolgee.rate-limits.lock-wait-ms: ignored-config
+      tolgee.rate-limits.max-concurrent-per-bucket: ignored-config
+    tolgee.secretConfig:
+      tolgee.back-end-url: ignored-secret-config
+      tolgee.oauth2.browser-extension-redirect-uris: ignored-secret-config
+      tolgee.oauth2.cli-redirect-uris: ignored-secret-config
+      tolgee.oauth2.access-token-validity-minutes: ignored-secret-config
+      tolgee.oauth2.refresh-token-validity-days: ignored-secret-config
+      tolgee.oauth2.authorization-code-validity-seconds: ignored-secret-config
+      tolgee.oauth2.consent-validity-seconds: ignored-secret-config
+      tolgee.oauth2.grant-retention-days: ignored-secret-config
+      tolgee.oauth2.grant-cleanup-cron: ignored-secret-config
+      tolgee.async.streaming.max-threads: ignored-secret-config
+      tolgee.async.streaming.queue-capacity: ignored-secret-config
+      tolgee.async.streaming.keep-alive-seconds: ignored-secret-config
+      tolgee.async.background.max-threads: ignored-secret-config
+      tolgee.async.background.keep-alive-seconds: ignored-secret-config
+      tolgee.rate-limits.lock-wait-ms: ignored-secret-config
+      tolgee.rate-limits.max-concurrent-per-bucket: ignored-secret-config
+    tolgee.extraEnv:
+    - name: TOLGEE_BACK_END_URL
+      value: ignored-extra-env
+    - name: TOLGEE_OAUTH2_BROWSER_EXTENSION_REDIRECT_URIS
+      value: ignored-extra-env
+    - name: TOLGEE_OAUTH2_CLI_REDIRECT_URIS
+      value: ignored-extra-env
+    - name: TOLGEE_OAUTH2_ACCESS_TOKEN_VALIDITY_MINUTES
+      value: ignored-extra-env
+    - name: TOLGEE_OAUTH2_REFRESH_TOKEN_VALIDITY_DAYS
+      value: ignored-extra-env
+    - name: TOLGEE_OAUTH2_AUTHORIZATION_CODE_VALIDITY_SECONDS
+      value: ignored-extra-env
+    - name: TOLGEE_OAUTH2_CONSENT_VALIDITY_SECONDS
+      value: ignored-extra-env
+    - name: TOLGEE_OAUTH2_GRANT_RETENTION_DAYS
+      value: ignored-extra-env
+    - name: TOLGEE_OAUTH2_GRANT_CLEANUP_CRON
+      value: ignored-extra-env
+    - name: TOLGEE_ASYNC_STREAMING_MAX_THREADS
+      value: ignored-extra-env
+    - name: TOLGEE_ASYNC_STREAMING_QUEUE_CAPACITY
+      value: ignored-extra-env
+    - name: TOLGEE_ASYNC_STREAMING_KEEP_ALIVE_SECONDS
+      value: ignored-extra-env
+    - name: TOLGEE_ASYNC_BACKGROUND_MAX_THREADS
+      value: ignored-extra-env
+    - name: TOLGEE_ASYNC_BACKGROUND_KEEP_ALIVE_SECONDS
+      value: ignored-extra-env
+    - name: TOLGEE_RATE_LIMITS_LOCK_WAIT_MS
+      value: ignored-extra-env
+    - name: TOLGEE_RATE_LIMITS_MAX_CONCURRENT_PER_BUCKET
+      value: ignored-extra-env
+  asserts:
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_BACK_END_URL")].value
+      value: https://api.example.com
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_BROWSER_EXTENSION_REDIRECT_URIS")].value
+      value: https://extension.example.com/callback,https://other.example.com/callback
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CLI_REDIRECT_URIS")].value
+      value: http://127.0.0.1:9876/callback,http://127.0.0.1:9877/callback
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_ACCESS_TOKEN_VALIDITY_MINUTES")].value
+      value: '15'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_REFRESH_TOKEN_VALIDITY_DAYS")].value
+      value: '20'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_AUTHORIZATION_CODE_VALIDITY_SECONDS")].value
+      value: '120'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CONSENT_VALIDITY_SECONDS")].value
+      value: '600'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_GRANT_RETENTION_DAYS")].value
+      value: '0'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_GRANT_CLEANUP_CRON")].value
+      value: 0 30 2 * * *
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_STREAMING_MAX_THREADS")].value
+      value: '0'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_STREAMING_QUEUE_CAPACITY")].value
+      value: '0'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_STREAMING_KEEP_ALIVE_SECONDS")].value
+      value: '0'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_BACKGROUND_MAX_THREADS")].value
+      value: '-2'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_ASYNC_BACKGROUND_KEEP_ALIVE_SECONDS")].value
+      value: '0'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_RATE_LIMITS_LOCK_WAIT_MS")].value
+      value: '0'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_RATE_LIMITS_MAX_CONCURRENT_PER_BUCKET")].value
+      value: '0'
+  - lengthEqual:
+      path: spec.template.spec.containers[0].env
+      count: 23

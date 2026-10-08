@@ -1,0 +1,4 @@
+tolgee:
+  oauth2:
+    cliRedirectUris:
+    - ''

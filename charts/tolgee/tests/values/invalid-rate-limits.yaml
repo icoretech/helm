@@ -1,0 +1,3 @@
+tolgee:
+  rateLimits:
+    maxConcurrentPerBucket: -1
