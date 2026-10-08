@@ -1,0 +1,56 @@
+suite: strict token and scratch configuration
+templates:
+  - deployment.yaml
+tests:
+  - it: leaves upstream strict-token and scratch defaults unset
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="STRICT_TOKEN_USE")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name=="SCRATCH_DIR")]
+
+  - it: enables strict token authentication and uses the configured scratch root
+    values:
+      - values/valid-released-config.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="STRICT_TOKEN_USE")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SCRATCH_DIR")].value
+          value: /scratch/browserless
+
+  - it: renders explicit false and suppresses conflicting extra env values
+    set:
+      config.strictTokenUse: false
+      config.scratchDir: /scratch/browserless
+      extraEnv:
+        - name: STRICT_TOKEN_USE
+          value: "true"
+        - name: SCRATCH_DIR
+          value: /ignored
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="STRICT_TOKEN_USE")].value
+          value: "false"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SCRATCH_DIR")].value
+          value: /scratch/browserless
+      - lengthEqual:
+          path: spec.template.spec.containers[0].env
+          count: 9
+
+  - it: allows extra env to set options when typed values are unset
+    set:
+      extraEnv:
+        - name: STRICT_TOKEN_USE
+          value: "true"
+        - name: SCRATCH_DIR
+          value: /scratch/custom
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="STRICT_TOKEN_USE")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="SCRATCH_DIR")].value
+          value: /scratch/custom

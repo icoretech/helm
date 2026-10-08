@@ -57,6 +57,9 @@ config:
   # --   key: token
   tokenSecretRef: null
 
+  # -- (bool) Require TOKEN on all routes, including routes that normally opt out of authentication. Static files remain public. Null preserves the upstream default (false).
+  strictTokenUse: null
+
   # -- Debug selector (e.g. "-*" to reduce logs).
   debug: "-*"
 
@@ -113,6 +116,9 @@ config:
 
   # -- Data directory path.
   dataDir: null
+
+  # -- Root for Browserless-owned per-session temporary files. Null uses the upstream temporary directory; keep this separate from reusable browser profiles.
+  scratchDir: null
 
   # -- Download directory path.
   downloadDir: null

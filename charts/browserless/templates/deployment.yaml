@@ -79,6 +79,11 @@ spec:
               value: {{ printf "%v" (index $config "token") | quote }}
             {{- $_ := set $configEnv "TOKEN" true }}
             {{- end }}
+            {{- if and (hasKey $config "strictTokenUse") (ne (index $config "strictTokenUse") nil) }}
+            - name: STRICT_TOKEN_USE
+              value: {{ printf "%v" (index $config "strictTokenUse") | quote }}
+            {{- $_ := set $configEnv "STRICT_TOKEN_USE" true }}
+            {{- end }}
             {{- if and (hasKey $config "debug") (ne (index $config "debug") nil) (ne (printf "%v" (index $config "debug")) "") }}
             - name: DEBUG
               value: {{ printf "%v" (index $config "debug") | quote }}
@@ -173,6 +178,11 @@ spec:
             - name: DATA_DIR
               value: {{ printf "%v" . | quote }}
             {{- $_ := set $configEnv "DATA_DIR" true }}
+            {{- end }}
+            {{- with (index $config "scratchDir") }}
+            - name: SCRATCH_DIR
+              value: {{ printf "%v" . | quote }}
+            {{- $_ := set $configEnv "SCRATCH_DIR" true }}
             {{- end }}
             {{- with (index $config "downloadDir") }}
             - name: DOWNLOAD_DIR
