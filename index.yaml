@@ -3298,6 +3298,41 @@ entries:
         url: https://icoretech.github.io/helm/pgp-public-key.asc
     apiVersion: v2
     appVersion: v2.57.0
+    created: "2026-10-08T13:26:26.420130109Z"
+    description: Browserless v2 browser automation service for Kubernetes
+    digest: 54f6ea6dea306540893fe2b5c3f2901391d00fe496ba4576136dee1fadf4ca07
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/browserless/logo.svg
+    keywords:
+    - browserless
+    - chromium
+    - chrome
+    - firefox
+    - playwright
+    - puppeteer
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: browserless
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/browserless
+    - https://github.com/browserless/browserless
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/browserless-0.18.1/browserless-0.18.1.tgz
+    version: 0.18.1
+  - annotations:
+      artifacthub.io/images: |
+        - name: browserless-chromium
+          image: ghcr.io/browserless/chromium:v2.57.0
+      artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v2.57.0
     created: "2026-10-01T08:52:29.839735611Z"
     description: Browserless v2 browser automation service for Kubernetes
     digest: 72fc92b401a93a7dfb8661ec384ece9f338533db254bff77f1f904e4af1604d1
@@ -18922,6 +18957,44 @@ entries:
         url: https://icoretech.github.io/helm/pgp-public-key.asc
     apiVersion: v2
     appVersion: v3.226.3
+    created: "2026-10-08T13:26:26.599516168Z"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.17.2
+    description: Tolgee Platform Helm chart for Kubernetes
+    digest: 29bfbcf0f73d1a33e9a21a5ef771ba853f7346a902dd071a6b087de146f37c49
+    home: https://tolgee.io
+    icon: https://icoretech.github.io/helm/charts/tolgee/logo.svg
+    keywords:
+    - tolgee
+    - localization
+    - i18n
+    - l10n
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: tolgee
+    sources:
+    - https://github.com/tolgee/tolgee-platform
+    - https://github.com/icoretech/helm/tree/main/charts/tolgee
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/tolgee-0.52.1/tolgee-0.52.1.tgz
+    version: 0.52.1
+  - annotations:
+      artifacthub.io/images: |
+        - name: tolgee
+          image: tolgee/tolgee:v3.226.3
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v3.226.3
     created: "2026-10-08T12:16:02.332028637Z"
     dependencies:
     - condition: postgres.enabled
@@ -23898,4 +23971,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-08T12:16:02.332612629Z"
+generated: "2026-10-08T13:26:26.600240431Z"
