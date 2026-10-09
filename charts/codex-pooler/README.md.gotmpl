@@ -172,9 +172,9 @@ metadata:
 spec:
   interval: 5m
   install:
-    waitForJobs: true
+    disableWaitForJobs: false
   upgrade:
-    waitForJobs: true
+    disableWaitForJobs: false
   chart:
     spec:
       chart: codex-pooler
