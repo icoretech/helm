@@ -78,6 +78,8 @@ Startup ordering depends on the image. Images containing `CodexPooler.Platform.J
 
 Keep `app.replicaCount` at `1` unless app clustering is intentionally configured and verified. When `app.replicaCount` is `>= 2`, the chart requires app clustering and automatically enables websocket owner forwarding on app pods.
 
+Chart 0.12.0 removes the inert `app.websocketContinuity.allowUnsafeMultiReplica` setting. Remove that field from existing values, even when it is `false`: schema validation now rejects it. It never bypassed the clustering requirements. Multiple app replicas still require `clustering.enabled=true` and `clustering.participants.app=true`, with owner forwarding enabled automatically. This chart version does not publish a new application image; the default image remains `0.11.5` and its startup-gate limitation above still applies.
+
 ## Rolling Updates And Browser Affinity
 
 Codex Pooler keeps its compiled browser assets inside the release image. No shared object storage or external asset synchronization is required.

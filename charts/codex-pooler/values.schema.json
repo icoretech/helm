@@ -129,7 +129,6 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "allowUnsafeMultiReplica": { "type": "boolean" },
             "ownerForwarding": {
               "type": "object",
               "additionalProperties": false,

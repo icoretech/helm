@@ -3,6 +3,8 @@ set -euo pipefail
 
 CHART_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$CHART_DIR"
+scratch="$(mktemp -d)"
+trap 'rm -rf "$scratch"' EXIT
 
 echo "==> Helm version"
 helm version --short
@@ -23,15 +25,21 @@ expect_invalid() {
   local values_file="$1"
   echo "  - expecting failure: $values_file"
 
-  if helm lint . -f "$values_file" >/tmp/codex-pooler-schema-lint.err 2>&1; then
+  if helm lint . -f "$values_file" >"$scratch/lint.err" 2>&1; then
     echo "ERROR: helm lint unexpectedly succeeded for $values_file" >&2
-    cat /tmp/codex-pooler-schema-lint.err >&2 || true
+    cat "$scratch/lint.err" >&2 || true
     exit 1
   fi
 
-  if helm template invalid . -f "$values_file" >/tmp/codex-pooler-schema-template.out 2>/tmp/codex-pooler-schema-template.err; then
+  if helm template invalid . -f "$values_file" >"$scratch/template.out" 2>"$scratch/template.err"; then
     echo "ERROR: helm template unexpectedly succeeded for $values_file" >&2
-    cat /tmp/codex-pooler-schema-template.out >&2 || true
+    cat "$scratch/template.out" >&2 || true
+    exit 1
+  fi
+
+  if [[ -n "${2:-}" ]] && ! grep -F -- "$2" "$scratch/template.err" >/dev/null; then
+    echo "ERROR: expected schema failure naming $2 for $values_file" >&2
+    cat "$scratch/template.err" >&2
     exit 1
   fi
 }
@@ -50,8 +58,13 @@ for f in \
   expect_invalid "$f"
 done
 
+echo "==> Removed unsafe multi-replica values must be rejected even when false"
+for f in tests/values/invalid-unsafe-multi-replica-{true,false}.yaml; do
+  expect_invalid "$f" "allowUnsafeMultiReplica"
+done
+
 echo "==> preStop values remain shell-safe when schema validation is bypassed"
-adversarial_render="$(mktemp)"
+adversarial_render="$scratch/adversarial-render.yaml"
 helm template adversarial . \
   --skip-schema-validation \
   --show-only templates/app-deployment.yaml \

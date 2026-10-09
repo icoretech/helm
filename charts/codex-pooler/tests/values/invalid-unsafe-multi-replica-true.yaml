@@ -1,0 +1,6 @@
+app:
+  replicaCount: 2
+  websocketContinuity:
+    allowUnsafeMultiReplica: true
+clustering:
+  enabled: true

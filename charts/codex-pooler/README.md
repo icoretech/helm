@@ -18,7 +18,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.11.4 \
+  --version 0.12.0 \
   --values values.production.yaml
 ```
 
@@ -27,7 +27,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.11.4 \
+  --version 0.12.0 \
   --values values.production.yaml
 ```
 
@@ -77,6 +77,8 @@ Startup ordering depends on the image. Images containing `CodexPooler.Platform.J
 `helm rollback` renders the target revision's Job again, so it re-runs the migration with the rolled-back image. `Ecto.Migrator` applies only pending migrations and never reverses one, so that is a no-op when the schema is already ahead of the image.
 
 Keep `app.replicaCount` at `1` unless app clustering is intentionally configured and verified. When `app.replicaCount` is `>= 2`, the chart requires app clustering and automatically enables websocket owner forwarding on app pods.
+
+Chart 0.12.0 removes the inert `app.websocketContinuity.allowUnsafeMultiReplica` setting. Remove that field from existing values, even when it is `false`: schema validation now rejects it. It never bypassed the clustering requirements. Multiple app replicas still require `clustering.enabled=true` and `clustering.participants.app=true`, with owner forwarding enabled automatically. This chart version does not publish a new application image; the default image remains `0.11.5` and its startup-gate limitation above still applies.
 
 ## Rolling Updates And Browser Affinity
 
@@ -176,7 +178,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.11.4"
+      version: "0.12.0"
       sourceRef:
         kind: HelmRepository
         name: icoretech
