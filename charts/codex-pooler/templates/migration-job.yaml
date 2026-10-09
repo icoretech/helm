@@ -6,10 +6,10 @@
 # is created after the Secret (Helm orders Secret before Job), belongs to the
 # release, is visible in `helm get manifest`, and goes away with it.
 #
-# Ordering for the workloads is enforced where it belongs: every role's
-# readiness probe asks the release whether the schema is usable, so a pod cannot
-# serve ahead of the migration it needs. The name carries the release revision
-# because a Job's pod template is immutable and every upgrade renders a new one.
+# Images containing Platform.JobRuntime check their required schema before
+# starting Oban queues or plugins. Readiness alone does not order background
+# work on older images. The name carries the release revision because a Job's
+# pod template is immutable and every upgrade renders a new one.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -20,8 +20,8 @@ metadata:
 spec:
   ttlSecondsAfterFinished: {{ .Values.migrations.ttlSecondsAfterFinished }}
   # A migration that cannot start — a missing Secret key, an unreachable
-  # database — must fail the release instead of sitting active forever and
-  # hanging `helm install` until the client timeout.
+  # database — has a bounded lifetime. Helm reports Job failure when invoked
+  # with --wait --wait-for-jobs; readiness does not gate Oban on older images.
   backoffLimit: {{ .Values.migrations.backoffLimit }}
   activeDeadlineSeconds: {{ .Values.migrations.activeDeadlineSeconds }}
   template:

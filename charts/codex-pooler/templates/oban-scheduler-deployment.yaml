@@ -64,24 +64,19 @@ spec:
             {{- include "codex-pooler.env" . | nindent 12 }}
           # `rollout status` on these Deployments used to mean nothing: with no
           # probe at all, a worker reported Ready against a database with no
-          # schema. Readiness deliberately, not startup or liveness — restarting
-          # a container cannot apply a migration, so those would crash-loop.
+          # schema. This probe reports readiness; it cannot prevent queue or plugin
+          # startup. Images containing Platform.JobRuntime independently refuse
+          # Oban startup until their required schema is applied, and may restart
+          # while migrations are pending. Older images lack that startup gate.
           # `rpc` spawns a BEAM per call, hence the slow cadence and the
           # generous timeout; `ERL_AFLAGS=` clears inherited flags the same way
           # the app's preStop command does.
           #
-          # Two arms, because the first one is empty on every image published so
-          # far. `readiness_check/0` is a cross-repository contract like
-          # `prepare_shutdown/1` and verifies that every migration the image
-          # carries is applied — but it exists only in unreleased Pooler, so a
-          # wrapper that fell back to `:ok` made the probe answer Ready without
-          # touching the database on exactly the images operators can install.
-          # The fallback queries `schema_migrations` instead, which any image
-          # can answer, and requires at least one applied row: the table alone
-          # proves nothing, because Ecto creates it empty the first time a
-          # migrator starts. Both arms fail
-          # by raising: `rpc` discards return values, so an arm that returned
-          # `{:error, …}` would exit 0 and report Ready.
+          # Images exporting readiness_check/0 verify their complete required
+          # migration set; older images fall back to at least one applied row.
+          # Neither probe prevents background startup in an image without the
+          # independent JobRuntime gate. Both arms raise on failure because
+          # `rpc` discards return values and would otherwise exit successfully.
           #
           # `Code.ensure_loaded?` first: `function_exported?/3` answers false for
           # a module that is merely not loaded, which would route to the weaker

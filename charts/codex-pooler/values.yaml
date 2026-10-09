@@ -137,7 +137,7 @@ app:
 migrations:
   enabled: true
   ttlSecondsAfterFinished: 300
-  # -- Job retries before the migration is treated as failed. A migration that keeps failing must fail the release rather than retry indefinitely.
+  # -- Job retries before failure. Use Helm --wait --wait-for-jobs to make migration failure fail the release operation.
   backoffLimit: 3
   # -- Wall-clock budget for the migration Job (minimum 61s), including startup and all migration work. Releases supporting MIGRATION_ADVISORY_LOCK_WAIT_SECONDS receive a contention limit of min(600, deadline minus 60) seconds; older images ignore that setting.
   activeDeadlineSeconds: 900

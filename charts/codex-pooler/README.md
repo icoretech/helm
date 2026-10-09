@@ -18,7 +18,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.11.3 \
+  --version 0.11.4 \
   --values values.production.yaml
 ```
 
@@ -27,7 +27,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.11.3 \
+  --version 0.11.4 \
   --values values.production.yaml
 ```
 
@@ -67,12 +67,12 @@ App-only maintenance and releases with both Oban roles disabled or the worker sc
 
 The migration Job is part of the release, not a Helm hook, so it is visible in `helm get manifest` and removed by `helm uninstall`. Helm creates the Secret before the Job, and each release revision renders its own Job because a Job's pod template is immutable.
 
-Ordering is enforced by readiness rather than by a hook phase, and what that is worth depends on the image:
+Startup ordering depends on the image. Images containing `CodexPooler.Platform.JobRuntime` strictly check every migration they carry before each Oban start or restart. Worker, scheduler and combined roles refuse to start queues, staging or plugins while schema is missing or the database is unavailable; successful readiness from an earlier connection does not bypass this check. Complete migrations or restore connectivity to let normal restarts recover. This chart does not add the gate to older images: the default `0.11.5` image and older overrides retain their previous startup behavior. Readiness probes report state but cannot prevent their background work from starting.
 
-- the worker and scheduler readiness probes ask the release about the database. On an image that exports `CodexPooler.Release.readiness_check/0` they verify that every migration the image carries is applied. Published images do not export it, so the fallback only requires one applied `schema_migrations` row: it proves migration history has started, not that every migration is finished.
+- the worker and scheduler readiness probes ask the release about the database. Images exporting `CodexPooler.Release.readiness_check/0`, including `0.11.5`, verify every migration they carry. Older images use a fallback requiring one applied `schema_migrations` row: it proves migration history has started, not that every migration is finished. Neither probe prevents Oban startup without the independent image gate.
 - the app's readiness is `/readyz`, which reports database connectivity on images up to `0.7.8` and the applied schema on newer ones. On those older images an app pod can become Ready while the migration is still running.
 
-`helm test` waits up to nine minutes for every migration to become applied and fails if any remain pending, on any image — run it after an install or upgrade if you want a single answer. `helm --wait` does not wait for Jobs unless you also pass `--wait-for-jobs` (`spec.install.waitForJobs` and `spec.upgrade.waitForJobs` in a Flux `HelmRelease`); set it if you want a failed migration to fail the release rather than leave a Deployment that never becomes ready.
+`helm test` waits up to nine minutes for every migration to become applied and fails if any remain pending, on any image — run it after an install or upgrade if you want a single answer. `helm --wait` does not wait for Jobs unless you also pass `--wait-for-jobs` (`spec.install.disableWaitForJobs: false` and `spec.upgrade.disableWaitForJobs: false` in a Flux `HelmRelease`); use these wait settings to report migration failure as a failed release operation. Flux also requires waiting itself to remain enabled (`disableWait: false`). Waiting does not itself gate Oban startup. With `migrations.enabled=false`, apply the same image-required migrations externally before starting its job roles.
 
 `helm rollback` renders the target revision's Job again, so it re-runs the migration with the rolled-back image. `Ecto.Migrator` applies only pending migrations and never reverses one, so that is a no-op when the schema is already ahead of the image.
 
@@ -176,7 +176,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.11.3"
+      version: "0.11.4"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -268,7 +268,7 @@ spec:
 | ingress.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
 | ingress.tls | list | `[]` |  |
 | migrations.activeDeadlineSeconds | int | `900` | Wall-clock budget for the migration Job (minimum 61s), including startup and all migration work. Releases supporting MIGRATION_ADVISORY_LOCK_WAIT_SECONDS receive a contention limit of min(600, deadline minus 60) seconds; older images ignore that setting. |
-| migrations.backoffLimit | int | `3` | Job retries before the migration is treated as failed. A migration that keeps failing must fail the release rather than retry indefinitely. |
+| migrations.backoffLimit | int | `3` |  |
 | migrations.enabled | bool | `true` |  |
 | migrations.resources.limits.cpu | string | `"250m"` |  |
 | migrations.resources.limits.memory | string | `"384Mi"` |  |
