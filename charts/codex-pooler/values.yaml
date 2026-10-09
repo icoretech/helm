@@ -150,6 +150,8 @@ migrations:
       memory: 384Mi
 
 oban:
+  # -- Acknowledge a separate scheduler on the same PostgreSQL database and schema. Does not deploy or configure it.
+  externalScheduler: false
   worker:
     enabled: true
     podAnnotations: {}

@@ -280,3 +280,11 @@ codex-pooler.icoretech.io/cluster-member: "true"
       name: {{ include "codex-pooler.secretName" . }}
       key: upstream-secret-key-version
 {{- end -}}
+
+{{- define "codex-pooler.validateObanTopology" -}}
+{{- $workerRunning := and .Values.oban.worker.enabled (gt (int .Values.oban.worker.replicaCount) 0) -}}
+{{- $schedulerRunning := and .Values.oban.scheduler.enabled (gt (int .Values.oban.scheduler.replicaCount) 0) -}}
+{{- if and $workerRunning (not $schedulerRunning) (not .Values.oban.externalScheduler) -}}
+{{- fail "A running Oban worker requires a running local scheduler or oban.externalScheduler=true acknowledging a scheduler on the same PostgreSQL database and schema" -}}
+{{- end -}}
+{{- end -}}

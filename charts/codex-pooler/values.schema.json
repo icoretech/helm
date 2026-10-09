@@ -228,6 +228,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "externalScheduler": { "type": "boolean", "description": "Acknowledge a separate scheduler using the same PostgreSQL database and schema for Oban leadership, staging and maintenance." },
         "worker": { "$ref": "#/definitions/obanRole" },
         "scheduler": { "$ref": "#/definitions/obanRole" }
       }

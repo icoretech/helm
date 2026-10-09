@@ -18,7 +18,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.11.2 \
+  --version 0.11.3 \
   --values values.production.yaml
 ```
 
@@ -27,7 +27,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.11.2 \
+  --version 0.11.3 \
   --values values.production.yaml
 ```
 
@@ -58,6 +58,12 @@ Do not put upstream access tokens, API keys, cookies, `auth.json`, SMTP password
 - `oban.worker` runs background jobs with `OBAN_MODE=worker`
 - `oban.scheduler` runs scheduled jobs with `OBAN_MODE=scheduler`
 - `migrations` runs release migrations and imports the vendored pricing feed
+
+A worker with a positive replica count requires an enabled local scheduler with a positive replica count. Workers execute queues but cannot lead Oban: without a scheduler, due scheduled jobs and retries remain unpromoted. The scheduler owns leader-gated staging and Cron, Lifeline and Pruner maintenance; it does not execute queues.
+
+For a scheduler managed in another release, set `oban.externalScheduler: true` and disable or scale down this release's scheduler explicitly. This acknowledges that an operational scheduler uses the same PostgreSQL database, schema and Oban instance name. The flag does not deploy a scheduler, change database configuration, disable the local scheduler, or verify that an external scheduler exists. Multiple schedulers sharing that Oban identity elect one database leader for staging and maintenance; separate Oban identities do not share that election.
+
+App-only maintenance and releases with both Oban roles disabled or the worker scaled to zero remain valid. Those configurations do not execute background queues unless another release supplies workers.
 
 The migration Job is part of the release, not a Helm hook, so it is visible in `helm get manifest` and removed by `helm uninstall`. Helm creates the Secret before the Job, and each release revision renders its own Job because a Job's pod template is immutable.
 
@@ -170,7 +176,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.11.2"
+      version: "0.11.3"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -281,6 +287,7 @@ spec:
 | monitoring.serviceMonitor.scheme | string | `"http"` |  |
 | monitoring.serviceMonitor.scrapeTimeout | string | `"10s"` |  |
 | nameOverride | string | `""` |  |
+| oban.externalScheduler | bool | `false` | Acknowledge a separate scheduler on the same PostgreSQL database and schema. Does not deploy or configure it. |
 | oban.scheduler.affinity | object | `{}` |  |
 | oban.scheduler.enabled | bool | `true` |  |
 | oban.scheduler.nodeSelector | object | `{}` |  |

@@ -1,0 +1,95 @@
+suite: scheduler topology
+templates:
+  - oban-worker-deployment.yaml
+  - oban-scheduler-deployment.yaml
+tests:
+  - it: refuses a running worker with a disabled local scheduler
+    set:
+      oban.scheduler.enabled: false
+    asserts:
+      - failedTemplate:
+          errorMessage: A running Oban worker requires a running local scheduler or oban.externalScheduler=true acknowledging a scheduler on the same PostgreSQL database and schema
+        template: oban-worker-deployment.yaml
+  - it: refuses a running worker with a zero replica local scheduler
+    set:
+      oban.scheduler.replicaCount: 0
+    asserts:
+      - failedTemplate:
+          errorMessage: A running Oban worker requires a running local scheduler or oban.externalScheduler=true acknowledging a scheduler on the same PostgreSQL database and schema
+        template: oban-worker-deployment.yaml
+  - it: refuses the same leaderless topology when the app is disabled
+    set:
+      app.enabled: false
+      oban.scheduler.enabled: false
+    asserts:
+      - failedTemplate:
+          errorMessage: A running Oban worker requires a running local scheduler or oban.externalScheduler=true acknowledging a scheduler on the same PostgreSQL database and schema
+        template: oban-worker-deployment.yaml
+  - it: permits an acknowledged external scheduler with local scheduler disabled
+    set:
+      oban.externalScheduler: true
+      oban.scheduler.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 1
+        template: oban-worker-deployment.yaml
+      - hasDocuments:
+          count: 0
+        template: oban-scheduler-deployment.yaml
+  - it: permits an acknowledged external scheduler with local scheduler at zero
+    set:
+      oban.externalScheduler: true
+      oban.scheduler.replicaCount: 0
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+        template: oban-worker-deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 0
+        template: oban-scheduler-deployment.yaml
+  - it: acknowledgement alone neither disables the local scheduler nor changes the worker role
+    set:
+      oban.externalScheduler: true
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+        template: oban-scheduler-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_MODE")].value
+          value: worker
+        template: oban-worker-deployment.yaml
+  - it: permits app only maintenance with both Oban roles disabled
+    set:
+      oban.worker.enabled: false
+      oban.scheduler.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: oban-worker-deployment.yaml
+      - hasDocuments:
+          count: 0
+        template: oban-scheduler-deployment.yaml
+  - it: permits a zero worker count without a scheduler
+    set:
+      oban.worker.replicaCount: 0
+      oban.scheduler.enabled: false
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 0
+        template: oban-worker-deployment.yaml
+  - it: permits a scheduler only release
+    set:
+      app.enabled: false
+      oban.worker.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: oban-worker-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=="OBAN_MODE")].value
+          value: scheduler
+        template: oban-scheduler-deployment.yaml
