@@ -18,7 +18,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.12.0 \
+  --version 0.13.0 \
   --values values.production.yaml
 ```
 
@@ -27,7 +27,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.12.0 \
+  --version 0.13.0 \
   --values values.production.yaml
 ```
 
@@ -78,7 +78,7 @@ Startup ordering depends on the image. Images containing `CodexPooler.Platform.J
 
 Keep `app.replicaCount` at `1` unless app clustering is intentionally configured and verified. When `app.replicaCount` is `>= 2`, the chart requires app clustering and automatically enables websocket owner forwarding on app pods.
 
-Chart 0.12.0 removes the inert `app.websocketContinuity.allowUnsafeMultiReplica` setting. Remove that field from existing values, even when it is `false`: schema validation now rejects it. It never bypassed the clustering requirements. Multiple app replicas still require `clustering.enabled=true` and `clustering.participants.app=true`, with owner forwarding enabled automatically. The chart defaults to application image `0.12.2`; explicit older image overrides retain the startup limitations above.
+Chart 0.13.0 removes the inert `app.websocketContinuity.allowUnsafeMultiReplica` setting. Remove that field from existing values, even when it is `false`: schema validation now rejects it. It never bypassed the clustering requirements. Multiple app replicas still require `clustering.enabled=true` and `clustering.participants.app=true`, with owner forwarding enabled automatically. The chart defaults to application image `0.12.2`; explicit older image overrides retain the startup limitations above.
 
 ## Rolling Updates And Browser Affinity
 
@@ -178,7 +178,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.12.0"
+      version: "0.13.0"
       sourceRef:
         kind: HelmRepository
         name: icoretech
