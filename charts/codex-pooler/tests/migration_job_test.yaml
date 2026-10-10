@@ -8,8 +8,8 @@ suite: migration job ownership
 # uninstall` reported success and left it there.
 #
 # So the Job is an ordinary release manifest. Helm applies Secret before Job, the
-# Job belongs to the release, and ordering for the serving pods comes from their
-# readiness probes instead (see role_readiness_test.yaml).
+# Job belongs to the release, and serving pods wait in their read-only init
+# container before application startup (see migration_startup_test.yaml).
 templates:
   - migration-job.yaml
   - secret.yaml

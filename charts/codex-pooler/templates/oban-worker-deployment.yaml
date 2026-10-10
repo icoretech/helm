@@ -41,6 +41,8 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      initContainers:
+        {{- include "codex-pooler.migrationReadiness" . | nindent 8 }}
       containers:
         - name: oban-worker
           image: {{ include "codex-pooler.image" . }}
@@ -67,8 +69,8 @@ spec:
           # probe at all, a worker reported Ready against a database with no
           # schema. This probe reports readiness; it cannot prevent queue or plugin
           # startup. Images containing Platform.JobRuntime independently refuse
-          # Oban startup until their required schema is applied, and may restart
-          # while migrations are pending. Older images lack that startup gate.
+          # Oban startup until their required schema is applied. The init container
+          # waits before application startup, so pending migrations do not cause restarts.
           # `rpc` spawns a BEAM per call, hence the slow cadence and the
           # generous timeout; `ERL_AFLAGS=` clears inherited flags the same way
           # the app's preStop command does.

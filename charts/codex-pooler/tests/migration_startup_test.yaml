@@ -1,0 +1,75 @@
+suite: migration startup ordering
+templates:
+  - app-deployment.yaml
+  - oban-worker-deployment.yaml
+  - oban-scheduler-deployment.yaml
+tests:
+  - it: gates the app before any serving application starts
+    template: app-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-schema
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value: [timeout, 900s, /app/bin/codex_pooler, eval]
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: 'SELECT to_regclass'
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: 'version = ANY'
+      - notMatchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: 'Migrator\.(run|migrations)\(|ensure_all_started\(:codex_pooler'
+  - it: gates the worker on the same secret and image
+    template: oban-worker-deployment.yaml
+    set:
+      image.tag: candidate
+      secrets.existingSecret: existing-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: ghcr.io/icoretech/codex-pooler:candidate
+      - equal:
+          path: spec.template.spec.initContainers[0].env[?(@.name=="DATABASE_URL")].valueFrom.secretKeyRef.name
+          value: existing-secret
+      - equal:
+          path: spec.template.spec.initContainers[0].env[?(@.name=="OBAN_MODE")].value
+          value: web
+      - notExists:
+          path: spec.template.spec.initContainers[0].env[?(@.name=="PHX_SERVER")]
+  - it: also waits for out-of-band migrations when its Job is disabled
+    template: oban-scheduler-deployment.yaml
+    set:
+      migrations.enabled: false
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-schema
+  - it: keeps one startup budget derived from the existing migration deadline
+    template: app-deployment.yaml
+    set:
+      migrations.activeDeadlineSeconds: 180
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value: [timeout, 180s, /app/bin/codex_pooler, eval]
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: '\+ 170000'
+  - it: inventories hidden entries and rejects malformed or duplicate migration versions
+    template: app-deployment.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: 'File\.ls\(Ecto\.Migrator\.migrations_path\(repo\)\)'
+      - notMatchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: 'Path\.wildcard'
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: 'Enum\.uniq\(versions\) != versions'
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: 'schema_wait_migration_files_malformed'

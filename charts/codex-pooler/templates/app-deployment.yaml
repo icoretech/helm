@@ -45,6 +45,8 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      initContainers:
+        {{- include "codex-pooler.migrationReadiness" . | nindent 8 }}
       containers:
         - name: app
           image: {{ include "codex-pooler.image" . }}

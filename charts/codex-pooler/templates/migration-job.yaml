@@ -6,9 +6,9 @@
 # is created after the Secret (Helm orders Secret before Job), belongs to the
 # release, is visible in `helm get manifest`, and goes away with it.
 #
-# Images containing Platform.JobRuntime check their required schema before
-# starting Oban queues or plugins. Readiness alone does not order background
-# work on older images. The name carries the release revision because a Job's
+# Serving-role init containers read the image-required schema before starting
+# the application; this Job remains the only migration writer.
+# The name carries the release revision because a Job's
 # pod template is immutable and every upgrade renders a new one.
 apiVersion: batch/v1
 kind: Job

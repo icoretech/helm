@@ -139,7 +139,7 @@ migrations:
   ttlSecondsAfterFinished: 300
   # -- Job retries before failure. Use Helm --wait --wait-for-jobs to make migration failure fail the release operation.
   backoffLimit: 3
-  # -- Wall-clock budget for the migration Job (minimum 61s), including startup and all migration work. Releases supporting MIGRATION_ADVISORY_LOCK_WAIT_SECONDS receive a contention limit of min(600, deadline minus 60) seconds; older images ignore that setting.
+  # -- Wall-clock budget for the migration Job and each serving pod's read-only schema startup wait (minimum 61s). The startup wait leaves 10s for process startup/exit. Releases supporting MIGRATION_ADVISORY_LOCK_WAIT_SECONDS receive a contention limit of min(600, deadline minus 60) seconds; older images ignore that setting.
   activeDeadlineSeconds: 900
   resources:
     requests:
