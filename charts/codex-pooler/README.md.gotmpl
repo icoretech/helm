@@ -128,7 +128,11 @@ At termination, the app first closes admission for new upstream dispatches, then
 - direct websocket turns being handled by the pod
 - proxy turns whose websocket is on the pod while their owner runs on another app pod
 
-The drain waits for these activities together, not one class after another. A turn that finishes naturally within the budget is allowed to complete. A turn still active at the deadline is finalized as `owner_drained`; clients should use their normal reconnect or retry path. New work that reaches the pod after the cutoff is rejected before upstream dispatch.
+The drain waits for these activities together, not one class after another. New upstream dispatches are refused once admission closes. Work already admitted retains only the right to complete that exact execution; it does not authorize another request or transfer completion authority to a replacement owner.
+
+Native compaction needs an application image that retains admitted collection through owner drain. For that execution, collecting a provider terminal and settling the request are separate from handing the result to the downstream client. The runtime waits within the existing budget for the matching request/attempt settlement and delivery receipt; provider completion or a successful database row alone does not establish client delivery. Cancellation, lost ownership, and the drain cutoff still prevent a late result from becoming a success. The chart hook cannot add this behavior to an older application image.
+
+A turn still active at the deadline is finalized as `owner_drained`; clients should use their normal reconnect or retry path. The preStop hook writes the readiness-withdrawal marker before its drain RPC, then keeps the configured 10-second wait before SIGTERM. The app's total termination grace period remains 120 seconds, with an 85-second drain setting; compaction does not extend those budgets. Owner drain and proxy drain are distinct: terminating only the proxy does not demonstrate completion during termination of the pod that owns the upstream compaction.
 
 This guarantee is Kubernetes- and ingress-controller-neutral: it does not depend on a particular ingress annotation, shared asset store, or external rollout controller. It takes effect only after the rollout that introduces this behavior has replaced all older app pods, because a terminating pod running an earlier release cannot apply the new admission and drain protocol.
 
