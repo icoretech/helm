@@ -5808,6 +5808,51 @@ entries:
         url: https://icoretech.github.io/helm/pgp-public-key.asc
     apiVersion: v2
     appVersion: 0.12.3
+    created: "2026-10-11T11:58:07.967964824Z"
+    description: Self-hosted gateway for sharing Codex account capacity across trusted
+      agents and tools
+    digest: 15500c6e37351aea9e2d7cec29f562d7c81d23477d2fb64ac6d887b71e591a52
+    home: https://www.codex-pooler.com
+    icon: https://icoretech.github.io/helm/charts/codex-pooler/logo.png
+    keywords:
+    - codex
+    - openai
+    - gateway
+    - pooler
+    - ai
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: codex-pooler
+    sources:
+    - https://github.com/icoretech/codex-pooler
+    - https://github.com/icoretech/helm/tree/main/charts/codex-pooler
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/codex-pooler-0.13.3/codex-pooler-0.13.3.tgz
+    version: 0.13.3
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/images: |
+        - name: codex-pooler
+          image: ghcr.io/icoretech/codex-pooler:0.12.3
+      artifacthub.io/license: Elastic-2.0
+      artifacthub.io/links: |
+        - name: Website
+          url: https://www.codex-pooler.com
+        - name: Documentation
+          url: https://www.codex-pooler.com/docs/
+        - name: X
+          url: https://x.com/icoretech_inc
+        - name: Reddit
+          url: https://reddit.com/r/CodexPooler
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 0.12.3
     created: "2026-10-10T17:54:08.736521288Z"
     description: Self-hosted gateway for sharing Codex account capacity across trusted
       agents and tools
@@ -24272,4 +24317,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-10T17:54:08.737580447Z"
+generated: "2026-10-11T11:58:07.968774262Z"
