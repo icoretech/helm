@@ -23,7 +23,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.13.1 \
+  --version 0.13.3 \
   --values values.production.yaml
 ```
 
@@ -32,7 +32,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.13.1 \
+  --version 0.13.3 \
   --values values.production.yaml
 ```
 
@@ -72,18 +72,22 @@ App-only maintenance and releases with both Oban roles disabled or the worker sc
 
 The migration Job is part of the release, not a Helm hook, so it is visible in `helm get manifest` and removed by `helm uninstall`. Helm creates the Secret before the Job, and each release revision renders its own Job because a Job's pod template is immutable.
 
-Startup ordering depends on the image. Images containing `CodexPooler.Platform.JobRuntime` strictly check every migration they carry before each Oban start or restart. Worker, scheduler and combined roles refuse to start queues, staging or plugins while schema is missing or the database is unavailable; successful readiness from an earlier connection does not bypass this check. Complete migrations or restore connectivity to let normal restarts recover. The default `0.12.2` image includes this gate. Older image overrides such as `0.11.5` retain their previous startup behavior and require migrations before starting job roles. Readiness probes report state but cannot prevent background work from starting on those older images.
+Each app, worker and scheduler pod first runs a `wait-for-schema` init container using its own application image and database Secret. It starts only the repository dependencies, reads that image's migration versions and waits until every version is present in the database. It neither starts the application nor creates tables or runs migrations: the migration Job remains the only migration writer. This orders startup on fresh installs and upgrades before heartbeat, settings, request handling or background jobs can touch an incomplete schema.
 
-- the worker and scheduler readiness probes ask the release about the database. Images exporting `CodexPooler.Release.readiness_check/0`, including `0.11.5`, verify every migration they carry. Older images use a fallback requiring one applied `schema_migrations` row: it proves migration history has started, not that every migration is finished. Neither probe prevents Oban startup without the independent image gate.
-- the app's readiness is `/readyz`, which reports database connectivity on images up to `0.7.8` and the applied schema on newer ones. On those older images an app pod can become Ready while the migration is still running.
+The startup wait also applies when `migrations.enabled=false`, so externally managed migrations must complete before the serving containers can start. Its outer process timeout uses `migrations.activeDeadlineSeconds`; the read-only loop leaves ten seconds for process startup and exit and bounds each query by the remaining monotonic deadline. A missing schema leaves the pod in initialization rather than starting an application that must crash and restart. A timeout reports `schema_wait_timeout`; inspect the migration Job and database connectivity instead of increasing readiness delays.
 
-`helm test` waits up to nine minutes for every migration to become applied and fails if any remain pending, on any image — run it after an install or upgrade if you want a single answer. `helm --wait` does not wait for Jobs unless you also pass `--wait-for-jobs` (`spec.install.disableWaitForJobs: false` and `spec.upgrade.disableWaitForJobs: false` in a Flux `HelmRelease`); use these wait settings to report migration failure as a failed release operation. Flux also requires waiting itself to remain enabled (`disableWait: false`). Waiting does not itself gate Oban startup. With `migrations.enabled=false`, apply the same image-required migrations externally before starting its job roles.
+Images containing `CodexPooler.Platform.JobRuntime`, including the default `0.12.3`, additionally recheck the required schema before each Oban start or restart. This remains a runtime safeguard if the schema becomes unavailable after initialization. Readiness probes report serving state separately:
+
+- the worker and scheduler readiness probes ask the release about the database. Images exporting `CodexPooler.Release.readiness_check/0`, including `0.11.5`, verify every migration they carry. Older images use a fallback requiring one applied `schema_migrations` row. The init container supplies the complete startup check even for those older images.
+- the app's readiness is `/readyz`, which reports database connectivity on images up to `0.7.8` and the applied schema on newer ones. It runs only after the startup schema wait succeeds.
+
+`helm test` waits up to nine minutes for every migration to become applied and fails if any remain pending, on any image — run it after an install or upgrade if you want a single answer. `helm --wait` does not wait for Jobs unless you also pass `--wait-for-jobs` (`spec.install.disableWaitForJobs: false` and `spec.upgrade.disableWaitForJobs: false` in a Flux `HelmRelease`); use these wait settings to report migration failure as a failed release operation. Flux also requires waiting itself to remain enabled (`disableWait: false`). These Helm flags report completion; the pod init container supplies startup ordering.
 
 `helm rollback` renders the target revision's Job again, so it re-runs the migration with the rolled-back image. `Ecto.Migrator` applies only pending migrations and never reverses one, so that is a no-op when the schema is already ahead of the image.
 
 Keep `app.replicaCount` at `1` unless app clustering is intentionally configured and verified. When `app.replicaCount` is `>= 2`, the chart requires app clustering and automatically enables websocket owner forwarding on app pods.
 
-Chart 0.13.0 removes the inert `app.websocketContinuity.allowUnsafeMultiReplica` setting. Remove that field from existing values, even when it is `false`: schema validation now rejects it. It never bypassed the clustering requirements. Multiple app replicas still require `clustering.enabled=true` and `clustering.participants.app=true`, with owner forwarding enabled automatically. The chart defaults to application image `0.12.2`; explicit older image overrides retain the startup limitations above.
+Chart 0.13.0 removes the inert `app.websocketContinuity.allowUnsafeMultiReplica` setting. Remove that field from existing values, even when it is `false`: schema validation now rejects it. It never bypassed the clustering requirements. Multiple app replicas still require `clustering.enabled=true` and `clustering.participants.app=true`, with owner forwarding enabled automatically. The chart defaults to application image `0.12.3`; explicit older image overrides retain the startup limitations above.
 
 ## Rolling Updates And Browser Affinity
 
@@ -133,7 +137,11 @@ At termination, the app first closes admission for new upstream dispatches, then
 - direct websocket turns being handled by the pod
 - proxy turns whose websocket is on the pod while their owner runs on another app pod
 
-The drain waits for these activities together, not one class after another. A turn that finishes naturally within the budget is allowed to complete. A turn still active at the deadline is finalized as `owner_drained`; clients should use their normal reconnect or retry path. New work that reaches the pod after the cutoff is rejected before upstream dispatch.
+The drain waits for these activities together, not one class after another. New upstream dispatches are refused once admission closes. Work already admitted retains only the right to complete that exact execution; it does not authorize another request or transfer completion authority to a replacement owner.
+
+Native compaction needs an application image that retains admitted collection through owner drain. For that execution, collecting a provider terminal and settling the request are separate from handing the result to the downstream client. The runtime waits within the existing budget for the matching request/attempt settlement and delivery receipt; provider completion or a successful database row alone does not establish client delivery. Cancellation, lost ownership, and the drain cutoff still prevent a late result from becoming a success. The chart hook cannot add this behavior to an older application image.
+
+A turn still active at the deadline is finalized as `owner_drained`; clients should use their normal reconnect or retry path. The preStop hook writes the readiness-withdrawal marker before its drain RPC, then keeps the configured 10-second wait before SIGTERM. The app's total termination grace period remains 120 seconds, with an 85-second drain setting; compaction does not extend those budgets. Owner drain and proxy drain are distinct: terminating only the proxy does not demonstrate completion during termination of the pod that owns the upstream compaction.
 
 This guarantee is Kubernetes- and ingress-controller-neutral: it does not depend on a particular ingress annotation, shared asset store, or external rollout controller. It takes effect only after the rollout that introduces this behavior has replaced all older app pods, because a terminating pod running an earlier release cannot apply the new admission and drain protocol.
 
@@ -183,7 +191,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.13.1"
+      version: "0.13.3"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -274,7 +282,7 @@ spec:
 | ingress.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
 | ingress.tls | list | `[]` |  |
-| migrations.activeDeadlineSeconds | int | `900` | Wall-clock budget for the migration Job (minimum 61s), including startup and all migration work. Releases supporting MIGRATION_ADVISORY_LOCK_WAIT_SECONDS receive a contention limit of min(600, deadline minus 60) seconds; older images ignore that setting. |
+| migrations.activeDeadlineSeconds | int | `900` | Wall-clock budget for the migration Job and each serving pod's read-only schema startup wait (minimum 61s). The startup wait leaves 10s for process startup/exit. Releases supporting MIGRATION_ADVISORY_LOCK_WAIT_SECONDS receive a contention limit of min(600, deadline minus 60) seconds; older images ignore that setting. |
 | migrations.backoffLimit | int | `3` |  |
 | migrations.enabled | bool | `true` |  |
 | migrations.resources.limits.cpu | string | `"250m"` |  |
