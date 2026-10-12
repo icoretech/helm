@@ -166,6 +166,34 @@ tests:
             - -ec
             - 'touch "$CODEX_POOLER_DRAIN_MARKER_PATH" || true; ERL_AFLAGS= timeout 87s /app/bin/codex_pooler rpc "if Code.ensure_loaded?(CodexPooler.Release) and function_exported?(CodexPooler.Release, :prepare_shutdown, 0), do: CodexPooler.Release.prepare_shutdown(), else: CodexPooler.Gateway.Transports.Websocket.RolloutDrain.drain_for_shutdown()" || true; sleep 10'
 
+  - it: keeps clustered receipt continuation inside the existing app shutdown budget
+    template: app-deployment.yaml
+    set:
+      clustering.enabled: true
+      app.replicaCount: 2
+    asserts:
+      - equal:
+          path: spec.minReadySeconds
+          value: 120
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 120
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="CODEX_POOLER_WEBSOCKET_DRAIN_TIMEOUT_MS")].value
+          value: "85000"
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="CODEX_POOLER_WEBSOCKET_OWNER_FORWARDING")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="app")].lifecycle.preStop.exec.command
+          value:
+            - /bin/sh
+            - -ec
+            - 'touch "$CODEX_POOLER_DRAIN_MARKER_PATH" || true; ERL_AFLAGS= timeout 87s /app/bin/codex_pooler rpc "if Code.ensure_loaded?(CodexPooler.Release) and function_exported?(CodexPooler.Release, :prepare_shutdown, 0), do: CodexPooler.Release.prepare_shutdown(), else: CodexPooler.Gateway.Transports.Websocket.RolloutDrain.drain_for_shutdown()" || true; sleep 10'
+
   - it: derives the RPC shell timeout and accepts the exact lifecycle budget
     template: app-deployment.yaml
     set:
@@ -176,6 +204,9 @@ tests:
       - equal:
           path: spec.template.spec.terminationGracePeriodSeconds
           value: 27
+      - equal:
+          path: spec.template.spec.containers[?(@.name=="app")].env[?(@.name=="CODEX_POOLER_WEBSOCKET_DRAIN_TIMEOUT_MS")].value
+          value: "7000"
       - equal:
           path: spec.template.spec.containers[?(@.name=="app")].lifecycle.preStop.exec.command
           value:

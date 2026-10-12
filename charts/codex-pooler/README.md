@@ -18,7 +18,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.13.4 \
+  --version 0.13.5 \
   --values values.production.yaml
 ```
 
@@ -27,7 +27,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.13.4 \
+  --version 0.13.5 \
   --values values.production.yaml
 ```
 
@@ -131,14 +131,19 @@ At termination, the app first closes admission for new upstream dispatches, then
 - local websocket owners
 - direct websocket turns being handled by the pod
 - proxy turns whose websocket is on the pod while their owner runs on another app pod
+- retained accounting receipt settlements, including workers registered after drain begins
 
 The drain waits for these activities together, not one class after another. New upstream dispatches are refused once admission closes. Work already admitted retains only the right to complete that exact execution; it does not authorize another request or transfer completion authority to a replacement owner.
 
 Native compaction needs an application image that retains admitted collection through owner drain. For that execution, collecting a provider terminal and settling the request are separate from handing the result to the downstream client. The runtime waits within the existing budget for the matching request/attempt settlement and delivery receipt; provider completion or a successful database row alone does not establish client delivery. Cancellation, lost ownership, and the drain cutoff still prevent a late result from becoming a success. The chart hook cannot add this behavior to an older application image.
 
-A turn still active at the deadline is finalized as `owner_drained`; clients should use their normal reconnect or retry path. The preStop hook writes the readiness-withdrawal marker before its drain RPC, then keeps the configured 10-second wait before SIGTERM. The app's total termination grace period remains 120 seconds, with an 85-second drain setting; compaction does not extend those budgets. Owner drain and proxy drain are distinct: terminating only the proxy does not demonstrate completion during termination of the pod that owns the upstream compaction.
+Retained usage also requires an application image that supports receipt continuation. When trusted provider usage has already reached the owner, the runtime hands it to an independently supervised receipt worker before blocking drain persistence. The worker can finish accounting after the client disconnects or the owner exits; it does not keep cancelled generation running or change a cancelled delivery into a success. Usage that never arrived remains unknown, and an in-memory receipt is not durable until its database commit succeeds.
 
-This guarantee is Kubernetes- and ingress-controller-neutral: it does not depend on a particular ingress annotation, shared asset store, or external rollout controller. It takes effect only after the rollout that introduces this behavior has replaced all older app pods, because a terminating pod running an earlier release cannot apply the new admission and drain protocol.
+The drain includes late receipt workers and waits for their producers to finish handing off. Owners, turns and receipts share the same absolute shutdown deadline and existing bounded settlement allowance; a late worker does not restart the clock. The runtime reports failed or aborted receipt work explicitly instead of treating an unfinished settlement as a successful drain. Process, node or database failure can still prevent a commit.
+
+A turn still active at the deadline is finalized as `owner_drained`; clients should use their normal reconnect or retry path. The preStop hook writes the readiness-withdrawal marker before its drain RPC, then keeps the configured 10-second wait before SIGTERM. The app's total termination grace period remains 120 seconds, with an 85-second drain setting; compaction and retained accounting receipts do not extend those budgets. Owner drain and proxy drain are distinct: terminating only the proxy does not demonstrate completion during termination of the pod that owns the upstream compaction.
+
+This guarantee is Kubernetes- and ingress-controller-neutral: it does not depend on a particular ingress annotation, shared asset store, or external rollout controller. It takes effect only after the rollout that introduces this behavior has replaced all older app pods, because a terminating pod running an earlier release cannot apply the new admission and drain protocol. During a mixed-version rollout, older owners cannot acquire receipt retention or completion acknowledgement behavior from chart hooks or configuration; the owner application image must implement it.
 
 Browser affinity prevents cross-revision HTML and asset requests from bouncing between pods. It does not extend the websocket drain budget.
 
@@ -186,7 +191,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.13.4"
+      version: "0.13.5"
       sourceRef:
         kind: HelmRepository
         name: icoretech
@@ -215,7 +220,7 @@ spec:
 | app.affinity | object | `{}` |  |
 | app.drainMarkerPath | string | `"/tmp/codex-pooler-draining"` |  |
 | app.enabled | bool | `true` |  |
-| app.lifecycle.preStop.drainTimeoutSeconds | int | `85` | Maximum seconds to wait for the websocket rollout drain RPC before continuing pod shutdown. The drain returns as soon as in-flight turns finish, so the budget is only consumed while a long turn is actually running. Turns get about drainTimeoutSeconds minus 10.7 seconds; at 10 or less every drain cuts them at once. The default is sized so that window covers p99 in-flight turn durations instead of cutting at p95. |
+| app.lifecycle.preStop.drainTimeoutSeconds | int | `85` | Shared websocket rollout drain budget before continuing pod shutdown. Supporting application images include retained accounting receipt workers, including late handoffs, within the same absolute deadline and existing settlement allowance; older images cannot gain this behavior from the hook. The drain returns when admitted activity and receipt work finish. Turns get about drainTimeoutSeconds minus 10.7 seconds; at 10 or less every drain cuts them at once. The default is sized so that window covers p99 in-flight turn durations instead of cutting at p95. |
 | app.lifecycle.preStop.enabled | bool | `true` |  |
 | app.lifecycle.preStop.sleepSeconds | int | `10` | Seconds to keep the pod unready after the drain marker/RPC before Kubernetes sends SIGTERM. |
 | app.minReadySeconds | int | `120` | Seconds a newly ready app pod must stay ready before the rollout continues. Spacing the per-pod websocket drains keeps reconnecting clients from re-uploading their sessions all at once after a deploy; set 0 to disable the pause. |
@@ -241,7 +246,7 @@ spec:
 | app.startupProbe.timeoutSeconds | int | `2` |  |
 | app.strategy.maxSurge | int | `1` |  |
 | app.strategy.maxUnavailable | int | `0` |  |
-| app.terminationGracePeriodSeconds | int | `120` | Total shutdown budget. Formula: max(drainTimeoutSeconds + 2 seconds RPC allowance + sleepSeconds, 2 seconds RPC allowance + sleepSeconds + drainTimeoutSeconds for the full in-VM fallback) + 10 seconds endpoint shutdown + 5 seconds margin. |
+| app.terminationGracePeriodSeconds | int | `120` | Total shutdown budget, shared with retained accounting receipt continuation on supporting application images; receipt workers do not add another window. Formula: max(drainTimeoutSeconds + 2 seconds RPC allowance + sleepSeconds, 2 seconds RPC allowance + sleepSeconds + drainTimeoutSeconds for the full in-VM fallback) + 10 seconds endpoint shutdown + 5 seconds margin. |
 | app.tolerations | list | `[]` |  |
 | clustering.cookie.existingSecret | string | `""` |  |
 | clustering.cookie.existingSecretKey | string | `"release-cookie"` |  |
