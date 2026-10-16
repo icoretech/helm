@@ -5792,6 +5792,51 @@ entries:
       artifacthub.io/category: ai-machine-learning
       artifacthub.io/images: |
         - name: codex-pooler
+          image: ghcr.io/icoretech/codex-pooler:0.13.2
+      artifacthub.io/license: Elastic-2.0
+      artifacthub.io/links: |
+        - name: Website
+          url: https://www.codex-pooler.com
+        - name: Documentation
+          url: https://www.codex-pooler.com/docs/
+        - name: X
+          url: https://x.com/icoretech_inc
+        - name: Reddit
+          url: https://reddit.com/r/CodexPooler
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 0.13.2
+    created: "2026-10-16T00:41:12.292542518Z"
+    description: Self-hosted gateway for sharing Codex account capacity across trusted
+      agents and tools
+    digest: 9a65e55382b00d262b6fefa07ace4b0de15d75f9c48e558f85adf6e7dcacb5d6
+    home: https://www.codex-pooler.com
+    icon: https://icoretech.github.io/helm/charts/codex-pooler/logo.png
+    keywords:
+    - codex
+    - openai
+    - gateway
+    - pooler
+    - ai
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: codex-pooler
+    sources:
+    - https://github.com/icoretech/codex-pooler
+    - https://github.com/icoretech/helm/tree/main/charts/codex-pooler
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/codex-pooler-0.14.1/codex-pooler-0.14.1.tgz
+    version: 0.14.1
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/images: |
+        - name: codex-pooler
           image: ghcr.io/icoretech/codex-pooler:0.13.0
       artifacthub.io/license: Elastic-2.0
       artifacthub.io/links: |
@@ -24725,4 +24770,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-15T18:59:42.378939456Z"
+generated: "2026-10-16T00:41:12.293172319Z"
