@@ -18360,6 +18360,38 @@ entries:
   - annotations:
       artifacthub.io/images: |
         - name: pgbouncer
+          image: ghcr.io/icoretech/pgbouncer-docker:1.26.1
+      artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.26.1
+    created: "2026-10-19T12:17:48.808356821Z"
+    description: A Helm chart for deploying PgBouncer, a PostgreSQL connection pooler,
+      on Kubernetes
+    digest: d6aad21b9dd8e8976b0282519b8bcc2aa373316448986e21ebd21d9576873579
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/pgbouncer/logo.png
+    keywords:
+    - pgbouncer
+    - postgresql
+    - kubernetes
+    kubeVersion: '>= 1.31.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: pgbouncer
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/pgbouncer
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/pgbouncer-4.2.4/pgbouncer-4.2.4.tgz
+    version: 4.2.4
+  - annotations:
+      artifacthub.io/images: |
+        - name: pgbouncer
           image: ghcr.io/icoretech/pgbouncer-docker:1.26.0
       artifacthub.io/license: MIT
       artifacthub.io/signKey: |
@@ -25119,4 +25151,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-19T09:49:10.12862001Z"
+generated: "2026-10-19T12:17:48.809269099Z"
