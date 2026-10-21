@@ -5,6 +5,54 @@ entries:
       artifacthub.io/category: monitoring-logging
       artifacthub.io/images: |
         - name: airbroke
+          image: ghcr.io/icoretech/airbroke:1.4.4
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://i.imgur.com/hcwnz84.png
+        - title: Toolbox
+          url: https://i.imgur.com/b2NBh2i.png
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.4.4
+    created: "2026-10-21T14:36:56.984117026Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 4.1.5
+    description: Airbroke Helm chart for Kubernetes
+    digest: 5f468e2e5096bad7623a84279e954a93c865bb415fc71e932dfd365f629645d9
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-2.4.1/airbroke-2.4.1.tgz
+    version: 2.4.1
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/images: |
+        - name: airbroke
           image: ghcr.io/icoretech/airbroke:1.4.3
       artifacthub.io/license: MIT
       artifacthub.io/recommendations: |
@@ -12522,6 +12570,51 @@ entries:
     - https://github.com/icoretech/helm/releases/download/metamcp-0.1.0/metamcp-0.1.0.tgz
     version: 0.1.0
   multica:
+  - annotations:
+      artifacthub.io/images: |
+        - name: multica-backend
+          image: ghcr.io/multica-ai/multica-backend:v0.6.5
+        - name: multica-web
+          image: ghcr.io/multica-ai/multica-web:v0.6.5
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v0.6.5
+    created: "2026-10-21T14:36:57.180338169Z"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.19.3
+    - condition: redis.enabled
+      name: redis
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.27.4
+    description: Multica managed agents platform for Kubernetes
+    digest: e5fb6ba897dc0d96f3a983ac99d430543812d7e3fdeb7ef5681e1f11d9d90a30
+    home: https://github.com/multica-ai/multica
+    icon: https://raw.githubusercontent.com/multica-ai/multica/main/docs/assets/logo-light.svg
+    keywords:
+    - multica
+    - agents
+    - codex
+    - claude-code
+    - ai
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: multica
+    sources:
+    - https://github.com/multica-ai/multica
+    - https://github.com/icoretech/helm/tree/main/charts/multica
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/multica-0.6.6/multica-0.6.6.tgz
+    version: 0.6.6
   - annotations:
       artifacthub.io/images: |
         - name: multica-backend
@@ -25324,4 +25417,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-21T04:14:38.917961995Z"
+generated: "2026-10-21T14:36:57.181856045Z"
