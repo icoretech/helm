@@ -129,6 +129,16 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^charts\\/codex-pooler\\/README\\.md$/"],
+      "matchStrings": [
+        "including the default `(?<currentValue>\\d+\\.\\d+\\.\\d+)`",
+        "The chart defaults to application image `(?<currentValue>\\d+\\.\\d+\\.\\d+)`"
+      ],
+      "depNameTemplate": "ghcr.io/icoretech/codex-pooler",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^charts\\/codex-pooler\\/Chart\\.yaml$/"],
       "matchStrings": ["image:\\s*ghcr\\.io\\/icoretech\\/codex-pooler:(?<currentValue>[^\\s]+)"],
       "depNameTemplate": "ghcr.io/icoretech/codex-pooler",
