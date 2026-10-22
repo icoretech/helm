@@ -49,7 +49,7 @@ config:
 image:
   browser: firefox
   # repository: ghcr.io/browserless/firefox # optional explicit override
-  # tag: v2.57.0                 # optional override
+  # tag: "" # defaults to the chart appVersion; set a tag to override
 ```
 
 ## Strict Token Authentication
