@@ -107,7 +107,7 @@ EXPECTED_STEPS: list[dict] = [
     {
         "name": None,
         "uses": SETUP_PYTHON_ACTION,
-        "with": {"python-version": "3.14", "check-latest": "true"},
+        "with": {"python-version": "3.15", "check-latest": "true"},
     },
     # `with: {version: …}` here would change which ct the pinned commands invoke.
     {"name": "Set up chart-testing", "uses": CHART_TESTING_ACTION},
