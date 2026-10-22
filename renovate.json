@@ -17,6 +17,16 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^\\.github\\/scripts\\/verify-ci-gate\\.py$/"],
+      "matchStrings": ["\"python-version\": \"(?<currentValue>\\d+\\.\\d+)\""],
+      "depNameTemplate": "python",
+      "packageNameTemplate": "actions/python-versions",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "npm",
+      "extractVersionTemplate": "^(?<version>\\d+\\.\\d+\\.\\d+)(-\\d+)?$"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^charts\\/airbroke\\/Chart\\.yaml$/"],
       "matchStrings": ["appVersion:\\s*\\\"?(?<currentValue>[^\\\"\\s]+)\\\"?"],
       "depNameTemplate": "ghcr.io/icoretech/airbroke",
@@ -152,7 +162,7 @@
   "packageRules": [
     {
       "matchManagers": ["custom.regex"],
-      "matchPackageNames": ["helm/helm"],
+      "matchPackageNames": ["helm/helm", "actions/python-versions"],
       "additionalBranchPrefix": "workflows-",
       "automerge": true,
       "platformAutomerge": true
