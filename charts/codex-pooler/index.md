@@ -23,7 +23,7 @@ helm repo add icoretech https://icoretech.github.io/helm
 helm repo update
 helm upgrade --install codex-pooler icoretech/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.14.10 \
+  --version 0.14.11 \
   --values values.production.yaml
 ```
 
@@ -32,7 +32,7 @@ OCI:
 ```bash
 helm upgrade --install codex-pooler oci://ghcr.io/icoretech/charts/codex-pooler \
   -n codex-pooler --create-namespace \
-  --version 0.14.10 \
+  --version 0.14.11 \
   --values values.production.yaml
 ```
 
@@ -76,7 +76,7 @@ Each app, worker and scheduler pod first runs a `wait-for-schema` init container
 
 The startup wait also applies when `migrations.enabled=false`, so externally managed migrations must complete before the serving containers can start. Its outer process timeout uses `migrations.activeDeadlineSeconds`; the read-only loop leaves ten seconds for process startup and exit and bounds each query by the remaining monotonic deadline. A missing schema leaves the pod in initialization rather than starting an application that must crash and restart. A timeout reports `schema_wait_timeout`; inspect the migration Job and database connectivity instead of increasing readiness delays.
 
-Images containing `CodexPooler.Platform.JobRuntime`, including the default `0.13.12`, additionally recheck the required schema before each Oban start or restart. This remains a runtime safeguard if the schema becomes unavailable after initialization. Readiness probes report serving state separately:
+Images containing `CodexPooler.Platform.JobRuntime`, including the default `0.13.14`, additionally recheck the required schema before each Oban start or restart. This remains a runtime safeguard if the schema becomes unavailable after initialization. Readiness probes report serving state separately:
 
 - the worker and scheduler readiness probes ask the release about the database. Images exporting `CodexPooler.Release.readiness_check/0`, including `0.11.5`, verify every migration they carry. Older images use a fallback requiring one applied `schema_migrations` row. The init container supplies the complete startup check even for those older images.
 - the app's readiness is `/readyz`, which reports database connectivity on images up to `0.7.8` and the applied schema on newer ones. It runs only after the startup schema wait succeeds.
@@ -87,7 +87,7 @@ Images containing `CodexPooler.Platform.JobRuntime`, including the default `0.13
 
 Keep `app.replicaCount` at `1` unless app clustering is intentionally configured and verified. When `app.replicaCount` is `>= 2`, the chart requires app clustering and automatically enables websocket owner forwarding on app pods.
 
-Chart 0.13.0 removes the inert `app.websocketContinuity.allowUnsafeMultiReplica` setting. Remove that field from existing values, even when it is `false`: schema validation now rejects it. It never bypassed the clustering requirements. Multiple app replicas still require `clustering.enabled=true` and `clustering.participants.app=true`, with owner forwarding enabled automatically. The chart defaults to application image `0.13.12`; explicit older image overrides retain the startup limitations above.
+Chart 0.13.0 removes the inert `app.websocketContinuity.allowUnsafeMultiReplica` setting. Remove that field from existing values, even when it is `false`: schema validation now rejects it. It never bypassed the clustering requirements. Multiple app replicas still require `clustering.enabled=true` and `clustering.participants.app=true`, with owner forwarding enabled automatically. The chart defaults to application image `0.13.14`; explicit older image overrides retain the startup limitations above.
 
 ## Rolling Updates And Browser Affinity
 
@@ -196,7 +196,7 @@ spec:
   chart:
     spec:
       chart: codex-pooler
-      version: "0.14.10"
+      version: "0.14.11"
       sourceRef:
         kind: HelmRepository
         name: icoretech
