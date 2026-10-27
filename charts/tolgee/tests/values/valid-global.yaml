@@ -1,0 +1,6 @@
+global:
+  environment: test
+  nested:
+    enabled: true
+    endpoints:
+      - https://example.com

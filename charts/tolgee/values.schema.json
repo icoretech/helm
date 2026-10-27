@@ -3,6 +3,7 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "global": { "type": "object" },
     "replicaCount": { "type": "integer", "minimum": 1 },
     "image": {
       "type": "object",

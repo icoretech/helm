@@ -1,3 +1,6 @@
+# -- Shared Helm values inherited from a parent chart. Does not map arbitrary globals to application environment variables.
+global: {}
+
 # -- Number of Tolgee replicas.
 replicaCount: 1
 

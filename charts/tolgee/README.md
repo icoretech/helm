@@ -35,6 +35,19 @@ helm upgrade --install tolgee oci://ghcr.io/icoretech/charts/tolgee \
   --set tolgee.authentication.jwtSecret="replace-with-a-strong-secret-at-least-32-characters"
 ```
 
+## Use as a Dependency
+
+The chart accepts Helm's shared `global` object when installed as a dependency of a parent chart. Global values are inherited by subcharts; Tolgee settings still use the chart's own configuration keys. Unknown keys outside `global` remain invalid.
+
+Parent chart values:
+
+```yaml
+global:
+  environment: test
+tolgee:
+  replicaCount: 1
+```
+
 ## External PostgreSQL Example
 
 ```yaml
@@ -340,6 +353,7 @@ spec:
 | deployment.progressDeadlineSeconds | int | `1800` | Time in seconds for the Deployment controller to wait before marking a rollout failed. |
 | deployment.strategy.type | string | `"Recreate"` | Deployment strategy. `Recreate` avoids RWO PVC multi-attach deadlocks during single-replica upgrades. |
 | fullnameOverride | string | `""` | Override fully-qualified release name. |
+| global | object | `{}` | Shared Helm values inherited from a parent chart. Does not map arbitrary globals to application environment variables. |
 | httpRoute.annotations | object | `{}` | HTTPRoute annotations. |
 | httpRoute.enabled | bool | `false` | Enable Gateway API HTTPRoute. |
 | httpRoute.hostnames | list | `[]` | Optional HTTPRoute hostnames. |

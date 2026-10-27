@@ -1,0 +1,9 @@
+tolgee:
+  postgres:
+    enabled: false
+  database:
+    external:
+      enabled: true
+      host: postgres.example.com
+      username: sample-user
+      password: sample-password

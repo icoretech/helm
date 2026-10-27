@@ -1,0 +1,7 @@
+apiVersion: v2
+name: sample-wrapper
+type: application
+version: 0.1.0
+dependencies:
+  - name: tolgee
+    version: "*"
