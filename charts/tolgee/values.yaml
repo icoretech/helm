@@ -314,10 +314,18 @@ tolgee:
   backEndUrl: ""
 
   oauth2:
-    # -- Exact browser extension redirect URIs. Empty leaves this OAuth client unregistered.
+    # -- (bool) Enable browser extension OAuth login. Null preserves the application default (disabled).
+    browserExtensionEnabled: null
+    # -- Exact browser extension redirect URIs. Empty retains the official redirects; use browserExtensionEnabled to enable the client.
     browserExtensionRedirectUris: []
-    # -- CLI loopback redirect URIs. Configure only when CLI OAuth login is needed; prefer a loopback IP literal.
+    # -- (bool) Enable CLI OAuth login. Null preserves the application default (enabled when an issuer is configured).
+    cliEnabled: null
+    # -- CLI loopback redirect URIs. Empty retains the default loopback redirect; use cliEnabled to disable the client. Prefer a loopback IP literal.
     cliRedirectUris: []
+    # -- (bool) Enable Client ID Metadata Documents (CIMD). Null preserves the application default (enabled).
+    cimdEnabled: null
+    # -- Allowed CIMD hosts. Empty preserves the application default (any public host); private and loopback hosts remain refused.
+    cimdAllowedHosts: []
     # -- (int) OAuth access token lifetime in minutes. Null preserves the application default.
     accessTokenValidityMinutes: null
     # -- (int) OAuth refresh token lifetime in days, restarted on refresh. Null preserves the application default.

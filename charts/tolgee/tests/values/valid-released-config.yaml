@@ -1,10 +1,16 @@
 tolgee:
   backEndUrl: https://api.example.com
   oauth2:
+    browserExtensionEnabled: true
     browserExtensionRedirectUris:
     - https://extension.example.com/callback
+    cliEnabled: false
     cliRedirectUris:
     - http://127.0.0.1:9876/callback
+    cimdEnabled: true
+    cimdAllowedHosts:
+    - client.example.com
+    - other.example.com
     grantRetentionDays: 0
   async:
     streaming:

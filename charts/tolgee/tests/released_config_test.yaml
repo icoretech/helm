@@ -5,6 +5,14 @@ tests:
 - it: leaves new application defaults untouched
   asserts:
   - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_BROWSER_EXTENSION_ENABLED")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CLI_ENABLED")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CIMD_ENABLED")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CIMD_ALLOWED_HOSTS")]
+  - notExists:
       path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_BACK_END_URL")]
   - notExists:
       path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_BROWSER_EXTENSION_REDIRECT_URIS")]
@@ -42,9 +50,15 @@ tests:
       path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_CONTAINER_NAME")]
   - notExists:
       path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_FILE_STORAGE_AZURE_CONNECTION_STRING")]
-- it: maps OAuth URLs, comma-separated redirects, lifetimes, and zero-valued pool and rate controls
+- it: maps OAuth enablement, URLs, comma-separated lists, lifetimes, and zero-valued pool and rate controls
   set:
     tolgee.backEndUrl: https://api.example.com
+    tolgee.oauth2.browserExtensionEnabled: true
+    tolgee.oauth2.cliEnabled: true
+    tolgee.oauth2.cimdEnabled: true
+    tolgee.oauth2.cimdAllowedHosts:
+    - client.example.com
+    - other.example.com
     tolgee.oauth2.browserExtensionRedirectUris:
     - https://extension.example.com/callback
     - https://other.example.com/callback
@@ -65,6 +79,18 @@ tests:
     tolgee.rateLimits.lockWaitMs: 0
     tolgee.rateLimits.maxConcurrentPerBucket: 0
   asserts:
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_BROWSER_EXTENSION_ENABLED")].value
+      value: 'true'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CLI_ENABLED")].value
+      value: 'true'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CIMD_ENABLED")].value
+      value: 'true'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CIMD_ALLOWED_HOSTS")].value
+      value: client.example.com,other.example.com
   - equal:
       path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_BACK_END_URL")].value
       value: https://api.example.com
@@ -131,6 +157,12 @@ tests:
 - it: deduplicates typed options against generic properties and extra env
   set:
     tolgee.backEndUrl: https://api.example.com
+    tolgee.oauth2.browserExtensionEnabled: false
+    tolgee.oauth2.cliEnabled: false
+    tolgee.oauth2.cimdEnabled: false
+    tolgee.oauth2.cimdAllowedHosts:
+    - client.example.com
+    - other.example.com
     tolgee.oauth2.browserExtensionRedirectUris:
     - https://extension.example.com/callback
     - https://other.example.com/callback
@@ -151,6 +183,10 @@ tests:
     tolgee.rateLimits.lockWaitMs: 0
     tolgee.rateLimits.maxConcurrentPerBucket: 0
     tolgee.config:
+      tolgee.oauth2.browser-extension-enabled: true
+      tolgee.oauth2.cli-enabled: true
+      tolgee.oauth2.cimd-enabled: true
+      tolgee.oauth2.cimd-allowed-hosts: ignored-config
       tolgee.back-end-url: ignored-config
       tolgee.oauth2.browser-extension-redirect-uris: ignored-config
       tolgee.oauth2.cli-redirect-uris: ignored-config
@@ -168,6 +204,10 @@ tests:
       tolgee.rate-limits.lock-wait-ms: ignored-config
       tolgee.rate-limits.max-concurrent-per-bucket: ignored-config
     tolgee.secretConfig:
+      tolgee.oauth2.browser-extension-enabled: 'true'
+      tolgee.oauth2.cli-enabled: 'true'
+      tolgee.oauth2.cimd-enabled: 'true'
+      tolgee.oauth2.cimd-allowed-hosts: ignored-secret-config
       tolgee.back-end-url: ignored-secret-config
       tolgee.oauth2.browser-extension-redirect-uris: ignored-secret-config
       tolgee.oauth2.cli-redirect-uris: ignored-secret-config
@@ -185,6 +225,14 @@ tests:
       tolgee.rate-limits.lock-wait-ms: ignored-secret-config
       tolgee.rate-limits.max-concurrent-per-bucket: ignored-secret-config
     tolgee.extraEnv:
+    - name: TOLGEE_OAUTH2_BROWSER_EXTENSION_ENABLED
+      value: 'true'
+    - name: TOLGEE_OAUTH2_CLI_ENABLED
+      value: 'true'
+    - name: TOLGEE_OAUTH2_CIMD_ENABLED
+      value: 'true'
+    - name: TOLGEE_OAUTH2_CIMD_ALLOWED_HOSTS
+      value: ignored-extra-env
     - name: TOLGEE_BACK_END_URL
       value: ignored-extra-env
     - name: TOLGEE_OAUTH2_BROWSER_EXTENSION_REDIRECT_URIS
@@ -268,4 +316,59 @@ tests:
       value: '0'
   - lengthEqual:
       path: spec.template.spec.containers[0].env
-      count: 23
+      count: 27
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_BROWSER_EXTENSION_ENABLED")].value
+      value: 'false'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CLI_ENABLED")].value
+      value: 'false'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CIMD_ENABLED")].value
+      value: 'false'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CIMD_ALLOWED_HOSTS")].value
+      value: client.example.com,other.example.com
+- it: leaves generic OAuth configuration available when typed controls are unset
+  set:
+    tolgee.config:
+      tolgee.oauth2.browser-extension-enabled: true
+      tolgee.oauth2.cimd-allowed-hosts: client.example.com
+    tolgee.extraEnv:
+    - name: TOLGEE_OAUTH2_CLI_ENABLED
+      value: 'false'
+    - name: TOLGEE_OAUTH2_CIMD_ENABLED
+      value: 'false'
+  asserts:
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_BROWSER_EXTENSION_ENABLED")].value
+      value: 'true'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CLI_ENABLED")].value
+      value: 'false'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CIMD_ENABLED")].value
+      value: 'false'
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CIMD_ALLOWED_HOSTS")].value
+      value: client.example.com
+  - lengthEqual:
+      path: spec.template.spec.containers[0].env
+      count: 11
+- it: does not infer client enablement from redirect overrides
+  set:
+    tolgee.oauth2.browserExtensionRedirectUris:
+    - https://extension.example.com/callback
+    tolgee.oauth2.cliRedirectUris:
+    - http://127.0.0.1:9876/callback
+  asserts:
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_BROWSER_EXTENSION_ENABLED")]
+  - notExists:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CLI_ENABLED")]
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_BROWSER_EXTENSION_REDIRECT_URIS")].value
+      value: https://extension.example.com/callback
+  - equal:
+      path: spec.template.spec.containers[0].env[?(@.name=="TOLGEE_OAUTH2_CLI_REDIRECT_URIS")].value
+      value: http://127.0.0.1:9876/callback

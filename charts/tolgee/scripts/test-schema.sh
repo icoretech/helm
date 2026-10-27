@@ -62,6 +62,10 @@ for f in \
   tests/values/invalid-azure-partial-ref.yaml \
   tests/values/invalid-azure-ref-key-only.yaml \
   tests/values/invalid-oauth-redirect.yaml \
+  tests/values/invalid-oauth-browser-extension-enabled.yaml \
+  tests/values/invalid-oauth-cli-enabled.yaml \
+  tests/values/invalid-oauth-cimd-enabled.yaml \
+  tests/values/invalid-oauth-cimd-host.yaml \
   tests/values/invalid-oauth-lifetime.yaml \
   tests/values/invalid-oauth-retention.yaml \
   tests/values/invalid-async-keepalive.yaml \

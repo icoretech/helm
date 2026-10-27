@@ -302,6 +302,9 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
+            "browserExtensionEnabled": {
+              "type": ["boolean", "null"]
+            },
             "browserExtensionRedirectUris": {
               "type": "array",
               "items": {
@@ -309,7 +312,20 @@
                 "minLength": 1
               }
             },
+            "cliEnabled": {
+              "type": ["boolean", "null"]
+            },
             "cliRedirectUris": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "cimdEnabled": {
+              "type": ["boolean", "null"]
+            },
+            "cimdAllowedHosts": {
               "type": "array",
               "items": {
                 "type": "string",

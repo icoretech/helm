@@ -161,16 +161,40 @@ spec:
             {{- $_ := set $envSeen "TOLGEE_BACK_END_URL" true }}
             {{- end }}
 
+            {{- if ne .Values.tolgee.oauth2.browserExtensionEnabled nil }}
+            - name: TOLGEE_OAUTH2_BROWSER_EXTENSION_ENABLED
+              value: {{ .Values.tolgee.oauth2.browserExtensionEnabled | quote }}
+            {{- $_ := set $envSeen "TOLGEE_OAUTH2_BROWSER_EXTENSION_ENABLED" true }}
+            {{- end }}
+
             {{- with .Values.tolgee.oauth2.browserExtensionRedirectUris }}
             - name: TOLGEE_OAUTH2_BROWSER_EXTENSION_REDIRECT_URIS
               value: {{ join "," . | quote }}
             {{- $_ := set $envSeen "TOLGEE_OAUTH2_BROWSER_EXTENSION_REDIRECT_URIS" true }}
             {{- end }}
 
+            {{- if ne .Values.tolgee.oauth2.cliEnabled nil }}
+            - name: TOLGEE_OAUTH2_CLI_ENABLED
+              value: {{ .Values.tolgee.oauth2.cliEnabled | quote }}
+            {{- $_ := set $envSeen "TOLGEE_OAUTH2_CLI_ENABLED" true }}
+            {{- end }}
+
             {{- with .Values.tolgee.oauth2.cliRedirectUris }}
             - name: TOLGEE_OAUTH2_CLI_REDIRECT_URIS
               value: {{ join "," . | quote }}
             {{- $_ := set $envSeen "TOLGEE_OAUTH2_CLI_REDIRECT_URIS" true }}
+            {{- end }}
+
+            {{- if ne .Values.tolgee.oauth2.cimdEnabled nil }}
+            - name: TOLGEE_OAUTH2_CIMD_ENABLED
+              value: {{ .Values.tolgee.oauth2.cimdEnabled | quote }}
+            {{- $_ := set $envSeen "TOLGEE_OAUTH2_CIMD_ENABLED" true }}
+            {{- end }}
+
+            {{- with .Values.tolgee.oauth2.cimdAllowedHosts }}
+            - name: TOLGEE_OAUTH2_CIMD_ALLOWED_HOSTS
+              value: {{ join "," . | quote }}
+            {{- $_ := set $envSeen "TOLGEE_OAUTH2_CIMD_ALLOWED_HOSTS" true }}
             {{- end }}
 
             {{- if ne .Values.tolgee.oauth2.accessTokenValidityMinutes nil }}
