@@ -17,7 +17,8 @@ for f in \
   tests/values/valid-s3-secretrefs.yaml \
   tests/values/valid-azure-inline.yaml \
   tests/values/valid-azure-secretref.yaml \
-  tests/values/valid-released-config.yaml
+  tests/values/valid-released-config.yaml \
+  tests/values/valid-global.yaml
   do
   echo "  - $f"
   helm lint . -f "$f" >/dev/null

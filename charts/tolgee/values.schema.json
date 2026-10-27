@@ -3,6 +3,7 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "global": { "type": "object", "description": "Global values. Helm passes them to every subchart, so this chart must accept them when used as a dependency." },
     "replicaCount": { "type": "integer", "minimum": 1 },
     "image": {
       "type": "object",
