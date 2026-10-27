@@ -40,6 +40,19 @@ helm upgrade --install tolgee oci://ghcr.io/icoretech/charts/tolgee \
   --set tolgee.authentication.jwtSecret="replace-with-a-strong-secret-at-least-32-characters"
 ```
 
+## Use as a Dependency
+
+The chart accepts Helm's shared `global` object when installed as a dependency of a parent chart. Global values are inherited by subcharts; Tolgee settings still use the chart's own configuration keys. Unknown keys outside `global` remain invalid.
+
+Parent chart values:
+
+```yaml
+global:
+  environment: test
+tolgee:
+  replicaCount: 1
+```
+
 ## External PostgreSQL Example
 
 ```yaml
@@ -139,7 +152,7 @@ Use the built-in `*Ref` fields when you want chart-managed env wiring without st
 
 Tolgee's OAuth 2.1 authorization server supports the browser extension, CLI, and MCP. Set `tolgee.backEndUrl` to the public backend origin behind a reverse proxy. OAuth uses this URL as its issuer, falling back to `tolgee.frontEndUrl`; registering an OAuth client requires one of these URLs. Use an origin such as `https://tolgee.example.com`, without a path, query, or fragment. Do not set `server.forward-headers-strategy`; Tolgee uses the explicit backend URL instead.
 
-Empty redirect URI lists leave the corresponding clients unregistered. Register only the exact URIs needed by your clients; prefer the loopback IP literal `127.0.0.1` for CLI callbacks.
+The CLI is enabled by default when a usable issuer is configured. Enable the published browser extension explicitly with `tolgee.oauth2.browserExtensionEnabled=true`. To disable either client, set its `cliEnabled` or `browserExtensionEnabled` switch to `false`.
 
 ```yaml
 tolgee:
@@ -148,13 +161,23 @@ tolgee:
   authentication:
     enabled: true
   oauth2:
-    cliRedirectUris:
-      - http://127.0.0.1:9876/callback
+    cliEnabled: true
     accessTokenValidityMinutes: 30
     refreshTokenValidityDays: 30
 ```
 
-The browser extension uses `tolgee.oauth2.browserExtensionRedirectUris`. Token and consent lifetimes, grant retention, and grant cleanup scheduling can also be configured under `tolgee.oauth2`; unset fields preserve upstream defaults.
+Empty redirect URI lists retain the built-in client defaults. Set `tolgee.oauth2.browserExtensionRedirectUris` or `cliRedirectUris` only for clients with custom callback URLs; these lists replace the defaults. Prefer the loopback IP literal `127.0.0.1` for CLI callbacks; its port may vary at runtime. Token and consent lifetimes, grant retention, and grant cleanup scheduling can also be configured under `tolgee.oauth2`; unset fields preserve upstream defaults.
+
+MCP clients can identify themselves with an HTTPS Client ID Metadata Document (CIMD). `tolgee.oauth2.cimdEnabled` controls this registration path. Its default is enabled, with any public host permitted. Use `cimdAllowedHosts` to restrict metadata hosts, or set `cimdEnabled=false` to accept only pre-registered clients. Private and loopback hosts are always rejected.
+
+```yaml
+tolgee:
+  oauth2:
+    browserExtensionEnabled: true
+    cimdEnabled: true
+    cimdAllowedHosts:
+      - clients.example.com
+```
 
 Ingress or gateway routing must forward `/oauth2/*`, `/.well-known/*`, and `/mcp/*` to Tolgee when using these clients, in addition to the UI and `/v2/*` APIs. A single `/` prefix route covers these paths. Ensure any external authentication proxy permits OAuth discovery and token requests to reach Tolgee's own authentication layer.
 
@@ -203,7 +226,7 @@ Zero or negative `maxThreads` selects automatic sizing. A negative streaming `qu
 
 ## Multiple Replicas
 
-Use shared PostgreSQL, shared Redis, and shared file storage before increasing `replicaCount` or enabling autoscaling. Redis must be enabled for both cache/rate-limit consistency and websocket event distribution; configuring a Redis hostname alone does not enable it. The same Redis client also supports MCP session recovery across replicas.
+Use shared PostgreSQL, shared Redis, and shared file storage before increasing `replicaCount` or enabling autoscaling. Redis must be enabled for both cache/rate-limit consistency and websocket event distribution; configuring a Redis hostname alone does not enable it. MCP requests use a stateless transport and do not require a shared MCP session store.
 
 ```yaml
 replicaCount: 2
@@ -345,6 +368,7 @@ spec:
 | deployment.progressDeadlineSeconds | int | `1800` | Time in seconds for the Deployment controller to wait before marking a rollout failed. |
 | deployment.strategy.type | string | `"Recreate"` | Deployment strategy. `Recreate` avoids RWO PVC multi-attach deadlocks during single-replica upgrades. |
 | fullnameOverride | string | `""` | Override fully-qualified release name. |
+| global | object | `{}` | Shared Helm values inherited from a parent chart. Does not map arbitrary globals to application environment variables. |
 | httpRoute.annotations | object | `{}` | HTTPRoute annotations. |
 | httpRoute.enabled | bool | `false` | Enable Gateway API HTTPRoute. |
 | httpRoute.hostnames | list | `[]` | Optional HTTPRoute hostnames. |
@@ -473,8 +497,12 @@ spec:
 | tolgee.frontEndUrl | string | `""` | Public frontend URL (recommended for secure link generation). |
 | tolgee.oauth2.accessTokenValidityMinutes | int | `nil` | OAuth access token lifetime in minutes. Null preserves the application default. |
 | tolgee.oauth2.authorizationCodeValiditySeconds | int | `nil` | Authorization code lifetime in seconds. Null preserves the application default. |
-| tolgee.oauth2.browserExtensionRedirectUris | list | `[]` | Exact browser extension redirect URIs. Empty leaves this OAuth client unregistered. |
-| tolgee.oauth2.cliRedirectUris | list | `[]` | CLI loopback redirect URIs. Configure only when CLI OAuth login is needed; prefer a loopback IP literal. |
+| tolgee.oauth2.browserExtensionEnabled | bool | `nil` | Enable browser extension OAuth login. Null preserves the application default (disabled). |
+| tolgee.oauth2.browserExtensionRedirectUris | list | `[]` | Exact browser extension redirect URIs. Empty retains the official redirects; use browserExtensionEnabled to enable the client. |
+| tolgee.oauth2.cimdAllowedHosts | list | `[]` | Allowed CIMD hosts. Empty preserves the application default (any public host); private and loopback hosts remain refused. |
+| tolgee.oauth2.cimdEnabled | bool | `nil` | Enable Client ID Metadata Documents (CIMD). Null preserves the application default (enabled). |
+| tolgee.oauth2.cliEnabled | bool | `nil` | Enable CLI OAuth login. Null preserves the application default (enabled when an issuer is configured). |
+| tolgee.oauth2.cliRedirectUris | list | `[]` | CLI loopback redirect URIs. Empty retains the default loopback redirect; use cliEnabled to disable the client. Prefer a loopback IP literal. |
 | tolgee.oauth2.consentValiditySeconds | int | `nil` | Pending consent lifetime in seconds. Null preserves the application default. |
 | tolgee.oauth2.grantCleanupCron | string | `""` | Grant cleanup schedule in Spring six-field cron format. Empty preserves the application default. |
 | tolgee.oauth2.grantRetentionDays | int | `nil` | Retention of spent grants after credential expiry in days. Null preserves the application default. |
