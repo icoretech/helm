@@ -13,6 +13,7 @@ Deploy [Tolgee Platform](https://tolgee.io/) on Kubernetes with optional bundled
 - Optional bundled PostgreSQL dependency (`postgres.enabled=true`)
 - External PostgreSQL mode with inline values or existing Secret refs
 - Configurable persistence for Tolgee filesystem data (`/data` by default)
+- Optional startup health check, additional volumes, and Deployment annotations
 - Ingress and Gateway API `HTTPRoute` support
 - Generic Tolgee/Spring property pass-through via dot-notation maps (`tolgee.config`, `tolgee.secretConfig`)
 - OAuth 2.1 client registration, Azure Blob Storage, async pool sizing, and rate-limit concurrency controls
@@ -224,6 +225,34 @@ tolgee:
 
 Zero or negative `maxThreads` selects automatic sizing. A negative streaming `queueCapacity` selects automatic capacity; zero allows no queueing. Zero `keepAliveSeconds` disables idle thread expiry. The per-bucket concurrency cap applies per node; zero disables that cap. Fields default to `null` so upstream defaults remain effective.
 
+## Startup and Writable Directories
+
+Enable `startupProbe` to give application startup and database migrations a separate health-check budget. Liveness and readiness checks begin after the startup probe succeeds. The startup probe is disabled by default to preserve existing deployments; choose its budget and `deployment.progressDeadlineSeconds` for the expected migration duration.
+
+When using a read-only container root filesystem, keep application files on persistent or object storage and provide a writable temporary directory. The extra volume lists extend the chart-managed data volume and also work with `persistence.enabled=false`; the name `data` is reserved while persistence is enabled.
+
+```yaml
+securityContext:
+  readOnlyRootFilesystem: true
+startupProbe:
+  enabled: true
+  failureThreshold: 90
+  periodSeconds: 10
+  timeoutSeconds: 5
+extraVolumes:
+  - name: tmp
+    emptyDir:
+      sizeLimit: 256Mi
+extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp
+deployment:
+  annotations:
+    reloader.stakater.com/auto: "true"
+```
+
+Deployment annotations apply to the Deployment object; `podAnnotations` applies to its pod template. The Reloader example requires an installed Reloader controller and restarts pods when a referenced Secret changes. Updating a bootstrap-only setting such as the initial administrator password does not change an existing Tolgee account password.
+
 ## Multiple Replicas
 
 Use shared PostgreSQL, shared Redis, and shared file storage before increasing `replicaCount` or enabling autoscaling. Redis must be enabled for both cache/rate-limit consistency and websocket event distribution; configuring a Redis hostname alone does not enable it. MCP requests use a stateless transport and do not require a shared MCP session store.
@@ -365,8 +394,11 @@ spec:
 | database.waitForReady.imagePullPolicy | string | `"IfNotPresent"` | Init container image pull policy. |
 | database.waitForReady.periodSeconds | int | `2` | Poll interval in seconds. |
 | database.waitForReady.timeoutSeconds | int | `180` | Max seconds to wait for DB readiness. |
+| deployment.annotations | object | `{}` | Deployment annotations, for example to reload pods when referenced Secrets change. |
 | deployment.progressDeadlineSeconds | int | `1800` | Time in seconds for the Deployment controller to wait before marking a rollout failed. |
 | deployment.strategy.type | string | `"Recreate"` | Deployment strategy. `Recreate` avoids RWO PVC multi-attach deadlocks during single-replica upgrades. |
+| extraVolumeMounts | list | `[]` | Additional volume mounts for the Tolgee container. |
+| extraVolumes | list | `[]` | Additional pod volumes. The name `data` is reserved when persistence is enabled. |
 | fullnameOverride | string | `""` | Override fully-qualified release name. |
 | global | object | `{}` | Shared Helm values inherited from a parent chart. Does not map arbitrary globals to application environment variables. |
 | httpRoute.annotations | object | `{}` | HTTPRoute annotations. |
@@ -447,6 +479,13 @@ spec:
 | serviceAccount.annotations | object | `{}` | Service account annotations. |
 | serviceAccount.create | bool | `true` | Create a service account. |
 | serviceAccount.name | string | `""` | Service account name. |
+| startupProbe.enabled | bool | `false` | Enable a startup probe that delays liveness/readiness checks until startup succeeds. |
+| startupProbe.failureThreshold | int | `90` |  |
+| startupProbe.httpGet.path | string | `"/actuator/health"` | Startup probe path. |
+| startupProbe.initialDelaySeconds | int | `0` |  |
+| startupProbe.periodSeconds | int | `10` |  |
+| startupProbe.successThreshold | int | `1` |  |
+| startupProbe.timeoutSeconds | int | `3` |  |
 | tolerations | list | `[]` | Tolerations. |
 | tolgee.async.background.keepAliveSeconds | int | `nil` | Idle background thread lifetime in seconds. Zero keeps core threads alive; null preserves the application default. |
 | tolgee.async.background.maxThreads | int | `nil` | Maximum background threads. Null preserves the application default; zero or negative derives from the database pool. |
