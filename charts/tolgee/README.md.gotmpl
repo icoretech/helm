@@ -8,6 +8,7 @@ Deploy [Tolgee Platform](https://tolgee.io/) on Kubernetes with optional bundled
 - Optional bundled PostgreSQL dependency (`postgres.enabled=true`)
 - External PostgreSQL mode with inline values or existing Secret refs
 - Configurable persistence for Tolgee filesystem data (`/data` by default)
+- Optional startup health check, additional volumes, and Deployment annotations
 - Ingress and Gateway API `HTTPRoute` support
 - Generic Tolgee/Spring property pass-through via dot-notation maps (`tolgee.config`, `tolgee.secretConfig`)
 - OAuth 2.1 client registration, Azure Blob Storage, async pool sizing, and rate-limit concurrency controls
@@ -218,6 +219,34 @@ tolgee:
 ```
 
 Zero or negative `maxThreads` selects automatic sizing. A negative streaming `queueCapacity` selects automatic capacity; zero allows no queueing. Zero `keepAliveSeconds` disables idle thread expiry. The per-bucket concurrency cap applies per node; zero disables that cap. Fields default to `null` so upstream defaults remain effective.
+
+## Startup and Writable Directories
+
+Enable `startupProbe` to give application startup and database migrations a separate health-check budget. Liveness and readiness checks begin after the startup probe succeeds. The startup probe is disabled by default to preserve existing deployments; choose its budget and `deployment.progressDeadlineSeconds` for the expected migration duration.
+
+When using a read-only container root filesystem, keep application files on persistent or object storage and provide a writable temporary directory. The extra volume lists extend the chart-managed data volume and also work with `persistence.enabled=false`; the name `data` is reserved while persistence is enabled.
+
+```yaml
+securityContext:
+  readOnlyRootFilesystem: true
+startupProbe:
+  enabled: true
+  failureThreshold: 90
+  periodSeconds: 10
+  timeoutSeconds: 5
+extraVolumes:
+  - name: tmp
+    emptyDir:
+      sizeLimit: 256Mi
+extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp
+deployment:
+  annotations:
+    reloader.stakater.com/auto: "true"
+```
+
+Deployment annotations apply to the Deployment object; `podAnnotations` applies to its pod template. The Reloader example requires an installed Reloader controller and restarts pods when a referenced Secret changes. Updating a bootstrap-only setting such as the initial administrator password does not change an existing Tolgee account password.
 
 ## Multiple Replicas
 

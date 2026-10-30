@@ -1,0 +1,3 @@
+extraVolumes:
+  - name: data
+    emptyDir: {}

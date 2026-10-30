@@ -1,0 +1,3 @@
+startupProbe:
+  enabled: true
+  successThreshold: 2

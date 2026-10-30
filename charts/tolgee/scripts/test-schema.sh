@@ -20,6 +20,7 @@ for f in \
   tests/values/valid-azure-inline.yaml \
   tests/values/valid-azure-secretref.yaml \
   tests/values/valid-released-config.yaml \
+  tests/values/valid-runtime-configuration.yaml \
   tests/values/valid-global.yaml
   do
   echo "  - $f"
@@ -70,7 +71,13 @@ for f in \
   tests/values/invalid-oauth-retention.yaml \
   tests/values/invalid-async-keepalive.yaml \
   tests/values/invalid-async-type.yaml \
-  tests/values/invalid-rate-limits.yaml
+  tests/values/invalid-rate-limits.yaml \
+  tests/values/invalid-startup-success-threshold.yaml \
+  tests/values/invalid-startup-period.yaml \
+  tests/values/invalid-deployment-annotation.yaml \
+  tests/values/invalid-extra-volume.yaml \
+  tests/values/invalid-extra-volume-mount.yaml \
+  tests/values/invalid-reserved-volume.yaml
   do
   expect_invalid "$f"
 done

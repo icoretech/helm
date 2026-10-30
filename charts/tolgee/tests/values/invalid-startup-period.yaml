@@ -1,0 +1,3 @@
+startupProbe:
+  enabled: true
+  periodSeconds: 0

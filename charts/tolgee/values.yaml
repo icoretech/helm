@@ -45,6 +45,12 @@ podSecurityContext: {}
 # -- Container security context.
 securityContext: {}
 
+# -- Additional pod volumes. The name `data` is reserved when persistence is enabled.
+extraVolumes: []
+
+# -- Additional volume mounts for the Tolgee container.
+extraVolumeMounts: []
+
 service:
   # -- Service annotations.
   annotations: {}
@@ -185,6 +191,9 @@ autoscaling:
   targetMemoryUtilizationPercentage:
 
 deployment:
+  # -- Deployment annotations, for example to reload pods when referenced Secrets change.
+  annotations: {}
+
   # -- Time in seconds for the Deployment controller to wait before marking a rollout failed.
   progressDeadlineSeconds: 1800
   strategy:
@@ -539,6 +548,18 @@ tolgee:
 
   # -- Additional envFrom refs.
   envFrom: []
+
+startupProbe:
+  # -- Enable a startup probe that delays liveness/readiness checks until startup succeeds.
+  enabled: false
+  httpGet:
+    # -- Startup probe path.
+    path: /actuator/health
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 90
 
 livenessProbe:
   # -- Enable liveness probe.

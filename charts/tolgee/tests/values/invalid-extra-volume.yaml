@@ -1,0 +1,2 @@
+extraVolumes:
+  - emptyDir: {}

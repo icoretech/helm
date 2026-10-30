@@ -37,6 +37,27 @@
     },
     "podSecurityContext": { "type": "object" },
     "securityContext": { "type": "object" },
+    "extraVolumes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "minLength": 1 }
+        },
+        "required": ["name"]
+      }
+    },
+    "extraVolumeMounts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "mountPath": { "type": "string", "pattern": "^/" }
+        },
+        "required": ["name", "mountPath"]
+      }
+    },
     "service": {
       "type": "object",
       "additionalProperties": false,
@@ -170,6 +191,10 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "annotations": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
         "progressDeadlineSeconds": { "type": "integer", "minimum": 1 },
         "strategy": {
           "type": "object",
@@ -732,6 +757,27 @@
       },
       "required": ["authentication", "smtp", "fileStorage", "telemetry", "cache", "websocket", "webhook", "config", "secretConfig", "extraEnv", "envFrom"]
     },
+    "startupProbe": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "httpGet": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": { "type": "string", "minLength": 1 }
+          },
+          "required": ["path"]
+        },
+        "initialDelaySeconds": { "type": "integer", "minimum": 0 },
+        "periodSeconds": { "type": "integer", "minimum": 1 },
+        "timeoutSeconds": { "type": "integer", "minimum": 1 },
+        "successThreshold": { "const": 1 },
+        "failureThreshold": { "type": "integer", "minimum": 1 }
+      },
+      "required": ["enabled", "httpGet"]
+    },
     "livenessProbe": {
       "type": "object",
       "additionalProperties": false,
@@ -777,6 +823,25 @@
     "postgres": { "type": "object" }
   },
   "allOf": [
+    {
+      "if": {
+        "properties": {
+          "persistence": {
+            "properties": { "enabled": { "const": true } },
+            "required": ["enabled"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "extraVolumes": {
+            "items": {
+              "properties": { "name": { "not": { "const": "data" } } }
+            }
+          }
+        }
+      }
+    },
     {
       "if": {
         "properties": {

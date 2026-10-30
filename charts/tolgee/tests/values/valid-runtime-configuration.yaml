@@ -1,0 +1,23 @@
+deployment:
+  annotations:
+    reloader.stakater.com/auto: "true"
+podAnnotations:
+  example.com/pod-note: sample
+securityContext:
+  readOnlyRootFilesystem: true
+startupProbe:
+  enabled: true
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 90
+livenessProbe:
+  httpGet:
+    path: /
+extraVolumes:
+  - name: tmp
+    emptyDir:
+      sizeLimit: 256Mi
+extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp

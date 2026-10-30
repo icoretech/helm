@@ -1,0 +1,120 @@
+suite: runtime configuration
+templates:
+  - deployment.yaml
+tests:
+  - it: preserves the default probes and persistent data volume
+    values:
+      - values/valid-minimal.yaml
+    asserts:
+      - notExists:
+          path: metadata.annotations
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /actuator/health
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /actuator/health
+      - lengthEqual:
+          path: spec.template.spec.containers[0].volumeMounts
+          count: 1
+      - lengthEqual:
+          path: spec.template.spec.volumes
+          count: 1
+
+  - it: supports startup health checks and a writable temporary directory with a read-only root filesystem
+    values:
+      - values/valid-runtime-configuration.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            reloader.stakater.com/auto: "true"
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            example.com/pod-note: sample
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 90
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: data
+      - equal:
+          path: spec.template.spec.volumes[1]
+          value:
+            name: tmp
+            emptyDir:
+              sizeLimit: 256Mi
+
+  - it: renders additional volumes without local persistence for object-storage deployments
+    values:
+      - values/valid-runtime-configuration.yaml
+    set:
+      persistence.enabled: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: tmp
+              mountPath: /tmp
+      - equal:
+          path: spec.template.spec.volumes
+          value:
+            - name: tmp
+              emptyDir:
+                sizeLimit: 256Mi
+
+  - it: omits empty volume lists without persistence or extra volumes
+    values:
+      - values/valid-minimal.yaml
+    set:
+      persistence.enabled: false
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].volumeMounts
+      - notExists:
+          path: spec.template.spec.volumes
+
+  - it: allows a custom data volume when chart persistence is disabled
+    set:
+      persistence.enabled: false
+      extraVolumes:
+        - name: data
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: data
+          mountPath: /data
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes
+          value:
+            - name: data
+              emptyDir: {}
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: data
+              mountPath: /data

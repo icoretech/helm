@@ -1,0 +1,3 @@
+extraVolumeMounts:
+  - name: tmp
+    mountPath: tmp
