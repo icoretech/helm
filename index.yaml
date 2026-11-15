@@ -11,6 +11,54 @@ entries:
         - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
       artifacthub.io/screenshots: |
         - title: Projects
+          url: https://raw.githubusercontent.com/icoretech/airbroke/main/public/screenshot.png
+        - title: Toolbox
+          url: https://raw.githubusercontent.com/icoretech/airbroke/main/public/screenshot2.png
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.4.10
+    created: "2026-11-15T07:19:43.875268021Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 4.1.5
+    description: Airbroke Helm chart for Kubernetes
+    digest: f5309a83235516db3719920c6416e2d0d4d33b89f6c3a9660a16e03256e1967d
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-2.4.7/airbroke-2.4.7.tgz
+    version: 2.4.7
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/images: |
+        - name: airbroke
+          image: ghcr.io/icoretech/airbroke:1.4.10
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+      artifacthub.io/screenshots: |
+        - title: Projects
           url: https://i.imgur.com/hcwnz84.png
         - title: Toolbox
           url: https://i.imgur.com/b2NBh2i.png
@@ -3624,6 +3672,41 @@ entries:
     - https://github.com/icoretech/helm/releases/download/airbroke-1.0.25/airbroke-1.0.25.tgz
     version: 1.0.25
   browserless:
+  - annotations:
+      artifacthub.io/images: |
+        - name: browserless-chromium
+          image: ghcr.io/browserless/chromium:v2.63.1
+      artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v2.63.1
+    created: "2026-11-15T07:19:44.168723111Z"
+    description: Browserless v2 browser automation service for Kubernetes
+    digest: d4ded92850a2805e41a37e3a96715a6a5acd5d6a5e981b0cb3d70616c4119a24
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/browserless/logo.svg
+    keywords:
+    - browserless
+    - chromium
+    - chrome
+    - firefox
+    - playwright
+    - puppeteer
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: browserless
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/browserless
+    - https://github.com/browserless/browserless
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/browserless-0.24.1/browserless-0.24.1.tgz
+    version: 0.24.1
   - annotations:
       artifacthub.io/images: |
         - name: browserless-chromium
@@ -28062,4 +28145,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-11-13T17:07:53.241684018Z"
+generated: "2026-11-15T07:19:44.17123925Z"
