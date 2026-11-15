@@ -4,7 +4,7 @@ title: airbroke
 ---
 
 <p align="center">
-  <img src="https://i.imgur.com/dPL9YEz.png" height="400">
+  <img src="logo.png" height="200" alt="Airbroke">
 </p>
 
 # Airbroke Helm Chart
