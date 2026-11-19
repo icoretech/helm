@@ -3771,6 +3771,41 @@ entries:
   - annotations:
       artifacthub.io/images: |
         - name: browserless-chromium
+          image: ghcr.io/browserless/chromium:v2.64.0
+      artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v2.64.0
+    created: "2026-11-19T18:42:46.689516852Z"
+    description: Browserless v2 browser automation service for Kubernetes
+    digest: 87ad0412753cb75703a2a6214192f05367f8733c3c044cdda21af4222259cffc
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/browserless/logo.svg
+    keywords:
+    - browserless
+    - chromium
+    - chrome
+    - firefox
+    - playwright
+    - puppeteer
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: browserless
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/browserless
+    - https://github.com/browserless/browserless
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/browserless-0.25.0/browserless-0.25.0.tgz
+    version: 0.25.0
+  - annotations:
+      artifacthub.io/images: |
+        - name: browserless-chromium
           image: ghcr.io/browserless/chromium:v2.63.2
       artifacthub.io/license: MIT
       artifacthub.io/signKey: |
@@ -14492,6 +14527,51 @@ entries:
   - annotations:
       artifacthub.io/images: |
         - name: multica-backend
+          image: ghcr.io/multica-ai/multica-backend:v0.11.1
+        - name: multica-web
+          image: ghcr.io/multica-ai/multica-web:v0.11.1
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v0.11.1
+    created: "2026-11-19T18:42:46.967011782Z"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.19.3
+    - condition: redis.enabled
+      name: redis
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.27.4
+    description: Multica managed agents platform for Kubernetes
+    digest: 67a984499b22bf5907384903ff464f65ed7c798894d41dd19adf1bcef4feec23
+    home: https://github.com/multica-ai/multica
+    icon: https://raw.githubusercontent.com/multica-ai/multica/main/docs/assets/logo-light.svg
+    keywords:
+    - multica
+    - agents
+    - codex
+    - claude-code
+    - ai
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: multica
+    sources:
+    - https://github.com/multica-ai/multica
+    - https://github.com/icoretech/helm/tree/main/charts/multica
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/multica-0.11.1/multica-0.11.1.tgz
+    version: 0.11.1
+  - annotations:
+      artifacthub.io/images: |
+        - name: multica-backend
           image: ghcr.io/multica-ai/multica-backend:v0.11.0
         - name: multica-web
           image: ghcr.io/multica-ai/multica-web:v0.11.0
@@ -22302,6 +22382,44 @@ entries:
   - annotations:
       artifacthub.io/images: |
         - name: tolgee
+          image: tolgee/tolgee:v3.246.0
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v3.246.0
+    created: "2026-11-19T18:42:47.225292964Z"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: oci://registry-1.docker.io/cloudpirates
+      version: 0.17.2
+    description: Tolgee Platform Helm chart for Kubernetes
+    digest: ae9c93467a92cd9901832703b85ebec061fdab426ce75d0d0bfa452a62e3c9de
+    home: https://tolgee.io
+    icon: https://icoretech.github.io/helm/charts/tolgee/logo.svg
+    keywords:
+    - tolgee
+    - localization
+    - i18n
+    - l10n
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: tolgee
+    sources:
+    - https://github.com/tolgee/tolgee-platform
+    - https://github.com/icoretech/helm/tree/main/charts/tolgee
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/tolgee-0.69.0/tolgee-0.69.0.tgz
+    version: 0.69.0
+  - annotations:
+      artifacthub.io/images: |
+        - name: tolgee
           image: tolgee/tolgee:v3.245.1
       artifacthub.io/license: Apache-2.0
       artifacthub.io/signKey: |
@@ -28615,4 +28733,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-11-19T05:40:18.30307419Z"
+generated: "2026-11-19T18:42:47.226642624Z"
