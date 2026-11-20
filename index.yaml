@@ -3771,6 +3771,41 @@ entries:
   - annotations:
       artifacthub.io/images: |
         - name: browserless-chromium
+          image: ghcr.io/browserless/chromium:v2.64.2
+      artifacthub.io/license: MIT
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: v2.64.2
+    created: "2026-11-20T21:44:41.104157242Z"
+    description: Browserless v2 browser automation service for Kubernetes
+    digest: c2bef22034b1e1c98c90845059a9f6fcc1f98bf171d84733841e0669f72da1a1
+    home: https://github.com/icoretech/helm
+    icon: https://icoretech.github.io/helm/charts/browserless/logo.svg
+    keywords:
+    - browserless
+    - chromium
+    - chrome
+    - firefox
+    - playwright
+    - puppeteer
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: browserless
+    sources:
+    - https://github.com/icoretech/helm/tree/main/charts/browserless
+    - https://github.com/browserless/browserless
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/browserless-0.25.2/browserless-0.25.2.tgz
+    version: 0.25.2
+  - annotations:
+      artifacthub.io/images: |
+        - name: browserless-chromium
           image: ghcr.io/browserless/chromium:v2.64.1
       artifacthub.io/license: MIT
       artifacthub.io/signKey: |
@@ -6793,6 +6828,51 @@ entries:
     - https://github.com/icoretech/helm/releases/download/codex-lb-0.1.0/codex-lb-0.1.0.tgz
     version: 0.1.0
   codex-pooler:
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/images: |
+        - name: codex-pooler
+          image: ghcr.io/icoretech/codex-pooler:0.16.5
+      artifacthub.io/license: Elastic-2.0
+      artifacthub.io/links: |
+        - name: Website
+          url: https://www.codex-pooler.com
+        - name: Documentation
+          url: https://www.codex-pooler.com/docs/
+        - name: X
+          url: https://x.com/icoretech_inc
+        - name: Reddit
+          url: https://reddit.com/r/CodexPooler
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 0.16.5
+    created: "2026-11-20T21:44:41.265268382Z"
+    description: Self-hosted gateway for sharing Codex account capacity across trusted
+      agents and tools
+    digest: 625ee9064d6e3e3ea6324a5a162a0d15c82bea5b387e87fccfe86e58d52335c2
+    home: https://www.codex-pooler.com
+    icon: https://icoretech.github.io/helm/charts/codex-pooler/logo.png
+    keywords:
+    - codex
+    - openai
+    - gateway
+    - pooler
+    - ai
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: codex-pooler
+    sources:
+    - https://github.com/icoretech/codex-pooler
+    - https://github.com/icoretech/helm/tree/main/charts/codex-pooler
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/codex-pooler-0.17.4/codex-pooler-0.17.4.tgz
+    version: 0.17.4
   - annotations:
       artifacthub.io/category: ai-machine-learning
       artifacthub.io/images: |
@@ -28813,4 +28893,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-11-20T19:16:45.296205918Z"
+generated: "2026-11-20T21:44:41.266427956Z"
