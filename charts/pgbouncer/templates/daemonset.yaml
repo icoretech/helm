@@ -8,6 +8,10 @@ apiVersion: {{ template "deployment.apiVersion" . }}
 kind: DaemonSet
 metadata:
   name: {{ include "pgbouncer.fullname" . }}
+  {{- if .Values.annotations }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
+  {{- end }}
   labels:
     {{- include "pgbouncer.labels" . | nindent 4 }}
 spec:

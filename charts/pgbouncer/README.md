@@ -60,6 +60,7 @@ The following table lists the configurable parameters of the PgBouncer chart and
 | image.tag | string | `"1.26.1"` | Container image tag |
 | imagePullSecrets | list | `[]` | Array of imagePullSecrets to use for pulling private images. |
 | kind | string | `"Deployment"` | Resource type for PgBouncer (Deployment, DaemonSet). Defaults to Deployment. |
+| annotations | object | `{}` | Annotations to add to the deployment. |
 | lifecycle | object | `{}` | See Kubernetes docs on lifecycle hooks. |
 | minReadySeconds | int | `0` | Minimum number of seconds for which a newly created pod should be ready without crashing, before being considered available. |
 | nameOverride | string | `""` | Overrides the chart name for resources. If set, takes precedence over the chart's name. |
