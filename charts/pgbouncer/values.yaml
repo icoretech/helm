@@ -10,6 +10,9 @@ replicaCount: 1
 # -- Resource type for PgBouncer (Deployment, DaemonSet). Defaults to Deployment.
 kind: Deployment
 
+# -- Annotations for the selected Deployment or DaemonSet object. Use podAnnotations for annotations on its pods.
+annotations: {}
+
 # -- The update strategy to apply to the Deployment (e.g. Recreate or RollingUpdate).
 updateStrategy: {}
 #  type: Recreate

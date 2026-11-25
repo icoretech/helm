@@ -8,6 +8,10 @@ apiVersion: {{ template "deployment.apiVersion" . }}
 kind: Deployment
 metadata:
   name: {{ include "pgbouncer.fullname" . }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   labels:
     {{- include "pgbouncer.labels" . | nindent 4 }}
 spec:

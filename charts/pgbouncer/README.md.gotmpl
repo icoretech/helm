@@ -27,6 +27,8 @@ This command deploys a PgBouncer instance with default configuration.
 
 The following table lists the configurable parameters of the PgBouncer chart and their default values.
 
+`annotations` applies to the selected Deployment or DaemonSet object. `podAnnotations` applies to the pod template created by that workload.
+
 {{ template "chart.valuesSection" . }}
 
 ### Server reset settings

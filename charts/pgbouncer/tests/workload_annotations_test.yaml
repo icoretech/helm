@@ -1,0 +1,54 @@
+suite: workload annotations
+templates:
+  - deployment.yaml
+  - daemonset.yaml
+  - configmap.yaml
+  - secret.yaml
+  - userlist-secret.yaml
+tests:
+  - it: applies annotations to a Deployment object
+    template: deployment.yaml
+    values:
+      - values/valid-minimal.yaml
+    set:
+      annotations:
+        example.com/controller: deployment
+      podAnnotations:
+        example.com/pod: deployment
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.annotations["example.com/controller"]
+          value: deployment
+      - equal:
+          path: spec.template.metadata.annotations["example.com/pod"]
+          value: deployment
+
+  - it: applies annotations to a DaemonSet object
+    template: daemonset.yaml
+    values:
+      - values/valid-minimal.yaml
+    set:
+      kind: DaemonSet
+      annotations:
+        example.com/controller: daemonset
+      podAnnotations:
+        example.com/pod: daemonset
+    asserts:
+      - isKind:
+          of: DaemonSet
+      - equal:
+          path: metadata.annotations["example.com/controller"]
+          value: daemonset
+      - equal:
+          path: spec.template.metadata.annotations["example.com/pod"]
+          value: daemonset
+
+  - it: omits controller annotations by default
+    template: deployment.yaml
+    values:
+      - values/valid-minimal.yaml
+    asserts:
+      - notExists:
+          path: metadata.annotations
