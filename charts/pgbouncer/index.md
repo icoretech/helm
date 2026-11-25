@@ -32,11 +32,14 @@ This command deploys a PgBouncer instance with default configuration.
 
 The following table lists the configurable parameters of the PgBouncer chart and their default values.
 
+`annotations` applies to the selected Deployment or DaemonSet object. `podAnnotations` applies to the pod template created by that workload.
+
 ## Values
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | See Kubernetes docs on affinity rules. |
+| annotations | object | `{}` | Annotations for the selected Deployment or DaemonSet object. Use podAnnotations for annotations on its pods. |
 | args | list | `[]` | Override the default container arguments. |
 | command | list | `[]` | Override the default container command (entrypoint). |
 | config.adminPassword | string | `nil` | If no existingAdminSecret is used, this admin password is placed in a new Secret. |
