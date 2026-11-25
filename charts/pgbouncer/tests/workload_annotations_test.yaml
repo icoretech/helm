@@ -9,7 +9,7 @@ tests:
   - it: applies annotations to a Deployment object
     template: deployment.yaml
     values:
-      - values/valid-minimal.yaml
+      - ../ci/install-values.yaml
     set:
       annotations:
         example.com/controller: deployment
@@ -28,7 +28,7 @@ tests:
   - it: applies annotations to a DaemonSet object
     template: daemonset.yaml
     values:
-      - values/valid-minimal.yaml
+      - ../ci/install-values.yaml
     set:
       kind: DaemonSet
       annotations:
@@ -48,7 +48,7 @@ tests:
   - it: omits controller annotations by default
     template: deployment.yaml
     values:
-      - values/valid-minimal.yaml
+      - ../ci/install-values.yaml
     asserts:
       - notExists:
           path: metadata.annotations
