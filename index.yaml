@@ -5,6 +5,54 @@ entries:
       artifacthub.io/category: monitoring-logging
       artifacthub.io/images: |
         - name: airbroke
+          image: ghcr.io/icoretech/airbroke:1.4.13
+      artifacthub.io/license: MIT
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/icoretech/pgbouncer
+      artifacthub.io/screenshots: |
+        - title: Projects
+          url: https://raw.githubusercontent.com/icoretech/airbroke/main/public/screenshot.png
+        - title: Toolbox
+          url: https://raw.githubusercontent.com/icoretech/airbroke/main/public/screenshot2.png
+      artifacthub.io/signKey: |
+        fingerprint: D089525241C856C7D4A34A41DB4CF65A75647D87
+        url: https://icoretech.github.io/helm/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.4.13
+    created: "2026-11-27T13:48:47.875535599Z"
+    dependencies:
+    - condition: pgbouncer.enabled
+      name: pgbouncer
+      repository: oci://ghcr.io/icoretech/charts
+      version: 4.1.5
+    description: Airbroke Helm chart for Kubernetes
+    digest: 75da943c7853e2df99b834f9cc9924cb4bb123610fa1eb269c8f2dc941d978c5
+    home: https://github.com/icoretech/airbroke
+    icon: https://icoretech.github.io/helm/charts/airbroke/logo.png
+    keywords:
+    - open
+    - source
+    - error
+    - catcher
+    - exception
+    - monitoring
+    - tracker
+    maintainers:
+    - email: claudio@icorete.ch
+      name: masterkain
+      url: https://github.com/masterkain
+    name: airbroke
+    sources:
+    - https://github.com/icoretech/airbroke
+    - https://github.com/icoretech/helm/tree/main/charts/airbroke
+    type: application
+    urls:
+    - https://github.com/icoretech/helm/releases/download/airbroke-2.4.10/airbroke-2.4.10.tgz
+    version: 2.4.10
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/images: |
+        - name: airbroke
           image: ghcr.io/icoretech/airbroke:1.4.12
       artifacthub.io/license: MIT
       artifacthub.io/recommendations: |
@@ -29455,4 +29503,4 @@ entries:
     urls:
     - https://github.com/icoretech/helm/releases/download/tolgee-0.1.0/tolgee-0.1.0.tgz
     version: 0.1.0
-generated: "2026-11-27T10:44:54.217512704Z"
+generated: "2026-11-27T13:48:47.876367412Z"
